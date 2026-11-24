@@ -16,3 +16,9 @@ Each entry: file(s) in this repo — origin — licence.
 
   - gradlew, gradlew.bat, gradle/wrapper/gradle-wrapper.jar
       Gradle Wrapper — https://github.com/gradle/gradle — Apache-2.0
+  - site/assets/fonts/geist-latin-*.woff2 (Latin subsets)
+      Geist — https://github.com/vercel/geist-font (npm "geist") — SIL OFL 1.1 (site/assets/fonts/OFL-Geist.txt)
+  - site/assets/fonts/anek-bangla-bengali-*.woff2
+      Anek Bangla — https://github.com/EkType/Anek (npm "@fontsource/anek-bangla") — SIL OFL 1.1 (site/assets/fonts/OFL-AnekBangla.txt)
+  - site/assets/fonts/jetbrains-mono-latin-500-normal.woff2
+      JetBrains Mono — https://github.com/JetBrains/JetBrainsMono (npm "@fontsource/jetbrains-mono") — SIL OFL 1.1 (site/assets/fonts/OFL-JetBrainsMono.txt)

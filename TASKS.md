@@ -12,7 +12,7 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M1 - Landing site live
 
-- [ ] `site/` for Banglish (`/`) and English (`/en/`), self-hosted fonts, inline icons, privacy pages, `config.json`, coming-soon state.
+- [x] `site/` for Banglish (`/`) and English (`/en/`), self-hosted fonts, inline icons, privacy pages, `config.json`, coming-soon state.
 - [ ] `build-site.mjs`, `verify-site.mjs`, Playwright checks, `pages.yml`; Pages enabled.
 - [ ] Gate: both pages deploy from CI; §7.4 checks pass; mocked non-BD visitor on `/` goes to `/en/`.
 
