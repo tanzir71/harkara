@@ -63,4 +63,32 @@ writeFileSync(
     1,
   ) + '\n',
 );
-console.log(`wrote ${areas.length} areas and ${categories.length} categories to ${out}`);
+// Word filters and composer rules (contentFilter.ts). Applied on the phone only.
+const filterTs = readFileSync(join(loka, 'lib/contentFilter.ts'), 'utf8');
+const listOf = (name) => {
+  const block = filterTs.match(new RegExp(`${name}\\s*=\\s*(?:new Set\\()?\\[([\\s\\S]*?)\\]`))[1];
+  return [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+};
+mkdirSync(join(out, 'word-filters'), { recursive: true });
+writeFileSync(
+  join(out, 'word-filters', 'filters.json'),
+  JSON.stringify(
+    {
+      source: 'loka/lib/contentFilter.ts',
+      englishBlockedWords: listOf('ENGLISH_BLOCKED_WORDS'),
+      banglaBlockedFragments: listOf('BANGLA_BLOCKED_FRAGMENTS'),
+      spamPhrases: listOf('SPAM_PHRASES'),
+      rules: {
+        maxTextLength: 400,
+        maxLinks: 1,
+        noPhoneNumbersIn: ['chatter', 'alert'],
+        phoneDigitsMin: 10,
+        phoneDigitsMax: 15,
+      },
+      moderation: { hideAfterDistinctReports: 3, hideAtScore: -5 },
+    },
+    null,
+    1,
+  ) + '\n',
+);
+console.log(`wrote ${areas.length} areas, ${categories.length} categories and word filters to ${out}`);

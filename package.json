@@ -17,6 +17,7 @@
     "site:check": "npm run site:build:offline && npm run site:verify && npm run site:build:fixture && npm run site:verify && npm run site:e2e"
   },
   "devDependencies": {
+    "@noble/curves": "^1.9.7",
     "@playwright/test": "1.65.1"
   }
 }
