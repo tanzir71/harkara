@@ -18,11 +18,11 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M2 - App shell + first APK (v0.1.0)
 
-- [ ] Theme from tokens (Day/Night), fonts, §6 components with screenshot tests.
-- [ ] Five tabs, Nearby home, connectivity pill on a `ConnectivityState` flow, onboarding without signup, Settings → Modules persisted.
-- [ ] Panic wipe, copy crash report, update card, share-this-app placeholder.
-- [ ] Signing keystore + secrets, `release.yml`.
-- [ ] Gate: `v0.1.0` release has signed APKs + `SHA256SUMS` + `latest.json`; landing shows real version, size, hash.
+- [x] Theme from tokens (Day/Night), fonts, §6 components with screenshot tests.
+- [x] Five tabs, Nearby home, connectivity pill on a `ConnectivityState` flow, onboarding without signup, Settings → Modules persisted.
+- [x] Panic wipe, copy crash report, update card, share-this-app placeholder.
+- [x] Signing keystore + secrets, `release.yml`.
+- [x] Gate: `v0.1.0` release has signed APKs + `SHA256SUMS` + `latest.json`; landing shows real version, size, hash.
 
 ## M3 - Protocol core (v0.2.0)
 
