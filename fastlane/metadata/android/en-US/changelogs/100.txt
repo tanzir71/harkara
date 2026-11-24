@@ -1,0 +1,1 @@
+First APK: the app shell — five tabs, onboarding without sign-up, modules, panic wipe, update card.
