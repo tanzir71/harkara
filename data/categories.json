@@ -1,0 +1,163 @@
+{
+ "source": "loka/lib/categories.ts",
+ "categories": [
+  {
+   "id": "traffic",
+   "lokaId": "traffic",
+   "label": "Traffic",
+   "labelBn": "জ্যাম",
+   "expiryHours": 3,
+   "placeholder": "Which road? How bad? (optional)"
+  },
+  {
+   "id": "food",
+   "lokaId": "food",
+   "label": "Food",
+   "labelBn": "খাবার",
+   "expiryHours": null,
+   "placeholder": "What did you eat? Worth it? (optional)"
+  },
+  {
+   "id": "crowd",
+   "lokaId": "busy",
+   "label": "Crowd",
+   "labelBn": "ভিড়",
+   "expiryHours": 4,
+   "placeholder": "How's the line / crowd? (optional)"
+  },
+  {
+   "id": "stock",
+   "lokaId": "stock",
+   "label": "Stock",
+   "labelBn": "স্টক",
+   "expiryHours": 24,
+   "placeholder": "What's out or available? (optional)"
+  },
+  {
+   "id": "alert",
+   "lokaId": "alert",
+   "label": "Alert",
+   "labelBn": "সতর্কতা",
+   "expiryHours": 12,
+   "placeholder": "What's happening? (optional)"
+  },
+  {
+   "id": "chatter",
+   "lokaId": "general",
+   "label": "Chatter",
+   "labelBn": "আড্ডা",
+   "expiryHours": 48,
+   "placeholder": "Say something to people nearby…"
+  }
+ ],
+ "chips": {
+  "traffic": [
+   {
+    "value": 1,
+    "label": "Moving"
+   },
+   {
+    "value": 2,
+    "label": "Slow"
+   },
+   {
+    "value": 3,
+    "label": "Gridlock"
+   }
+  ],
+  "crowd": [
+   {
+    "value": 1,
+    "label": "Chill"
+   },
+   {
+    "value": 2,
+    "label": "Filling up"
+   },
+   {
+    "value": 3,
+    "label": "Packed"
+   }
+  ],
+  "stockItem": [
+   {
+    "value": "fuel",
+    "label": "Fuel"
+   },
+   {
+    "value": "gas",
+    "label": "Gas"
+   },
+   {
+    "value": "power",
+    "label": "Power"
+   },
+   {
+    "value": "water",
+    "label": "Water"
+   },
+   {
+    "value": "cash",
+    "label": "ATM"
+   },
+   {
+    "value": "medicine",
+    "label": "Medicine"
+   }
+  ],
+  "stockStatus": [
+   {
+    "value": "available",
+    "label": "Available"
+   },
+   {
+    "value": "low",
+    "label": "Running low"
+   },
+   {
+    "value": "out",
+    "label": "Out"
+   }
+  ],
+  "alert": [
+   {
+    "value": "accident",
+    "label": "Accident"
+   },
+   {
+    "value": "protest",
+    "label": "Protest"
+   },
+   {
+    "value": "flood",
+    "label": "Waterlogging"
+   },
+   {
+    "value": "closure",
+    "label": "Road closed"
+   },
+   {
+    "value": "safety",
+    "label": "Safety"
+   }
+  ],
+  "price": [
+   {
+    "value": 1,
+    "label": "৳"
+   },
+   {
+    "value": 2,
+    "label": "৳৳"
+   },
+   {
+    "value": 3,
+    "label": "৳৳৳"
+   },
+   {
+    "value": 4,
+    "label": "৳৳৳৳"
+   }
+  ]
+ }
+}

@@ -1,4 +1,185 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Harkara</string>
+    <string name="app_name_bn" translatable="false">হরকরা</string>
+
+    <!-- Tabs -->
+    <string name="tab_nearby">Nearby</string>
+    <string name="tab_chats">Chats</string>
+    <string name="tab_tasks">Tasks</string>
+    <string name="tab_khata">Khata</string>
+    <string name="tab_me">Me</string>
+
+    <!-- Connectivity pill -->
+    <string name="pill_online">Online</string>
+    <string name="pill_bridge">Via a nearby phone</string>
+    <string name="pill_node">On local Wi-Fi</string>
+    <string name="pill_mesh">Nearby only · %1$d</string>
+    <string name="pill_sms">By text message</string>
+    <string name="pill_qr">Hand to hand</string>
+    <string name="pill_saved">Saved, sends later</string>
+
+    <!-- Delivery states -->
+    <string name="delivery_saved">Saved on this phone</string>
+    <string name="delivery_left">Left this phone</string>
+    <string name="delivery_network">Reached the network</string>
+    <string name="delivery_delivered">Delivered</string>
+    <string name="delivery_read">Read</string>
+
+    <!-- Cards -->
+    <string name="vote_up">Vote up</string>
+    <string name="vote_down">Vote down</string>
+    <string name="more_actions">More: block, report, mute</string>
+    <string name="iou_card_kind">Khata · IOU</string>
+    <string name="voice_play">Play voice note</string>
+    <string name="pin_still_there">Still there?</string>
+    <string name="pin_tally">%1$d yes · %2$d no</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="coming_soon">Coming soon</string>
+    <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Nearby -->
+    <string name="nearby_within">Within 3 km · %1$s</string>
+    <string name="nearby_auto">auto-detected</string>
+    <string name="nearby_chosen">chosen by you</string>
+    <string name="nearby_near_you">Near you</string>
+    <string name="nearby_change_area">Change area</string>
+    <string name="nearby_feed">Feed</string>
+    <string name="nearby_map">Map</string>
+    <string name="nearby_search">Search nearby</string>
+    <string name="nearby_all">All</string>
+    <string name="nearby_post">Post nearby</string>
+    <string name="nearby_empty_title">Nothing nearby yet</string>
+    <string name="nearby_empty_body">Posts from within 3 km show up here, with no name attached. Each one fades when it expires.</string>
+    <string name="nearby_map_fallback">The offline map arrives in a later update. Here is the list for now.</string>
+
+    <!-- Tabs not built yet -->
+    <string name="chats_empty_body">DMs, groups, area channels and everyone on this Wi-Fi — end-to-end encrypted.</string>
+    <string name="tasks_empty_body">Post an errand nearby, name a price, and hand off with a QR or 6-digit code.</string>
+    <string name="khata_empty_body">IOUs that both people sign. Settle up with a bKash or Nagad TrxID.</string>
+
+    <!-- Me -->
+    <string name="me_anonymous">No name yet</string>
+    <string name="me_anonymous_body">You stay anonymous. A name is asked only when you post, take a task or add an IOU.</string>
+    <string name="me_tools">Tools</string>
+    <string name="me_tools_note">Work with no signal</string>
+    <string name="tool_compass">Compass</string>
+    <string name="tool_qibla">Qibla</string>
+    <string name="tool_torch">Torch</string>
+    <string name="tool_pins">My pins</string>
+    <string name="tool_radar">Who\'s near</string>
+    <string name="tool_send_file">Send file</string>
+    <string name="tool_handbook">Handbook</string>
+    <string name="tool_map_packs">Map packs</string>
+    <string name="me_modules">Modules</string>
+    <string name="me_modules_note">Off means no battery use</string>
+    <string name="me_all_modules">All modules</string>
+    <string name="me_settings">Settings</string>
+    <string name="logo_description">Harkara logo</string>
+
+    <!-- Settings -->
+    <string name="settings_language">Language</string>
+    <string name="lang_system">Phone default</string>
+    <string name="lang_en">English</string>
+    <string name="lang_bn">বাংলা</string>
+    <string name="settings_share">Share this app</string>
+    <string name="settings_share_body">Phone-to-phone sharing arrives later; for now this shares the download link.</string>
+    <string name="settings_share_text">Harkara — an off-grid neighbourhood app for Dhaka. Get the APK: %1$s</string>
+    <string name="settings_crash">Copy crash report</string>
+    <string name="settings_crash_body">Paste it into a GitHub issue. Nothing is sent automatically.</string>
+    <string name="settings_crash_copied">Crash report copied</string>
+    <string name="settings_panic">Panic wipe</string>
+    <string name="settings_panic_body">Erase everything on this phone: keys, messages, settings. Tapping the logo three times does the same.</string>
+    <string name="panic_confirm_title">Wipe everything now?</string>
+    <string name="panic_confirm_body">This cannot be undone. Keys you have not backed up are gone for good.</string>
+    <string name="panic_confirm_wipe">Wipe now</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_licence">Free software under AGPL-3.0-or-later. The source is on GitHub.</string>
+
+    <!-- Update card -->
+    <string name="update_title">Harkara %1$s is out</string>
+    <string name="update_body">Download it from the website. It installs over this version and keeps your data.</string>
+    <string name="update_get">Get the update</string>
+    <string name="update_later">Later</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">Where are you?</string>
+    <string name="onboarding_body">Your Nearby feed shows posts from within 3 km. No sign-up, no phone number.</string>
+    <string name="onboarding_use_location">Use my location</string>
+    <string name="onboarding_location_note">Optional. Only used to pick your area; it never leaves the phone.</string>
+    <string name="onboarding_pick_area">Or pick your area</string>
+
+    <!-- Connectivity sheet -->
+    <string name="conn_title">How messages get out</string>
+    <string name="conn_body">Tried top to bottom, automatically. All free.</string>
+    <string name="conn_relays">Internet relays</string>
+    <string name="conn_relays_detail">%1$d of %2$d public relays reachable</string>
+    <string name="conn_bridge">Phone with data</string>
+    <string name="conn_bridge_detail">A nearby phone lifts messages onto the internet</string>
+    <string name="conn_node">Neighbourhood node</string>
+    <string name="conn_node_detail">An old phone on the local Wi-Fi, no internet needed</string>
+    <string name="conn_mesh">Bluetooth mesh</string>
+    <string name="conn_mesh_detail">%1$d phones in reach · up to 7 hops</string>
+    <string name="conn_sms">SMS</string>
+    <string name="conn_sms_detail">Prefilled in your SMS app</string>
+    <string name="conn_qr">QR code</string>
+    <string name="conn_qr_detail">Scan to pass a message on</string>
+    <string name="conn_saved">Saved on phone</string>
+    <string name="conn_saved_detail">%1$d waiting for a route</string>
+    <string name="conn_status_in_use">In use</string>
+    <string name="conn_status_ready">Ready</string>
+    <string name="conn_status_off">Off</string>
+    <string name="conn_status_always">Always</string>
+    <string name="conn_status_waiting">%1$d waiting</string>
+    <string name="conn_mesh_mode">Mesh mode</string>
+    <string name="conn_mesh_mode_body">Event mode relays more, uses more battery</string>
+    <string name="mesh_saver">Saver</string>
+    <string name="mesh_event">Event</string>
+
+    <!-- Modules -->
+    <string name="module_offline_map">Offline map pack</string>
+    <string name="module_offline_map_sub">Dhaka pack, downloaded when you ask</string>
+    <string name="module_no_map_lite">No-map Lite view</string>
+    <string name="module_no_map_lite_sub">Lists instead of map tiles</string>
+    <string name="module_saved_pins">Saved pins and layers</string>
+    <string name="module_saved_pins_sub">Your pins stay on this phone</string>
+    <string name="module_location_card">Location card</string>
+    <string name="module_location_card_sub">One-off: exact, about 100 m, or area + Plus Code</string>
+    <string name="module_live_share">Live share and group map</string>
+    <string name="module_live_share_sub">15 min, 1 h or 8 h, then it stops by itself</string>
+    <string name="module_meetup">Meet-up arrow</string>
+    <string name="module_meetup_sub">Points to a friend or a pin, when used</string>
+    <string name="module_check_ins">Check-ins</string>
+    <string name="module_check_ins_sub">One tap: “I got here safe”</string>
+    <string name="module_trip_plan">Trip plan and overdue alert</string>
+    <string name="module_trip_plan_sub">Tells your people if you don\'t check in on time</string>
+    <string name="module_compass">Compass and bearing to pin</string>
+    <string name="module_compass_sub">The sensor runs only while the screen is open</string>
+    <string name="module_qibla">Qibla and prayer times</string>
+    <string name="module_qibla_sub">Karachi method, Hanafi Asr</string>
+    <string name="module_torch">Flashlight, strobe, Morse SOS, siren</string>
+    <string name="module_torch_sub">Only while you use it</string>
+    <string name="module_qr">QR scan and make</string>
+    <string name="module_qr_sub">Pass messages hand to hand</string>
+    <string name="module_handbook">Emergency handbook</string>
+    <string name="module_handbook_sub">Bangla and English, works offline</string>
+    <string name="module_mesh">Bluetooth mesh</string>
+    <string name="module_mesh_sub">Saver: listens 1 min in 5 · Beta</string>
+    <string name="module_node">Neighbourhood node</string>
+    <string name="module_node_sub">An old phone on a charger serves the hall Wi-Fi</string>
+    <string name="module_ptt">Push-to-talk and voice notes</string>
+    <string name="module_ptt_sub">Up to 15 s over Bluetooth</string>
+    <string name="module_radar">Nearby radar and range test</string>
+    <string name="module_radar_sub">See which phones are in reach</string>
+    <string name="module_file_drop">File drop</string>
+    <string name="module_file_drop_sub">Send files over local Wi-Fi (LocalSend)</string>
+    <string name="module_lite">Lite mode</string>
+    <string name="module_lite_sub">No map, no media auto-download, mesh off, checks every 60 min</string>
+    <string name="module_sms_direct">Send SMS directly</string>
+    <string name="module_sms_direct_sub">Uses SIM credit · default off</string>
+    <string name="module_sms_gateway">Volunteer SMS gateway</string>
+    <string name="module_sms_gateway_sub">Relays up to 100 SMS a day for your contacts; uses your SIM credit · default off</string>
 </resources>

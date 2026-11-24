@@ -1,0 +1,196 @@
+package io.github.tanzir71.harkara.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.tanzir71.harkara.AppContainer
+import io.github.tanzir71.harkara.BuildConfig
+import io.github.tanzir71.harkara.R
+import io.github.tanzir71.harkara.ui.components.HarkaraTab
+import io.github.tanzir71.harkara.ui.components.TabBar
+import io.github.tanzir71.harkara.ui.screens.ChatsScreen
+import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
+import io.github.tanzir71.harkara.ui.screens.KhataScreen
+import io.github.tanzir71.harkara.ui.screens.MeScreen
+import io.github.tanzir71.harkara.ui.screens.ModulesScreen
+import io.github.tanzir71.harkara.ui.screens.NearbyScreen
+import io.github.tanzir71.harkara.ui.screens.OnboardingScreen
+import io.github.tanzir71.harkara.ui.screens.PanicWipeSheetContent
+import io.github.tanzir71.harkara.ui.screens.PillActions
+import io.github.tanzir71.harkara.ui.screens.SettingsScreen
+import io.github.tanzir71.harkara.ui.screens.TasksScreen
+import io.github.tanzir71.harkara.ui.theme.HarkaraTheme
+import io.github.tanzir71.harkara.update.UpdateChecker
+import kotlinx.coroutines.launch
+
+/** Things only the Android host can do; faked in tests. */
+interface PlatformActions {
+    fun openUrl(url: String)
+    fun shareText(text: String)
+    fun copyToClipboard(label: String, text: String)
+    /** Asks for coarse location once; reports the last known fix, or null if denied/unknown. */
+    fun requestLocation(onResult: (lat: Double?, lng: Double?) -> Unit)
+    /** Re-applies the language override (recreates the activity). */
+    fun applyLanguage()
+
+    object None : PlatformActions {
+        override fun openUrl(url: String) = Unit
+        override fun shareText(text: String) = Unit
+        override fun copyToClipboard(label: String, text: String) = Unit
+        override fun requestLocation(onResult: (lat: Double?, lng: Double?) -> Unit) = onResult(null, null)
+        override fun applyLanguage() = Unit
+    }
+}
+
+private enum class Page { Tabs, Modules, Settings }
+private enum class Sheet { None, Connectivity, PanicWipe }
+
+const val REPO_URL = "https://github.com/tanzir71/harkara"
+
+/** App root: onboarding until an area is chosen, then the five tabs. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
+    val settings by container.settings.state.collectAsStateWithLifecycle()
+    val connectivity by container.connectivity.state.collectAsStateWithLifecycle()
+    val update by container.updateChecker.available.collectAsStateWithLifecycle()
+    val visibleUpdate = update?.takeIf { it.versionCode > settings.dismissedUpdateCode }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+
+    var tab by rememberSaveable { mutableStateOf(HarkaraTab.Nearby) }
+    var page by rememberSaveable { mutableStateOf(Page.Tabs) }
+    var sheet by remember { mutableStateOf(Sheet.None) }
+
+    val comingSoon: () -> Unit = { scope.launch { snackbar.showSnackbar(context.getString(R.string.coming_soon)) } }
+    val pill = PillActions(onClick = { sheet = Sheet.Connectivity })
+
+    HarkaraTheme {
+        val c = HarkaraTheme.colors
+        Box(Modifier.fillMaxSize().background(c.bgCanvas)) {
+            if (!settings.onboarded) {
+                OnboardingScreen(
+                    areas = container.areas.all.map { it.name },
+                    onUseLocation = {
+                        platform.requestLocation { lat, lng ->
+                            val area = if (lat != null && lng != null) container.areas.nearest(lat, lng).name else null
+                            container.settings.completeOnboarding(area, auto = true)
+                        }
+                    },
+                    onPickArea = { container.settings.completeOnboarding(it, auto = false) },
+                    modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                )
+            } else {
+                when (page) {
+                    Page.Modules -> ModulesScreen(
+                        settings,
+                        onToggle = container.settings::setModule,
+                        onBack = { page = Page.Tabs },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.Settings -> SettingsScreen(
+                        settings,
+                        versionName = BuildConfig.VERSION_NAME,
+                        onBack = { page = Page.Tabs },
+                        onLanguage = {
+                            container.settings.setLanguage(it)
+                            platform.applyLanguage()
+                        },
+                        onShare = { platform.shareText(context.getString(R.string.settings_share_text, UpdateChecker.DOWNLOAD_PAGE)) },
+                        onCopyCrash = {
+                            platform.copyToClipboard("Harkara crash report", container.crashReporter.report())
+                            scope.launch { snackbar.showSnackbar(context.getString(R.string.settings_crash_copied)) }
+                        },
+                        onPanicWipe = { sheet = Sheet.PanicWipe },
+                        onOpenSource = { platform.openUrl(REPO_URL) },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.Tabs -> Column(Modifier.fillMaxSize()) {
+                        val content = Modifier.weight(1f).statusBarsPadding()
+                        when (tab) {
+                            HarkaraTab.Nearby -> NearbyScreen(
+                                areaName = settings.areaName,
+                                areaAuto = settings.areaAuto,
+                                connectivity = connectivity,
+                                posts = emptyList(),
+                                modifier = content,
+                                pill = pill,
+                                update = visibleUpdate,
+                                onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
+                                onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
+                                onCompose = comingSoon,
+                                onSearch = comingSoon,
+                            )
+                            HarkaraTab.Chats -> ChatsScreen(connectivity, content, pill)
+                            HarkaraTab.Tasks -> TasksScreen(connectivity, content, pill)
+                            HarkaraTab.Khata -> KhataScreen(connectivity, content, pill)
+                            HarkaraTab.Me -> MeScreen(
+                                settings = settings,
+                                connectivity = connectivity,
+                                modifier = content,
+                                pill = pill,
+                                update = visibleUpdate,
+                                onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
+                                onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
+                                onTool = { comingSoon() },
+                                onToggleModule = container.settings::setModule,
+                                onAllModules = { page = Page.Modules },
+                                onSettings = { page = Page.Settings },
+                                onLogoTripleTap = { sheet = Sheet.PanicWipe },
+                            )
+                        }
+                        TabBar(tab, { tab = it })
+                    }
+                }
+            }
+            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 96.dp))
+        }
+
+        if (sheet != Sheet.None) {
+            ModalBottomSheet(
+                onDismissRequest = { sheet = Sheet.None },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                containerColor = c.bgRaised,
+            ) {
+                Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
+                    when (sheet) {
+                        Sheet.Connectivity -> ConnectivitySheetContent(connectivity, settings.meshMode, container.settings::setMeshMode)
+                        Sheet.PanicWipe -> PanicWipeSheetContent(
+                            onWipe = {
+                                sheet = Sheet.None
+                                page = Page.Tabs
+                                tab = HarkaraTab.Nearby
+                                scope.launch { container.panicWipe() }
+                            },
+                            onCancel = { sheet = Sheet.None },
+                        )
+                        Sheet.None -> Unit
+                    }
+                }
+            }
+        }
+    }
+
+}

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tabs -->
+    <string name="tab_nearby">কাছে</string>
+    <string name="tab_chats">চ্যাট</string>
+    <string name="tab_tasks">কাজ</string>
+    <string name="tab_khata">খাতা</string>
+    <string name="tab_me">আমি</string>
+
+    <!-- Connectivity pill -->
+    <string name="pill_online">অনলাইন</string>
+    <string name="pill_bridge">পাশের ফোন দিয়ে</string>
+    <string name="pill_node">লোকাল ওয়াই-ফাইতে</string>
+    <string name="pill_mesh">শুধু আশেপাশে · %1$d</string>
+    <string name="pill_sms">এসএমএস দিয়ে</string>
+    <string name="pill_qr">হাতে হাতে</string>
+    <string name="pill_saved">জমা আছে, পরে যাবে</string>
+
+    <!-- Delivery states -->
+    <string name="delivery_saved">এই ফোনে জমা</string>
+    <string name="delivery_left">ফোন থেকে বেরিয়েছে</string>
+    <string name="delivery_network">নেটওয়ার্কে পৌঁছেছে</string>
+    <string name="delivery_delivered">পৌঁছেছে</string>
+    <string name="delivery_read">পড়েছে</string>
+
+    <!-- Cards -->
+    <string name="vote_up">ভালো</string>
+    <string name="vote_down">খারাপ</string>
+    <string name="more_actions">আরও: ব্লক, রিপোর্ট, মিউট</string>
+    <string name="iou_card_kind">খাতা · ধার</string>
+    <string name="voice_play">ভয়েস নোট চালাও</string>
+    <string name="pin_still_there">এখনো আছে?</string>
+    <string name="pin_tally">%1$d হ্যাঁ · %2$d না</string>
+    <string name="yes">হ্যাঁ</string>
+    <string name="no">না</string>
+    <string name="coming_soon">শীঘ্রই</string>
+    <string name="back">পেছনে</string>
+    <string name="cancel">বাতিল</string>
+
+    <!-- Nearby -->
+    <string name="nearby_within">৩ কিমির মধ্যে · %1$s</string>
+    <string name="nearby_auto">নিজে থেকে বোঝা</string>
+    <string name="nearby_chosen">তোমার বাছাই</string>
+    <string name="nearby_near_you">তোমার আশেপাশে</string>
+    <string name="nearby_change_area">এলাকা বদলাও</string>
+    <string name="nearby_feed">ফিড</string>
+    <string name="nearby_map">ম্যাপ</string>
+    <string name="nearby_search">আশেপাশে খোঁজো</string>
+    <string name="nearby_all">সব</string>
+    <string name="nearby_post">আশেপাশে পোস্ট করো</string>
+    <string name="nearby_empty_title">আশেপাশে এখনো কিছু নেই</string>
+    <string name="nearby_empty_body">৩ কিমির মধ্যের পোস্ট এখানে আসবে, নাম ছাড়া। মেয়াদ শেষ হলে পোস্ট নিজেই মিলিয়ে যায়।</string>
+    <string name="nearby_map_fallback">অফলাইন ম্যাপ পরের আপডেটে আসবে। আপাতত তালিকা দেখো।</string>
+
+    <!-- Tabs not built yet -->
+    <string name="chats_empty_body">ডিএম, গ্রুপ, এলাকার চ্যানেল আর এই ওয়াই-ফাইয়ের সবাই — এন্ড-টু-এন্ড এনক্রিপ্টেড।</string>
+    <string name="tasks_empty_body">আশেপাশে কাজ দাও, দাম বলো, আর QR বা ৬ সংখ্যার কোডে হাতবদল করো।</string>
+    <string name="khata_empty_body">দুজনেই সই করা ধারের হিসাব। bKash বা Nagad TrxID দিয়ে শোধ।</string>
+
+    <!-- Me -->
+    <string name="me_anonymous">এখনো নাম নেই</string>
+    <string name="me_anonymous_body">তুমি নামহীন থাকো। পোস্ট, কাজ নেওয়া বা ধার যোগ করার সময়ই শুধু নাম চাওয়া হয়।</string>
+    <string name="me_tools">টুলস</string>
+    <string name="me_tools_note">নেট ছাড়াই চলে</string>
+    <string name="tool_compass">কম্পাস</string>
+    <string name="tool_qibla">কিবলা</string>
+    <string name="tool_torch">টর্চ</string>
+    <string name="tool_pins">আমার পিন</string>
+    <string name="tool_radar">কে কাছে</string>
+    <string name="tool_send_file">ফাইল পাঠাও</string>
+    <string name="tool_handbook">হ্যান্ডবুক</string>
+    <string name="tool_map_packs">ম্যাপ প্যাক</string>
+    <string name="me_modules">মডিউল</string>
+    <string name="me_modules_note">বন্ধ মানে ব্যাটারি খরচ নেই</string>
+    <string name="me_all_modules">সব মডিউল</string>
+    <string name="me_settings">সেটিংস</string>
+    <string name="logo_description">হরকরা লোগো</string>
+
+    <!-- Settings -->
+    <string name="settings_language">ভাষা</string>
+    <string name="lang_system">ফোনের মতো</string>
+    <string name="lang_en">English</string>
+    <string name="lang_bn">বাংলা</string>
+    <string name="settings_share">অ্যাপটি শেয়ার করো</string>
+    <string name="settings_share_body">ফোন থেকে ফোনে শেয়ার পরে আসবে; আপাতত ডাউনলোড লিংক শেয়ার হবে।</string>
+    <string name="settings_share_text">হরকরা — ঢাকার অফ-গ্রিড পাড়ার অ্যাপ। APK নাও: %1$s</string>
+    <string name="settings_crash">ক্র্যাশ রিপোর্ট কপি করো</string>
+    <string name="settings_crash_body">GitHub issue-তে পেস্ট করো। নিজে থেকে কিছুই পাঠানো হয় না।</string>
+    <string name="settings_crash_copied">ক্র্যাশ রিপোর্ট কপি হয়েছে</string>
+    <string name="settings_panic">প্যানিক ওয়াইপ</string>
+    <string name="settings_panic_body">এই ফোনের সব মুছে ফেলো: কী, মেসেজ, সেটিংস। লোগোতে তিনবার ট্যাপ করলেও একই কাজ হয়।</string>
+    <string name="panic_confirm_title">এখনই সব মুছবে?</string>
+    <string name="panic_confirm_body">এটা আর ফেরানো যায় না। ব্যাকআপ না রাখা কী চিরতরে হারাবে।</string>
+    <string name="panic_confirm_wipe">এখনই মুছো</string>
+    <string name="settings_about">সম্পর্কে</string>
+    <string name="settings_version">সংস্করণ %1$s</string>
+    <string name="settings_licence">AGPL-3.0-or-later লাইসেন্সে ফ্রি সফটওয়্যার। সোর্স GitHub-এ।</string>
+
+    <!-- Update card -->
+    <string name="update_title">হরকরা %1$s এসেছে</string>
+    <string name="update_body">ওয়েবসাইট থেকে নামাও। এই সংস্করণের উপরেই ইনস্টল হবে, তোমার ডেটা থাকবে।</string>
+    <string name="update_get">আপডেট নাও</string>
+    <string name="update_later">পরে</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">তুমি কোথায়?</string>
+    <string name="onboarding_body">তোমার কাছে-ফিডে ৩ কিমির মধ্যের পোস্ট দেখাবে। সাইনআপ নেই, ফোন নম্বর নেই।</string>
+    <string name="onboarding_use_location">আমার লোকেশন নাও</string>
+    <string name="onboarding_location_note">ঐচ্ছিক। শুধু এলাকা বাছতে লাগে; ফোনের বাইরে যায় না।</string>
+    <string name="onboarding_pick_area">অথবা এলাকা বাছো</string>
+
+    <!-- Connectivity sheet -->
+    <string name="conn_title">মেসেজ কীভাবে বের হয়</string>
+    <string name="conn_body">উপর থেকে নিচে, নিজে থেকেই চেষ্টা হয়। সব ফ্রি।</string>
+    <string name="conn_relays">ইন্টারনেট রিলে</string>
+    <string name="conn_relays_detail">%2$d টির মধ্যে %1$d টি পাবলিক রিলে পাওয়া যাচ্ছে</string>
+    <string name="conn_bridge">ডেটা-ওয়ালা ফোন</string>
+    <string name="conn_bridge_detail">পাশের ফোন মেসেজ ইন্টারনেটে তুলে দেয়</string>
+    <string name="conn_node">পাড়ার নোড</string>
+    <string name="conn_node_detail">লোকাল ওয়াই-ফাইতে পুরোনো ফোন, নেট লাগে না</string>
+    <string name="conn_mesh">ব্লুটুথ মেশ</string>
+    <string name="conn_mesh_detail">নাগালে %1$d টি ফোন · ৭ হপ পর্যন্ত</string>
+    <string name="conn_sms">এসএমএস</string>
+    <string name="conn_sms_detail">তোমার এসএমএস অ্যাপে লেখা থাকে</string>
+    <string name="conn_qr">QR কোড</string>
+    <string name="conn_qr_detail">স্ক্যান করে মেসেজ এগিয়ে দাও</string>
+    <string name="conn_saved">ফোনে জমা</string>
+    <string name="conn_saved_detail">%1$d টি রাস্তার অপেক্ষায়</string>
+    <string name="conn_status_in_use">চালু আছে</string>
+    <string name="conn_status_ready">তৈরি</string>
+    <string name="conn_status_off">বন্ধ</string>
+    <string name="conn_status_always">সবসময়</string>
+    <string name="conn_status_waiting">%1$d টি অপেক্ষায়</string>
+    <string name="conn_mesh_mode">মেশ মোড</string>
+    <string name="conn_mesh_mode_body">ইভেন্ট মোড বেশি রিলে করে, ব্যাটারিও বেশি খায়</string>
+    <string name="mesh_saver">সেভার</string>
+    <string name="mesh_event">ইভেন্ট</string>
+
+    <!-- Modules -->
+    <string name="module_offline_map">অফলাইন ম্যাপ প্যাক</string>
+    <string name="module_offline_map_sub">ঢাকা প্যাক, তুমি চাইলে নামবে</string>
+    <string name="module_no_map_lite">ম্যাপ ছাড়া লাইট ভিউ</string>
+    <string name="module_no_map_lite_sub">ম্যাপের বদলে তালিকা</string>
+    <string name="module_saved_pins">সেভ করা পিন ও লেয়ার</string>
+    <string name="module_saved_pins_sub">তোমার পিন এই ফোনেই থাকে</string>
+    <string name="module_location_card">লোকেশন কার্ড</string>
+    <string name="module_location_card_sub">একবারের: সঠিক, প্রায় ১০০ মি, বা এলাকা + প্লাস কোড</string>
+    <string name="module_live_share">লাইভ শেয়ার ও গ্রুপ ম্যাপ</string>
+    <string name="module_live_share_sub">১৫ মিনিট, ১ ঘণ্টা বা ৮ ঘণ্টা, তারপর নিজেই বন্ধ</string>
+    <string name="module_meetup">দেখা করার তীর</string>
+    <string name="module_meetup_sub">বন্ধু বা পিনের দিকে দেখায়, যখন ব্যবহার করো</string>
+    <string name="module_check_ins">চেক-ইন</string>
+    <string name="module_check_ins_sub">এক ট্যাপে: “পৌঁছে গেছি”</string>
+    <string name="module_trip_plan">যাত্রা পরিকল্পনা ও দেরির সতর্কতা</string>
+    <string name="module_trip_plan_sub">সময়মতো চেক-ইন না করলে তোমার লোকদের জানায়</string>
+    <string name="module_compass">কম্পাস ও পিনের দিক</string>
+    <string name="module_compass_sub">স্ক্রিন খোলা থাকলেই শুধু সেন্সর চলে</string>
+    <string name="module_qibla">কিবলা ও নামাজের সময়</string>
+    <string name="module_qibla_sub">করাচি পদ্ধতি, হানাফি আসর</string>
+    <string name="module_torch">টর্চ, স্ট্রোব, মোর্স SOS, সাইরেন</string>
+    <string name="module_torch_sub">শুধু যতক্ষণ ব্যবহার করো</string>
+    <string name="module_qr">QR স্ক্যান ও তৈরি</string>
+    <string name="module_qr_sub">হাতে হাতে মেসেজ পৌঁছাও</string>
+    <string name="module_handbook">জরুরি হ্যান্ডবুক</string>
+    <string name="module_handbook_sub">বাংলা ও ইংরেজি, অফলাইনে চলে</string>
+    <string name="module_mesh">ব্লুটুথ মেশ</string>
+    <string name="module_mesh_sub">সেভার: ৫ মিনিটে ১ মিনিট শোনে · বেটা</string>
+    <string name="module_node">পাড়ার নোড</string>
+    <string name="module_node_sub">চার্জারে পুরোনো ফোন হলের ওয়াই-ফাইতে সার্ভ করে</string>
+    <string name="module_ptt">পুশ-টু-টক ও ভয়েস নোট</string>
+    <string name="module_ptt_sub">ব্লুটুথে ১৫ সেকেন্ড পর্যন্ত</string>
+    <string name="module_radar">আশেপাশের রাডার ও রেঞ্জ টেস্ট</string>
+    <string name="module_radar_sub">কোন ফোন নাগালে আছে দেখো</string>
+    <string name="module_file_drop">ফাইল ড্রপ</string>
+    <string name="module_file_drop_sub">লোকাল ওয়াই-ফাইতে ফাইল পাঠাও (LocalSend)</string>
+    <string name="module_lite">লাইট মোড</string>
+    <string name="module_lite_sub">ম্যাপ নেই, মিডিয়া নিজে নামে না, মেশ বন্ধ, ৬০ মিনিটে একবার চেক</string>
+    <string name="module_sms_direct">সরাসরি এসএমএস পাঠাও</string>
+    <string name="module_sms_direct_sub">সিমের টাকা খরচ হয় · ডিফল্ট বন্ধ</string>
+    <string name="module_sms_gateway">স্বেচ্ছাসেবী এসএমএস গেটওয়ে</string>
+    <string name="module_sms_gateway_sub">তোমার পরিচিতদের জন্য দিনে ১০০টি পর্যন্ত এসএমএস রিলে করে; সিমের টাকা খরচ হয় · ডিফল্ট বন্ধ</string>
+</resources>

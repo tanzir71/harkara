@@ -1,0 +1,379 @@
+{
+ "source": "loka/lib/dhakaAreas.ts",
+ "fallbackCenter": {
+  "lat": 23.7808,
+  "lng": 90.4142
+ },
+ "areas": [
+  {
+   "name": "Dhanmondi",
+   "lat": 23.7465,
+   "lng": 90.376
+  },
+  {
+   "name": "Gulshan 1",
+   "lat": 23.7804,
+   "lng": 90.4168
+  },
+  {
+   "name": "Gulshan 2",
+   "lat": 23.7948,
+   "lng": 90.4144
+  },
+  {
+   "name": "Banani",
+   "lat": 23.7937,
+   "lng": 90.4043
+  },
+  {
+   "name": "Mirpur 1",
+   "lat": 23.7984,
+   "lng": 90.3537
+  },
+  {
+   "name": "Mirpur 2",
+   "lat": 23.8061,
+   "lng": 90.363
+  },
+  {
+   "name": "Mirpur 3",
+   "lat": 23.8082,
+   "lng": 90.353
+  },
+  {
+   "name": "Mirpur 4",
+   "lat": 23.812,
+   "lng": 90.359
+  },
+  {
+   "name": "Mirpur 5",
+   "lat": 23.8181,
+   "lng": 90.36
+  },
+  {
+   "name": "Mirpur 6",
+   "lat": 23.822,
+   "lng": 90.365
+  },
+  {
+   "name": "Mirpur 7",
+   "lat": 23.817,
+   "lng": 90.367
+  },
+  {
+   "name": "Mirpur 8",
+   "lat": 23.8135,
+   "lng": 90.37
+  },
+  {
+   "name": "Mirpur 9",
+   "lat": 23.8085,
+   "lng": 90.366
+  },
+  {
+   "name": "Mirpur 10",
+   "lat": 23.8069,
+   "lng": 90.3687
+  },
+  {
+   "name": "Mirpur 11",
+   "lat": 23.8142,
+   "lng": 90.367
+  },
+  {
+   "name": "Mirpur 12",
+   "lat": 23.822,
+   "lng": 90.371
+  },
+  {
+   "name": "Mirpur 13",
+   "lat": 23.829,
+   "lng": 90.37
+  },
+  {
+   "name": "Mirpur 14",
+   "lat": 23.836,
+   "lng": 90.369
+  },
+  {
+   "name": "Uttara Sector 1",
+   "lat": 23.8558,
+   "lng": 90.4006
+  },
+  {
+   "name": "Uttara Sector 2",
+   "lat": 23.8597,
+   "lng": 90.3948
+  },
+  {
+   "name": "Uttara Sector 3",
+   "lat": 23.8623,
+   "lng": 90.3998
+  },
+  {
+   "name": "Uttara Sector 4",
+   "lat": 23.8658,
+   "lng": 90.394
+  },
+  {
+   "name": "Uttara Sector 5",
+   "lat": 23.8702,
+   "lng": 90.4003
+  },
+  {
+   "name": "Uttara Sector 6",
+   "lat": 23.8718,
+   "lng": 90.4062
+  },
+  {
+   "name": "Uttara Sector 7",
+   "lat": 23.8744,
+   "lng": 90.3992
+  },
+  {
+   "name": "Uttara Sector 8",
+   "lat": 23.8783,
+   "lng": 90.3948
+  },
+  {
+   "name": "Uttara Sector 9",
+   "lat": 23.8789,
+   "lng": 90.407
+  },
+  {
+   "name": "Uttara Sector 10",
+   "lat": 23.8828,
+   "lng": 90.402
+  },
+  {
+   "name": "Uttara Sector 11",
+   "lat": 23.8755,
+   "lng": 90.4126
+  },
+  {
+   "name": "Uttara Sector 12",
+   "lat": 23.8665,
+   "lng": 90.412
+  },
+  {
+   "name": "Uttara Sector 13",
+   "lat": 23.8693,
+   "lng": 90.3892
+  },
+  {
+   "name": "Uttara Sector 14",
+   "lat": 23.882,
+   "lng": 90.3889
+  },
+  {
+   "name": "Mohammadpur",
+   "lat": 23.7645,
+   "lng": 90.3587
+  },
+  {
+   "name": "Lalmatia",
+   "lat": 23.7551,
+   "lng": 90.3668
+  },
+  {
+   "name": "Bashundhara",
+   "lat": 23.8131,
+   "lng": 90.43
+  },
+  {
+   "name": "Badda",
+   "lat": 23.7806,
+   "lng": 90.4257
+  },
+  {
+   "name": "Rampura",
+   "lat": 23.7631,
+   "lng": 90.4209
+  },
+  {
+   "name": "Khilgaon",
+   "lat": 23.7481,
+   "lng": 90.4255
+  },
+  {
+   "name": "Malibagh",
+   "lat": 23.7493,
+   "lng": 90.4124
+  },
+  {
+   "name": "Moghbazar",
+   "lat": 23.7487,
+   "lng": 90.4043
+  },
+  {
+   "name": "Motijheel",
+   "lat": 23.733,
+   "lng": 90.4172
+  },
+  {
+   "name": "Paltan",
+   "lat": 23.7368,
+   "lng": 90.4105
+  },
+  {
+   "name": "Shahbagh",
+   "lat": 23.7389,
+   "lng": 90.3958
+  },
+  {
+   "name": "Farmgate",
+   "lat": 23.7589,
+   "lng": 90.3892
+  },
+  {
+   "name": "Tejgaon",
+   "lat": 23.7694,
+   "lng": 90.391
+  },
+  {
+   "name": "Panthapath",
+   "lat": 23.7526,
+   "lng": 90.3826
+  },
+  {
+   "name": "Kalabagan",
+   "lat": 23.7439,
+   "lng": 90.3852
+  },
+  {
+   "name": "Azimpur",
+   "lat": 23.7272,
+   "lng": 90.3863
+  },
+  {
+   "name": "Lalbagh",
+   "lat": 23.7195,
+   "lng": 90.3883
+  },
+  {
+   "name": "Old Dhaka",
+   "lat": 23.7104,
+   "lng": 90.4074
+  },
+  {
+   "name": "Kotwali",
+   "lat": 23.7089,
+   "lng": 90.4074
+  },
+  {
+   "name": "Sutrapur",
+   "lat": 23.7104,
+   "lng": 90.4206
+  },
+  {
+   "name": "Bangshal",
+   "lat": 23.7173,
+   "lng": 90.4002
+  },
+  {
+   "name": "Chawkbazar",
+   "lat": 23.7161,
+   "lng": 90.3931
+  },
+  {
+   "name": "Hazaribagh",
+   "lat": 23.7341,
+   "lng": 90.3627
+  },
+  {
+   "name": "Jatrabari",
+   "lat": 23.7105,
+   "lng": 90.4349
+  },
+  {
+   "name": "Sayedabad",
+   "lat": 23.7147,
+   "lng": 90.4286
+  },
+  {
+   "name": "Khilkhet",
+   "lat": 23.8295,
+   "lng": 90.4232
+  },
+  {
+   "name": "Kuril",
+   "lat": 23.8216,
+   "lng": 90.422
+  },
+  {
+   "name": "Baridhara",
+   "lat": 23.8034,
+   "lng": 90.4246
+  },
+  {
+   "name": "Niketan",
+   "lat": 23.7821,
+   "lng": 90.4116
+  },
+  {
+   "name": "Mohakhali",
+   "lat": 23.7798,
+   "lng": 90.3987
+  },
+  {
+   "name": "Kakrail",
+   "lat": 23.7398,
+   "lng": 90.407
+  },
+  {
+   "name": "Segunbagicha",
+   "lat": 23.7334,
+   "lng": 90.4066
+  },
+  {
+   "name": "Wari",
+   "lat": 23.7174,
+   "lng": 90.4174
+  },
+  {
+   "name": "Shantinagar",
+   "lat": 23.741,
+   "lng": 90.412
+  },
+  {
+   "name": "Shyamoli",
+   "lat": 23.7742,
+   "lng": 90.3657
+  },
+  {
+   "name": "Agargaon",
+   "lat": 23.7775,
+   "lng": 90.38
+  },
+  {
+   "name": "Kazipara",
+   "lat": 23.797,
+   "lng": 90.3722
+  },
+  {
+   "name": "Shewrapara",
+   "lat": 23.7907,
+   "lng": 90.375
+  },
+  {
+   "name": "Banasree",
+   "lat": 23.7627,
+   "lng": 90.4352
+  },
+  {
+   "name": "Aftabnagar",
+   "lat": 23.773,
+   "lng": 90.436
+  },
+  {
+   "name": "Demra",
+   "lat": 23.72,
+   "lng": 90.494
+  },
+  {
+   "name": "Kamrangirchar",
+   "lat": 23.716,
+   "lng": 90.366
+  }
+ ]
+}

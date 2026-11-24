@@ -1,97 +1,109 @@
 package io.github.tanzir71.harkara
 
+import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.RssFeed
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import io.github.tanzir71.harkara.ui.ChatScreen
-import io.github.tanzir71.harkara.ui.ComposeScreen
-import io.github.tanzir71.harkara.ui.FeedScreen
-import io.github.tanzir71.harkara.ui.MapScreen
-import io.github.tanzir71.harkara.ui.HarkaraTheme
-import io.github.tanzir71.harkara.ui.SettingsScreen
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import io.github.tanzir71.harkara.settings.AppSettings
+import io.github.tanzir71.harkara.ui.HarkaraApp
+import io.github.tanzir71.harkara.ui.PlatformActions
+import kotlinx.coroutines.launch
+import java.util.Locale
 
-/** Main Android activity hosting the Compose shell. */
-class MainActivity : ComponentActivity() {
+/** Hosts the Compose app and implements the few Android-only actions it needs. */
+class MainActivity : ComponentActivity(), PlatformActions {
+    private var pendingLocation: ((Double?, Double?) -> Unit)? = null
+
+    private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val callback = pendingLocation ?: return@registerForActivityResult
+        pendingLocation = null
+        if (granted) deliverLastKnownLocation(callback) else callback(null, null)
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(withLanguageOverride(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { HarkaraApp() }
+        enableEdgeToEdge()
+        val container = (application as HarkaraApplication).container
+        setContent { HarkaraApp(container, this) }
     }
-}
 
-/** Top-level Harkara UI with bottom navigation. */
-@Composable
-fun HarkaraApp() {
-    var tab by remember { mutableStateOf(HarkaraTab.Feed) }
-    HarkaraTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            Scaffold(
-                bottomBar = {
-                    NavigationBar {
-                        HarkaraTab.entries.forEach { item ->
-                            NavigationBarItem(
-                                selected = tab == item,
-                                onClick = { tab = item },
-                                icon = { Icon(item.icon(), contentDescription = item.label) },
-                                label = { Text(item.label) },
-                            )
-                        }
-                    }
-                },
-            ) { innerPadding ->
-                when (tab) {
-                    HarkaraTab.Feed -> FeedScreen(Modifier.padding(innerPadding))
-                    HarkaraTab.Chat -> ChatScreen(Modifier.padding(innerPadding))
-                    HarkaraTab.Map -> MapScreen(Modifier.padding(innerPadding))
-                    HarkaraTab.Compose -> ComposeScreen(Modifier.padding(innerPadding))
-                    HarkaraTab.Settings -> SettingsScreen(Modifier.padding(innerPadding))
-                }
-            }
+    override fun onStart() {
+        super.onStart()
+        // At most once a day, and only while the app is open and online (§5.5).
+        if (isOnline()) {
+            lifecycleScope.launch { (application as HarkaraApplication).container.updateChecker.checkIfDue() }
         }
     }
-}
 
-/** Bottom navigation destinations. */
-enum class HarkaraTab(val label: String) {
-    Feed("Feed"),
-    Chat("Chat"),
-    Map("Map"),
-    Compose("Compose"),
-    Settings("Settings");
-
-    /** Icon for the tab. */
-    @Composable
-    fun icon() = when (this) {
-        Feed -> Icons.Default.RssFeed
-        Chat -> Icons.AutoMirrored.Filled.Chat
-        Map -> Icons.Default.Map
-        Compose -> Icons.Default.AddCircle
-        Settings -> Icons.Default.Settings
+    private fun isOnline(): Boolean {
+        val cm = getSystemService(ConnectivityManager::class.java) ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
-}
 
-@Preview
-@Composable
-private fun HarkaraAppPreview() {
-    HarkaraApp()
+    override fun openUrl(url: String) {
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    }
+
+    override fun shareText(text: String) {
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+        runCatching { startActivity(Intent.createChooser(send, null)) }
+    }
+
+    override fun copyToClipboard(label: String, text: String) {
+        getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(label, text))
+    }
+
+    override fun requestLocation(onResult: (lat: Double?, lng: Double?) -> Unit) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            deliverLastKnownLocation(onResult)
+        } else {
+            pendingLocation = onResult
+            locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+    }
+
+    /** One-off, user-started read of the last fix the phone already has. No GPS is switched on. */
+    @Suppress("MissingPermission")
+    private fun deliverLastKnownLocation(onResult: (Double?, Double?) -> Unit) {
+        val lm = getSystemService(LocationManager::class.java)
+        val fix = runCatching {
+            lm?.getProviders(true)?.mapNotNull { lm.getLastKnownLocation(it) }?.maxByOrNull { it.time }
+        }.getOrNull()
+        onResult(fix?.latitude, fix?.longitude)
+    }
+
+    override fun applyLanguage() {
+        recreate()
+    }
+
+    companion object {
+        /** Wraps [base] with the in-app language override, or returns it unchanged for "phone default". */
+        fun withLanguageOverride(base: Context): Context {
+            val tag = AppSettings.readLanguage(base).tag ?: return base
+            val locale = Locale.forLanguageTag(tag)
+            Locale.setDefault(locale)
+            val config = Configuration(base.resources.configuration)
+            config.setLocale(locale)
+            return base.createConfigurationContext(config)
+        }
+    }
 }

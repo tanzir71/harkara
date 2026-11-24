@@ -7,8 +7,8 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 - [x] Copy Nearcast without history, rename ids/packages to `io.github.tanzir71.harkara`, `core-protocol` → `core`.
 - [x] LICENSE (AGPL-3.0-or-later), NOTICE, README (Banglish + English), AGENTS.md, TASKS.md, DECISIONS.md, HARDWARE.md.
 - [x] Generate `Tokens.kt` and `site/assets/tokens.css` from `design/tokens/tokens.json`; icons → vector drawables.
-- [ ] `ci.yml` green with the Nearcast tests passing under the new package names.
-- [ ] Gate: repo public; CI green; `./gradlew assembleDebug` produces an APK.
+- [x] `ci.yml` green with the Nearcast tests passing under the new package names.
+- [x] Gate: repo public; CI green; `./gradlew assembleDebug` produces an APK.
 
 ## M1 - Landing site live
 
