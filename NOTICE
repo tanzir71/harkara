@@ -1,0 +1,18 @@
+Harkara
+Copyright (C) 2026 Tanzir (github.com/tanzir71)
+
+Licensed under the GNU Affero General Public License, version 3 or (at your
+option) any later version. See LICENSE.
+
+Harkara merges and relicenses the owner's earlier projects under AGPL-3.0-or-later:
+  - Nearcast   https://github.com/tanzir71/nearcast   (Kotlin app + core protocol, starting code)
+  - Loka       https://github.com/tanzir71/loka       (categories, word filters, Dhaka areas)
+  - LiteGig    https://github.com/tanzir71/litegig    (task lifecycle rules, templates)
+  - LiteIOU    https://github.com/tanzir71/liteiou    (ledger flows, export formats)
+
+Third-party files and snippets
+------------------------------
+Each entry: file(s) in this repo — origin — licence.
+
+  - gradlew, gradlew.bat, gradle/wrapper/gradle-wrapper.jar
+      Gradle Wrapper — https://github.com/gradle/gradle — Apache-2.0

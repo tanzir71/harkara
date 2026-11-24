@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+<g transform="translate(-424 -24)">
+<path d="M429 28H433C433.552 28 434 28.4477 434 29V33C434 33.5523 433.552 34 433 34H429C428.448 34 428 33.5523 428 33V29C428 28.4477 428.448 28 429 28Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
+<path d="M439 28H443C443.552 28 444 28.4477 444 29V33C444 33.5523 443.552 34 443 34H439C438.448 34 438 33.5523 438 33V29C438 28.4477 438.448 28 439 28Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
+<path d="M429 38H433C433.552 38 434 38.4477 434 39V43C434 43.5523 433.552 44 433 44H429C428.448 44 428 43.5523 428 43V39C428 38.4477 428.448 38 429 38Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
+<path d="M438 43H438.01M443 38H444M438 38H440V40H438V38ZM442 42H444V44H442V42Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
+</g>
+</svg>

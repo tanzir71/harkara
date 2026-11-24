@@ -1,0 +1,793 @@
+{
+ "_note": "Landing copy for / (Banglish, lang=bn-Latn) and /en/ (English, lang=en). Source of truth is this file; Figma frames 22:113 / 25:544 (Banglish) and 27:931 / 27:1770 (English) show the layout. {{VERSION}}, {{APK_MB}}, {{SHA256_SHORT}} are filled at build time from the latest GitHub release.",
+ "meta": {
+  "title": {
+   "bn": "Harkara — Net nai? Harkara ache.",
+   "en": "Harkara — No signal? Harkara gets through."
+  },
+  "description": {
+   "bn": "Dhaka-r off-grid messenger. Internet chhara-o Bluetooth, hall-er Wi-Fi, SMS ba QR diye message, kaaj, khata ar map. Free, open source, signup nai.",
+   "en": "An off-grid messenger for Dhaka. Messages, errands, IOUs and maps over Bluetooth, local Wi-Fi, SMS or QR when the internet is down. Free, open source, no sign-up."
+  }
+ },
+ "nav": {
+  "links": {
+   "bn": [
+    "Off-grid",
+    "Workflows",
+    "Install",
+    "FAQ",
+    "GitHub"
+   ],
+   "en": [
+    "Off-grid",
+    "Workflows",
+    "Install",
+    "FAQ",
+    "GitHub"
+   ]
+  },
+  "apkShort": {
+   "bn": "APK",
+   "en": "APK"
+  },
+  "apkLong": {
+   "bn": "APK namao",
+   "en": "Get the APK"
+  },
+  "langToggle": {
+   "bn": [
+    "Banglish",
+    "EN"
+   ],
+   "en": [
+    "Banglish",
+    "EN"
+   ]
+  }
+ },
+ "hero": {
+  "eyebrow": {
+   "bn": "Off-grid messenger · Dhaka",
+   "en": "Off-grid messenger · Dhaka"
+  },
+  "h1": {
+   "bn": "Net nai?\nHarkara ache.",
+   "en": "No signal?\nHarkara gets through."
+  },
+  "h1Accent": {
+   "bn": "Harkara",
+   "en": "Harkara"
+  },
+  "lead": {
+   "bn": "Tomar message phone theke phone-e haath-bodol hoye pouchay. Net thakle internet relay, na thakle Bluetooth, hall-er Wi-Fi, SMS ba QR.",
+   "en": "Your message travels hand to hand, phone to phone. Over internet relays when there is a connection; over Bluetooth, campus Wi-Fi, SMS or a QR code when there isn’t."
+  },
+  "cta": {
+   "bn": "APK namao",
+   "en": "Get the APK"
+  },
+  "ctaMeta": {
+   "bn": "v{{VERSION}} · {{APK_MB}} MB",
+   "en": "v{{VERSION}} · {{APK_MB}} MB"
+  },
+  "ctaComingSoon": {
+   "bn": "Shighroi ashche · GitHub-e follow koro",
+   "en": "Coming soon · follow on GitHub"
+  },
+  "installLink": {
+   "bn": "Kivabe install korbo? 3 step",
+   "en": "How to install, in 3 steps"
+  },
+  "meta": {
+   "bn": "Android 8+ · Free · Signup nai · Open source (AGPL-3.0)",
+   "en": "Android 8+ · Free · No sign-up · Open source (AGPL-3.0)"
+  },
+  "betaNote": {
+   "bn": "Beta — kichu feature porer update-e ashbe. Ki ki kaaj kore, release note-e dekho.",
+   "en": "Beta — some features arrive in later updates. See the release notes for what works today."
+  }
+ },
+ "route": {
+  "title": {
+   "bn": "Ekta message-er rasta",
+   "en": "One message, one route"
+  },
+  "netState": {
+   "bn": "Internet: nai",
+   "en": "Internet: down"
+  },
+  "stops": [
+   {
+    "icon": "send",
+    "color": "text/primary",
+    "title": {
+     "bn": "Tumi · Shahidullah Hall",
+     "en": "You · Shahidullah Hall"
+    },
+    "detail": {
+     "bn": "“Ammu, hall-e pouchhe gechi”",
+     "en": "“Ammu, I’m back at the hall”"
+    }
+   },
+   {
+    "icon": "mesh",
+    "color": "state/mesh",
+    "title": {
+     "bn": "Rafi-r phone, 40 m dure",
+     "en": "Rafi’s phone, 40 m away"
+    },
+    "detail": {
+     "bn": "Bluetooth mesh · net lage na",
+     "en": "Bluetooth mesh · no internet"
+    }
+   },
+   {
+    "icon": "node",
+    "color": "state/node",
+    "title": {
+     "bn": "Hall canteen-er node",
+     "en": "The hall canteen node"
+    },
+    "detail": {
+     "bn": "Charger-e puraton phone, hall-er Wi-Fi",
+     "en": "An old phone on a charger, hall Wi-Fi"
+    }
+   },
+   {
+    "icon": "bridge",
+    "color": "state/bridge",
+    "title": {
+     "bn": "Tania-r phone, data on",
+     "en": "Tania’s phone, mobile data on"
+    },
+    "detail": {
+     "bn": "Message internet-e tule dilo",
+     "en": "Lifts the message onto the internet"
+    }
+   },
+   {
+    "icon": "check-double",
+    "color": "state/online",
+    "title": {
+     "bn": "Ammu-r phone, Sylhet",
+     "en": "Ammu’s phone, Sylhet"
+    },
+    "detail": {
+     "bn": "Pouchhe geche · 23:12",
+     "en": "Delivered · 23:12"
+    }
+   }
+  ],
+  "footnote": {
+   "bn": "Server nai, taka lage na. Message shudhu se-i porte pare jar jonno pathano.",
+   "en": "No server, no cost. Only the person it’s meant for can read it."
+  }
+ },
+ "offgrid": {
+  "eyebrow": {
+   "bn": "Off-grid relays",
+   "en": "Off-grid relays"
+  },
+  "h2": {
+   "bn": "Net gele-o 6 ta rasta khola thake.",
+   "en": "Six ways through when the network is down."
+  },
+  "lead": {
+   "bn": "Load-shedding, bonna, concert-er bhir — jekhane network more jay. Harkara nije bujhe nay kon rasta kaaj korche, ar message oi pothe pathay.",
+   "en": "Power cuts, floods, a packed concert — wherever the network gives out. Harkara works out which route is open and sends your message that way."
+  },
+  "groupOffline": {
+   "bn": "Net chhara",
+   "en": "No internet needed"
+  },
+  "groupOnline": {
+   "bn": "Ar net thakle",
+   "en": "And when there is internet"
+  },
+  "rungs": [
+   {
+    "n": "01",
+    "icon": "mesh",
+    "color": "state/mesh",
+    "title": {
+     "bn": "Bluetooth mesh",
+     "en": "Bluetooth mesh"
+    },
+    "detail": {
+     "bn": "Pashe-r Harkara phone-gulo message haath-bodol kore, 7 hop porjonto.",
+     "en": "Nearby phones running Harkara pass messages along, up to 7 hops."
+    }
+   },
+   {
+    "n": "02",
+    "icon": "bridge",
+    "color": "state/bridge",
+    "title": {
+     "bn": "Net-wala phone",
+     "en": "A phone with data"
+    },
+    "detail": {
+     "bn": "Kachhe karo data thakle, tar phone tomar message internet-e tule dey.",
+     "en": "If someone nearby has data, their phone lifts your message onto the internet."
+    }
+   },
+   {
+    "n": "03",
+    "icon": "node",
+    "color": "state/node",
+    "title": {
+     "bn": "Hall ba para-r node",
+     "en": "Hall or neighbourhood node"
+    },
+    "detail": {
+     "bn": "Charger-e lagano puraton phone, hall ba dokan-er Wi-Fi-te. Net lage na.",
+     "en": "An old phone on a charger, on a hall or shop Wi-Fi. No internet needed."
+    }
+   },
+   {
+    "n": "04",
+    "icon": "sms",
+    "color": "state/sms",
+    "title": {
+     "bn": "SMS",
+     "en": "SMS"
+    },
+    "detail": {
+     "bn": "Tomar SMS app-e text likha thake, tumi shudhu send dao.",
+     "en": "The text is written into your SMS app; you just press send."
+    }
+   },
+   {
+    "n": "05",
+    "icon": "qr",
+    "color": "text/primary",
+    "title": {
+     "bn": "QR code",
+     "en": "QR code"
+    },
+    "detail": {
+     "bn": "Screen-e dekhao, o scan korbe. Sob radio off thakleo cholbe.",
+     "en": "Show it on screen, they scan it. Works with every radio off."
+    }
+   },
+   {
+    "n": "06",
+    "icon": "queued",
+    "color": "state/queued",
+    "title": {
+     "bn": "Phone-e jomano",
+     "en": "Saved on the phone"
+    },
+    "detail": {
+     "bn": "Kono rasta na thakle jomano thake, rasta khullei chole jay.",
+     "en": "With no route open it waits, and goes the moment one opens."
+    }
+   },
+   {
+    "n": "07",
+    "icon": "relay",
+    "color": "state/online",
+    "online": true,
+    "title": {
+     "bn": "Internet relay",
+     "en": "Internet relay"
+    },
+    "detail": {
+     "bn": "Public relay diye shara shohor, shara desh. Kono nijossho server nai.",
+     "en": "Public relays reach the whole city and beyond. No server of our own."
+    }
+   }
+  ]
+ },
+ "workflows": {
+  "eyebrow": {
+   "bn": "Workflows",
+   "en": "Workflows"
+  },
+  "h2": {
+   "bn": "Roj-er sob kaaj, ek app-e.",
+   "en": "Everyday things, one app."
+  },
+  "lead": {
+   "bn": "Panch ta tab — Nearby, Chats, Tasks, Khata, Me. Proti ta kaaj upore-r rasta-gulor jei ta khola, oi ta diye chole.",
+   "en": "Five tabs — Nearby, Chats, Tasks, Khata, Me. Each one runs over whichever of those routes is open."
+  },
+  "worksOver": {
+   "bn": "Cholbe",
+   "en": "Works over"
+  },
+  "carriers": {
+   "mesh": {
+    "bn": "Mesh",
+    "en": "Mesh"
+   },
+   "bridge": {
+    "bn": "Net-wala phone",
+    "en": "A phone with data"
+   },
+   "node": {
+    "bn": "Node",
+    "en": "Node"
+   },
+   "sms": {
+    "bn": "SMS",
+    "en": "SMS"
+   },
+   "qr": {
+    "bn": "QR",
+    "en": "QR"
+   },
+   "relay": {
+    "bn": "Internet",
+    "en": "Internet"
+   }
+  },
+  "items": [
+   {
+    "n": "01",
+    "tab": "Nearby",
+    "bangla": "কাছে",
+    "works": [
+     "mesh",
+     "node",
+     "bridge",
+     "relay"
+    ],
+    "title": {
+     "bn": "Kachhe ki hocche, ekhon-i",
+     "en": "What’s happening nearby, right now"
+    },
+    "body": {
+     "bn": "Nilkhet-e jam, canteen-e khichuri shesh, library-te seat khali — 3 km-er moddhe sob post, nijer nam chhara. Meyad shesh hole post nije-i mile jay.",
+     "en": "A jam at Nilkhet, the canteen out of khichuri, free seats in the library — posts from within 3 km, no name attached. Each post fades when it expires."
+    },
+    "visual": {
+     "card": "post",
+     "category": "Food",
+     "meta": "Hall canteen · 120 m · 8 min",
+     "text": {
+      "bn": "Khichuri shesh, kintu dim bhaji ache. Line ekdom choto.",
+      "en": "Khichuri’s gone, egg bhaji still on. Short queue."
+     },
+     "detail": {
+      "bn": "Dim bhaji",
+      "en": "Egg bhaji"
+     },
+     "expiry": "3 h left",
+     "score": 31,
+     "comments": 7,
+     "carrier": "via mesh · 2 hops"
+    }
+   },
+   {
+    "n": "02",
+    "tab": "Chats",
+    "bangla": "চ্যাট",
+    "works": [
+     "mesh",
+     "node",
+     "relay",
+     "sms"
+    ],
+    "title": {
+     "bn": "Group, DM, ar “ei Wi-Fi-te sobai”",
+     "en": "Groups, DMs and “everyone on this Wi-Fi”"
+    },
+    "body": {
+     "bn": "Class group, mess group, ba hall-er Wi-Fi-te jara ache. Message end-to-end encrypted; relay-o porte pare na. Choto voice note mesh-eo jay.",
+     "en": "Class groups, flat groups, or everyone on the hall Wi-Fi. End-to-end encrypted — relays can’t read it. Short voice notes travel over the mesh too."
+    },
+    "visual": {
+     "sender": "Nabila · CSE 22",
+     "in": {
+      "bn": "Lab cancel! Sobai canteen-e aye",
+      "en": "Lab’s cancelled! Everyone to the canteen"
+     },
+     "out": {
+      "bn": "Ashchi, 5 min. Cha order dish",
+      "en": "Coming, 5 min. Order me a tea"
+     },
+     "voice": "0:09"
+    }
+   },
+   {
+    "n": "03",
+    "tab": "Tasks",
+    "bangla": "কাজ",
+    "works": [
+     "mesh",
+     "node",
+     "relay",
+     "sms",
+     "qr"
+    ],
+    "title": {
+     "bn": "Kaaj dao, kaaj koro",
+     "en": "Ask for help, or help out"
+    },
+    "body": {
+     "bn": "Nilkhet theke photocopy, gate theke parcel — kaaj post koro, taka bolo. Hand-off hoy QR ba 6 digit code-e, net chhara-o.",
+     "en": "Photocopies from Nilkhet, a parcel from the gate — post the errand and name a price. Handoff is a QR or 6-digit code, even offline."
+    },
+    "visual": {
+     "card": "task",
+     "price": "৳60",
+     "title": {
+      "bn": "2 set photocopy, Nilkhet theke TSC",
+      "en": "2 sets of photocopies, Nilkhet to TSC"
+     },
+     "status": "Accepted 14:20",
+     "runner": "Arnob · 12 done",
+     "handoffCode": "482 913"
+    }
+   },
+   {
+    "n": "04",
+    "tab": "Khata",
+    "bangla": "খাতা",
+    "works": [
+     "mesh",
+     "node",
+     "relay",
+     "sms",
+     "qr"
+    ],
+    "title": {
+     "bn": "Baki-r hishab, duijon-er sign-e",
+     "en": "IOUs that both sides sign"
+    },
+    "body": {
+     "bn": "Mess bill, canteen baki, CNG share — IOU tokhon-i pakka jokhon duijon-i sign kore. Settle korle bKash TrxID likhe rakho.",
+     "en": "Flat bills, canteen tabs, a shared CNG — an IOU counts only once both people sign. Settle up and note the bKash TrxID."
+    },
+    "visual": {
+     "card": "iou",
+     "amount": "৳1,850",
+     "what": {
+      "bn": "Rafi dibe · Mess bill, November",
+      "en": "Rafi owes you · November bill"
+     },
+     "status": {
+      "bn": "Duijon-i sign korse",
+      "en": "Signed by both"
+     }
+    }
+   },
+   {
+    "n": "05",
+    "tab": "Map",
+    "bangla": "ম্যাপ",
+    "works": [
+     "mesh",
+     "node",
+     "relay"
+    ],
+    "title": {
+     "bn": "Offline map, nijer pin",
+     "en": "Offline map, your own pins"
+    },
+    "body": {
+     "bn": "Dhaka-r map ekbar namao, tarpor net lagbe na. Pani-r filter, charging point, raat-er pharmacy pin koro; bondhu-der sathe share koro.",
+     "en": "Download the Dhaka map once and it works without internet. Pin water filters, charging points, late-night pharmacies; share them with friends."
+    },
+    "visual": {
+     "card": "pin",
+     "title": {
+      "bn": "Pani-r filter",
+      "en": "Water filter"
+     },
+     "detail": {
+      "bn": "Hall canteen-er pashe, 24 ghonta khola",
+      "en": "Next to the hall canteen, open 24 h"
+     },
+     "ask": {
+      "bn": "Ekhono ache?",
+      "en": "Still there?"
+     },
+     "tally": {
+      "bn": "9 ha · 0 na",
+      "en": "9 yes · 0 no"
+     },
+     "yes": {
+      "bn": "Ha",
+      "en": "Yes"
+     },
+     "no": {
+      "bn": "Na",
+      "en": "No"
+     }
+    }
+   },
+   {
+    "n": "06",
+    "tab": "Check-in",
+    "bangla": "খবর",
+    "works": [
+     "sms",
+     "mesh",
+     "node",
+     "relay"
+    ],
+    "title": {
+     "bn": "Pouchhe gele janiye dao",
+     "en": "Let them know you got there"
+    },
+    "body": {
+     "bn": "Ek tap-e “Hall-e pouchhe gechi” — net na thakle SMS-e. Bondhu-der sathe 1 ghonta live location, tarpor nije-i bondho.",
+     "en": "One tap for “Back at the hall” — by SMS if there’s no internet. Share live location with friends for an hour, then it stops by itself."
+    },
+    "visual": {
+     "card": "checkin+location",
+     "checkin": {
+      "bn": "Pouchhe gechi",
+      "en": "Got here safe"
+     },
+     "checkinDetail": "Hall · 23:10",
+     "live": {
+      "bn": "Live · aro 42 min",
+      "en": "Live · 42 min left"
+     },
+     "place": {
+      "bn": "Rafi · Shahbag mor theke 300 m",
+      "en": "Rafi · 300 m from Shahbag"
+     },
+     "plusCode": "7MMG+X4 Dhaka"
+    }
+   },
+   {
+    "n": "07",
+    "tab": "Tools & SOS",
+    "bangla": "বিপদে",
+    "works": [
+     "mesh",
+     "node",
+     "relay",
+     "sms",
+     "qr"
+    ],
+    "title": {
+     "bn": "Bipod-e, net chhara-o",
+     "en": "For emergencies, offline too"
+    },
+    "body": {
+     "bn": "Compass, Qibla, torch-e Morse SOS, Bangla-English emergency handbook, file pathano. Sob optional — off thakle battery khay na.",
+     "en": "Compass, Qibla, Morse SOS on the torch, a Bangla-English emergency handbook, file sending. All optional — switched off, they use no battery."
+    },
+    "visual": {
+     "tools": [
+      "Compass",
+      "Qibla",
+      "Torch",
+      "Handbook",
+      "File"
+     ],
+     "sosTitle": {
+      "bn": "Status pill 3 second chepe dhoro",
+      "en": "Hold the status pill for 3 seconds"
+     },
+     "sosDetail": {
+      "bn": "SOS ar location jay sob khola rasta-y, ekshathe",
+      "en": "Sends SOS and your location over every open route"
+     }
+    }
+   }
+  ]
+ },
+ "campus": {
+  "eyebrow": {
+   "bn": "Campus-e chalu koro",
+   "en": "Start it on campus"
+  },
+  "h2": {
+   "bn": "Ekjon theke pura hall.",
+   "en": "From one phone to the whole hall."
+  },
+  "lead": {
+   "bn": "Mesh tokhon-i kaaj kore jokhon pashe aro keu Harkara chalay. Duita kaaj, kono-tai net lage na.",
+   "en": "A mesh only works when people nearby run Harkara too. Two ways to grow it, neither needs internet."
+  },
+  "items": [
+   {
+    "icon": "drop",
+    "title": {
+     "bn": "Phone theke phone-e APK",
+     "en": "Share the APK phone to phone"
+    },
+    "detail": {
+     "bn": "Hotspot ba QR diye bondhu-ke app dao. Play Store, data, kichu lage na.",
+     "en": "Hand the app to a friend over hotspot or QR. No Play Store, no data."
+    }
+   },
+   {
+    "icon": "node",
+    "title": {
+     "bn": "Hall-e ekta node boshao",
+     "en": "Set up a node in your hall"
+    },
+    "detail": {
+     "bn": "Puraton phone + charger + hall-er Wi-Fi. Map, handbook, APK sob okhan theke pawa jay.",
+     "en": "An old phone, a charger and the hall Wi-Fi. It serves the map, the handbook and the APK."
+    }
+   }
+  ]
+ },
+ "install": {
+  "eyebrow": {
+   "bn": "Install",
+   "en": "Install"
+  },
+  "h2": {
+   "bn": "3 step, signup nai.",
+   "en": "Three steps, no sign-up."
+  },
+  "steps": [
+   {
+    "title": {
+     "bn": "APK namao",
+     "en": "Download the APK"
+    },
+    "detail": {
+     "bn": "GitHub Releases theke. Beshirbhag phone-er jonno arm64, {{APK_MB}} MB.",
+     "en": "From GitHub Releases. arm64 for most phones, {{APK_MB}} MB."
+    }
+   },
+   {
+    "title": {
+     "bn": "Browser-ke allow koro",
+     "en": "Allow your browser"
+    },
+    "detail": {
+     "bn": "Android jiggesh korbe “Install unknown apps”. Oi browser-er jonno ekbar on koro.",
+     "en": "Android will ask about “Install unknown apps”. Turn it on once for that browser."
+    }
+   },
+   {
+    "title": {
+     "bn": "Kholo, shuru koro",
+     "en": "Open it and go"
+    },
+    "detail": {
+     "bn": "Number, email kichu lagbe na. Area bachho, feed chole ashbe.",
+     "en": "No phone number, no email. Pick your area and the feed loads."
+    }
+   }
+  ],
+  "verifyLabel": {
+   "bn": "SHA-256",
+   "en": "SHA-256"
+  },
+  "copy": {
+   "bn": "Copy",
+   "en": "Copy"
+  },
+  "copied": {
+   "bn": "Copy hoyeche",
+   "en": "Copied"
+  },
+  "verifyNote": {
+   "bn": "Download-er por mile dekho. Protiti update ek-i signing key-te.",
+   "en": "Check it after downloading. Every update is signed with the same key."
+  },
+  "otherWays": {
+   "bn": "Onno upay",
+   "en": "Other ways"
+  },
+  "otherChips": {
+   "bn": [
+    "Obtainium",
+    "IzzyOnDroid",
+    "F-Droid · shighroi",
+    "Bondhu-r phone theke"
+   ],
+   "en": [
+    "Obtainium",
+    "IzzyOnDroid",
+    "F-Droid · soon",
+    "From a friend’s phone"
+   ]
+  },
+  "otherAbis": {
+   "bn": "Puraton phone? armeabi-v7a APK-o ache.",
+   "en": "Older phone? There’s an armeabi-v7a APK too."
+  }
+ },
+ "faq": {
+  "eyebrow": {
+   "bn": "FAQ",
+   "en": "FAQ"
+  },
+  "h2": {
+   "bn": "Proshno ache?",
+   "en": "Questions?"
+  },
+  "lead": {
+   "bn": "Na pele GitHub-e issue kholo. Code-o okhane, khola.",
+   "en": "Can’t find it? Open an issue on GitHub. The code is there too."
+  },
+  "items": [
+   {
+    "q": {
+     "bn": "Phone number lagbe?",
+     "en": "Do I need a phone number?"
+    },
+    "a": {
+     "bn": "Na. Signup nai, number nai. Phone-e ekta key toiri hoy, oi ta-i tumi. Backup nijer kache rakho.",
+     "en": "No. No sign-up, no number. Your phone makes a key, and that key is you. Keep a backup yourself."
+    }
+   },
+   {
+    "q": {
+     "bn": "Battery kheye felbe na?",
+     "en": "Won’t it drain my battery?"
+    },
+    "a": {
+     "bn": "Na. Mesh, map, live location — sob off thake jotokhon na tumi nije chalu koro. Lite mode-e aro kom khay.",
+     "en": "No. Mesh, maps and live location stay off until you turn them on. Lite mode uses even less."
+    }
+   },
+   {
+    "q": {
+     "bn": "Amar message ke porte pare?",
+     "en": "Who can read my messages?"
+    },
+    "a": {
+     "bn": "Shudhu jake pathaiso. Message end-to-end encrypted; relay, node ba pashe-r phone — keu porte pare na.",
+     "en": "Only the person you sent it to. Messages are end-to-end encrypted; relays, nodes and the phones that pass them along can’t read them."
+    }
+   },
+   {
+    "q": {
+     "bn": "Play Store-e nai keno?",
+     "en": "Why isn’t it on the Play Store?"
+    },
+    "a": {
+     "bn": "Free ar swadhin rakhte. APK GitHub-e, code open — je keu mile dekhte pare.",
+     "en": "To keep it free and independent. The APK is on GitHub and the code is open, so anyone can check it."
+    }
+   },
+   {
+    "q": {
+     "bn": "iPhone-e chalbe?",
+     "en": "Does it work on iPhone?"
+    },
+    "a": {
+     "bn": "Ekhono na. iPhone-wala bondhu-ra link khule browser-e IOU confirm ar task follow korte parbe.",
+     "en": "Not yet. Friends on iPhone can open a link to confirm an IOU or follow a task in the browser."
+    }
+   }
+  ]
+ },
+ "footer": {
+  "tagline": {
+   "bn": "Para-r app — bonna, load-shedding ar roj-er kaaj-er jonno.",
+   "en": "A neighbourhood app for floods, power cuts and everyday life."
+  },
+  "links": {
+   "bn": [
+    "GitHub",
+    "Codeberg mirror",
+    "Bug report",
+    "Privacy",
+    "AGPL-3.0"
+   ],
+   "en": [
+    "GitHub",
+    "Codeberg mirror",
+    "Bug report",
+    "Privacy",
+    "AGPL-3.0"
+   ]
+  },
+  "meta": {
+   "bn": "Made in Dhaka · v{{VERSION}} · No ads, no tracking",
+   "en": "Made in Dhaka · v{{VERSION}} · No ads, no tracking"
+  }
+ },
+ "privacy": {
+  "body": {
+   "bn": "Ei page kono cookie, analytics ba tracker chalay na. Bhasha bachar jonno browser ekbar api.country.is-ke shudhu desh-er code jiggesh kore (kichu jomay na). Tumi nije bhasha bachle oi check ar hoy na.",
+   "en": "This page uses no cookies, analytics or trackers. To pick a language, your browser asks api.country.is once for a country code (nothing is stored there). Once you choose a language yourself, that check stops."
+  }
+ }
+}
