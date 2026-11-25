@@ -73,6 +73,10 @@ interface PlatformActions {
     fun openTextDocument(onResult: (text: String?) -> Unit)
     /** Opens the SMS app with [body] prefilled and no recipient; needs no permission and stores no number. */
     fun composeSms(body: String) {}
+    /** Asks for precise (or approximate) location before a user-started live share; reports whether any was granted. */
+    fun requestLiveLocation(onResult: (granted: Boolean) -> Unit) = onResult(false)
+    /** Lets the user pick a file (map pack, GPX/KML/GeoJSON); reports a private copy and its display name. */
+    fun openFile(mimeTypes: Array<String>, onResult: (file: java.io.File?, name: String?) -> Unit) = onResult(null, null)
 
     object None : PlatformActions {
         override fun openUrl(url: String) = Unit
@@ -85,7 +89,7 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail }
+private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, MyPins, MapPacks, Compass }
 private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
@@ -173,6 +177,15 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     LaunchedEffect(center, settings.onboarded, relayStatus.size) { if (settings.onboarded) container.feedRepository.subscribeArea(center) }
     LaunchedEffect(center, settings.onboarded, connectedRelays) { if (settings.onboarded && connectedRelays > 0) container.feedRepository.catchUp(center) }
     LaunchedEffect(feedItems.map { it.post.id }) { container.feedRepository.subscribeReactions(feedItems.map { it.post.id }) }
+    // M9: pins, check-ins and live location share one gift-wrap inbox.
+    LaunchedEffect(center, settings.onboarded, relayStatus.size, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) {
+            container.startPlaces()
+            container.giftInbox.subscribe(container.relayPool)
+            container.pinRepository.subscribe(center)
+        }
+    }
+    var compassTarget by remember { mutableStateOf<io.github.tanzir71.harkara.core.geo.LatLng?>(null) }
 
     val comingSoon: () -> Unit = { scope.launch { snackbar.showSnackbar(context.getString(R.string.coming_soon)) } }
     val say: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
@@ -200,9 +213,28 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                 )
             } else {
                 when (page) {
+                    Page.MyPins -> io.github.tanzir71.harkara.ui.map.MyPinsHost(
+                        container, platform, profilePubkey, onBack = { page = Page.Tabs }, say = say,
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.MapPacks -> io.github.tanzir71.harkara.ui.map.MapPacksHost(
+                        container, platform, settings, onBack = { page = Page.Tabs }, say = say,
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.Compass -> io.github.tanzir71.harkara.ui.map.CompassHost(
+                        container, profilePubkey, compassTarget, onBack = { page = Page.Tabs },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
                     Page.Modules -> ModulesScreen(
                         settings,
-                        onToggle = container.settings::setModule,
+                        // "Offline map pack" stays off until a pack is downloaded: switching it on opens Map packs.
+                        onToggle = { module, on ->
+                            if (module == io.github.tanzir71.harkara.settings.Module.OFFLINE_MAP && on && container.mapPackManager.installed() == null) {
+                                page = Page.MapPacks
+                            } else {
+                                container.settings.setModule(module, on)
+                            }
+                        },
                         onBack = { page = Page.Tabs },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
@@ -284,6 +316,23 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onSearch = comingSoon,
                                 onVote = { id, up -> feedItems.firstOrNull { it.post.id == id }?.let { scope.launch { container.feedRepository.vote(it.post, up) } } },
                                 onMore = { id -> sheetPostId = id; sheet = Sheet.CardActions },
+                                mapContent = { mapModifier, modeSwitch ->
+                                    io.github.tanzir71.harkara.ui.map.NearbyMapHost(
+                                        container = container,
+                                        platform = platform,
+                                        settings = settings,
+                                        center = center,
+                                        profilePubkey = profilePubkey,
+                                        feedPosts = feedItems.map { it.post },
+                                        taskOffers = taskStates.filter { it.status == io.github.tanzir71.harkara.core.tasks.TaskStatus.OPEN }.map { it.offer },
+                                        modeSwitch = modeSwitch,
+                                        onOpenTask = { id -> taskStates.firstOrNull { "${it.offer.address}" == id }?.let { openTaskId = it.offer.event.id; page = Page.TaskDetail } },
+                                        onOpenPacks = { page = Page.MapPacks },
+                                        onOpenCompass = { target -> compassTarget = target; page = Page.Compass },
+                                        say = say,
+                                        modifier = mapModifier,
+                                    )
+                                },
                             )
                             HarkaraTab.Chats -> ChatsScreen(connectivity, content, pill)
                             HarkaraTab.Tasks -> TasksScreen(
@@ -324,7 +373,14 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 update = visibleUpdate,
                                 onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
-                                onTool = { comingSoon() },
+                                onTool = { tool ->
+                                    when (tool.module) {
+                                        io.github.tanzir71.harkara.settings.Module.SAVED_PINS -> page = Page.MyPins
+                                        io.github.tanzir71.harkara.settings.Module.OFFLINE_MAP -> page = Page.MapPacks
+                                        io.github.tanzir71.harkara.settings.Module.COMPASS -> { compassTarget = null; page = Page.Compass }
+                                        else -> comingSoon()
+                                    }
+                                },
                                 onToggleModule = container.settings::setModule,
                                 onAllModules = { page = Page.Modules },
                                 onSettings = { page = Page.Settings },

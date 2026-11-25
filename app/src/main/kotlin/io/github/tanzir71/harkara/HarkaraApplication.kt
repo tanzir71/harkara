@@ -26,6 +26,17 @@ import io.github.tanzir71.harkara.update.UpdateChecker
 import io.github.tanzir71.harkara.core.tasks.TaskTypes
 import io.github.tanzir71.harkara.tasks.TaskRepository
 import io.github.tanzir71.harkara.khata.KhataRepository
+import io.github.tanzir71.harkara.map.MapPackManager
+import io.github.tanzir71.harkara.places.AndroidLocationSource
+import io.github.tanzir71.harkara.places.CheckInRepository
+import io.github.tanzir71.harkara.places.GiftInbox
+import io.github.tanzir71.harkara.places.HeadingSource
+import io.github.tanzir71.harkara.places.LiveShareRepository
+import io.github.tanzir71.harkara.places.LocationSource
+import io.github.tanzir71.harkara.places.PinRepository
+import io.github.tanzir71.harkara.places.SensorHeadingSource
+import io.github.tanzir71.harkara.places.ServiceLiveShareHost
+import io.github.tanzir71.harkara.places.WorkManagerOverdueScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -79,6 +90,32 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     val khataRepository: KhataRepository by lazy {
         KhataRepository(database, outbox, pools = { listOf(relayPool) }, profile = { identity.profile() }, displayName = { settings.state.value.displayName })
             .also { it.startIngest(scope, relayPool) }
+    }
+
+    // M9: map, pins and location. Sensors and GPS run only while a screen or a user-started share collects them.
+    val giftInbox: GiftInbox by lazy { GiftInbox({ identity.profile() }) }
+    val locationSource: LocationSource by lazy { AndroidLocationSource(context) }
+    val headingSource: HeadingSource by lazy { SensorHeadingSource(context) }
+    val mapPackManager: MapPackManager by lazy { MapPackManager(File(context.filesDir, "maps")) }
+    val pinRepository: PinRepository by lazy {
+        PinRepository(database, outbox, relayPool, { identity.profile() }, { g5 -> identity.keyRing().area(g5, IsoWeek.current()) })
+            .also { it.startIngest(scope, giftInbox) }
+    }
+    val checkInRepository: CheckInRepository by lazy {
+        CheckInRepository(database, outbox, { identity.profile() }, WorkManagerOverdueScheduler(context)).also { it.startIngest(giftInbox) }
+    }
+    val liveShareRepository: LiveShareRepository by lazy {
+        LiveShareRepository(outbox, relayPool, { identity.profile() }, { identity.keyRing() }, locationSource, scope, { settings.state.value.displayName }, host = ServiceLiveShareHost(context))
+            .also { it.startIngest(giftInbox) }
+    }
+    private val placesStarted = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /** Registers every place feature with the inbox, then starts reading wraps (once). */
+    fun startPlaces() {
+        pinRepository
+        checkInRepository
+        liveShareRepository
+        if (placesStarted.compareAndSet(false, true)) giftInbox.start(scope, relayPool)
     }
 
     /** NIP-13 difficulty tuned once to this phone's speed (~2 s of mining). */

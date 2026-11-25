@@ -69,6 +69,11 @@ android {
     }
 
     packaging {
+        // Native libraries (MapLibre ~13 MB per ABI) are stored compressed and extracted at install, which
+        // keeps the download within 30 MB per ABI. See docs/DECISIONS.md (M9).
+        jniLibs {
+            useLegacyPackaging = true
+        }
         resources {
             excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -118,6 +123,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.secp256k1.kmp.jni.android)
     implementation(libs.zxing.core)
+    implementation(libs.maplibre.android)
     kapt(libs.androidx.room.compiler)
 
     debugImplementation(libs.androidx.compose.ui.tooling)

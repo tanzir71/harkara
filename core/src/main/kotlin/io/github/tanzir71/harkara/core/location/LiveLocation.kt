@@ -78,9 +78,15 @@ object LiveShares {
         return UnsignedEvent(session.pubkeyHex, createdAt, KIND, tags, content)
     }
 
-    /** Ephemeral wraps (21059) of one point for every person. */
+    /**
+     * Ephemeral wraps (21059) of one point for every person. Seal and wrap carry the point's own time:
+     * a live point is delivered as it happens, so backdating would hide nothing and would only make relays
+     * and `since` filters drop it.
+     */
     fun pointWraps(session: KeyPair, recipients: List<String>, rumor: Rumor): List<Event> =
-        recipients.distinct().map { to -> GiftWrap.sealAndWrap(rumor, session, to, Kinds.EPHEMERAL_GIFT_WRAP) }
+        recipients.distinct().map { to ->
+            GiftWrap.wrap(GiftWrap.seal(rumor, session, to, rumor.createdAt), to, rumor.createdAt, Kinds.EPHEMERAL_GIFT_WRAP)
+        }
 
     fun parseBody(content: String): LivePointBody? = runCatching { json.decodeFromString(LivePointBody.serializer(), content) }.getOrNull()
         ?.takeIf { it.lat in -90.0..90.0 && it.lng in -180.0..180.0 }

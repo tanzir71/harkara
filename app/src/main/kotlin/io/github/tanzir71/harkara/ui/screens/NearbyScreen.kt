@@ -45,7 +45,10 @@ import io.github.tanzir71.harkara.ui.components.categoryColor
 import io.github.tanzir71.harkara.ui.theme.HarkaraTheme
 import io.github.tanzir71.harkara.update.LatestRelease
 
-/** Screen 01/02: the Nearby feed with its Feed ⇄ Map switch (map is a list fallback until M9). */
+/**
+ * Screen 01/02: the Nearby feed with its Feed ⇄ Map switch. [mapContent] draws Map mode below the header
+ * (it gets the Feed/Map switch to place over the map); without it Map mode shows a note above the list.
+ */
 @Composable
 fun NearbyScreen(
     areaName: String?,
@@ -62,46 +65,59 @@ fun NearbyScreen(
     onSearch: () -> Unit = {},
     onVote: (postId: String, up: Boolean) -> Unit = { _, _ -> },
     onMore: (postId: String) -> Unit = {},
+    initialMode: Int = 0,
+    mapContent: (@Composable (modifier: Modifier, modeSwitch: @Composable () -> Unit) -> Unit)? = null,
 ) {
     val c = HarkaraTheme.colors
-    var mode by rememberSaveable { mutableIntStateOf(0) }
+    var mode by rememberSaveable { mutableIntStateOf(initialMode) }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     val shown = posts.filter { filter == null || it.category?.tag == filter }
+
+    val header: @Composable () -> Unit = {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp), verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f).clickable(role = Role.Button, onClick = onChangeArea)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        areaName ?: stringResource(R.string.nearby_near_you),
+                        style = HarkaraTheme.type.title.copy(fontSize = HarkaraTheme.type.amount.fontSize),
+                        color = c.textPrimary,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    HIcon(R.drawable.ic_chevron_down, size = 20.dp, contentDescription = stringResource(R.string.nearby_change_area))
+                }
+                Text(
+                    stringResource(R.string.nearby_within, stringResource(if (areaAuto) R.string.nearby_auto else R.string.nearby_chosen)),
+                    style = HarkaraTheme.type.caption,
+                    color = c.textSecondary,
+                )
+            }
+            ConnectivityPill(connectivity.best, meshPeers = connectivity.meshPeers, onClick = pill.onClick, onLongClick = pill.onLongClick)
+        }
+    }
+    val modeRow: @Composable () -> Unit = {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Segmented(listOf(stringResource(R.string.nearby_feed), stringResource(R.string.nearby_map)), mode, { mode = it })
+            Spacer(Modifier.weight(1f))
+            HIconButton(R.drawable.ic_search, stringResource(R.string.nearby_search), onSearch)
+        }
+    }
+
+    if (mode == 1 && mapContent != null) {
+        Column(modifier.fillMaxSize()) {
+            Box(Modifier.padding(bottom = 10.dp)) { header() }
+            mapContent(Modifier.weight(1f), modeRow)
+        }
+        return
+    }
 
     Box(modifier.fillMaxSize()) {
         LazyColumn(
             contentPadding = PaddingValues(bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp), verticalAlignment = Alignment.Top) {
-                    Column(Modifier.weight(1f).clickable(role = Role.Button, onClick = onChangeArea)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                areaName ?: stringResource(R.string.nearby_near_you),
-                                style = HarkaraTheme.type.title.copy(fontSize = HarkaraTheme.type.amount.fontSize),
-                                color = c.textPrimary,
-                                modifier = Modifier.semantics { heading() },
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            HIcon(R.drawable.ic_chevron_down, size = 20.dp, contentDescription = stringResource(R.string.nearby_change_area))
-                        }
-                        Text(
-                            stringResource(R.string.nearby_within, stringResource(if (areaAuto) R.string.nearby_auto else R.string.nearby_chosen)),
-                            style = HarkaraTheme.type.caption,
-                            color = c.textSecondary,
-                        )
-                    }
-                    ConnectivityPill(connectivity.best, meshPeers = connectivity.meshPeers, onClick = pill.onClick, onLongClick = pill.onLongClick)
-                }
-            }
-            item {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Segmented(listOf(stringResource(R.string.nearby_feed), stringResource(R.string.nearby_map)), mode, { mode = it })
-                    Spacer(Modifier.weight(1f))
-                    HIconButton(R.drawable.ic_search, stringResource(R.string.nearby_search), onSearch)
-                }
-            }
+            item { header() }
+            item { modeRow() }
             item {
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
