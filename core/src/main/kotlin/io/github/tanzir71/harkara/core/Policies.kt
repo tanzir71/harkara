@@ -14,7 +14,9 @@ class SosPolicy(
     private val cooldown: Duration = Duration.ofMinutes(30),
     private val mutedPubkeys: Set<String> = emptySet(),
 ) {
-    private val active = mutableMapOf<String, Event>()
+    // Retain the binding, not the event payload after the storage budget evicts it.
+    private data class ActiveSos(val id: String, val createdAt: Long)
+    private val active = mutableMapOf<String, ActiveSos>()
 
     /** True when an SOS or SOS update may be shown and relayed. Other kinds pass untouched. */
     fun accept(event: Event): Boolean {
@@ -24,7 +26,7 @@ class SosPolicy(
             Kinds.SOS_UPDATE -> {
                 if (!SosEvents.isClosingUpdate(event)) return false
                 // Replaying an old resolution must not reset a later emergency's cooldown.
-                if (active[event.pubkey]?.let { SosEvents.closes(event, it) } == true) active.remove(event.pubkey)
+                if (active[event.pubkey]?.let { event.tagValue("e") == it.id && event.createdAt >= it.createdAt } == true) active.remove(event.pubkey)
                 true
             }
             else -> {
@@ -32,7 +34,7 @@ class SosPolicy(
                 if (previous != null && event.createdAt - previous.createdAt < cooldown.seconds) {
                     false
                 } else {
-                    active[event.pubkey] = event
+                    active[event.pubkey] = ActiveSos(event.id, event.createdAt)
                     true
                 }
             }

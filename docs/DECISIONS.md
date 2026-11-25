@@ -1,5 +1,6 @@
 # Decisions
 
+- 2026-11-25: The SOS relay policy retains only the active alert id and timestamp per key, preserving exact-resolution checks without retaining full event payloads after storage-budget eviction.
 - 2026-11-25: Clean reproducibility jobs retry the same cache-disabled unsigned build at most three times after transient pinned-plugin resolution failures observed on fresh runners. Each job still begins from its own clean checkout; persistent failures and invalid comparison inputs fail normally.
 - 2026-11-25: Complete the QR tool with JourneyApps ZXing Android Embedded 4.3.0 (Apache-2.0), retaining ZXing core 3.5.3. Its QR-only camera/decoder sits behind `QrCamera`; it needs no Google service, account, external scanner app or background service. Scanned text is bounded to 8,000 characters and goes through explicit import and existing signature verification; camera permission is requested only on Scan and paste remains available when denied.
 - 2026-11-25: Safety-tool lifecycle owns torch/siren shutdown on background as well as navigation. SOS resolution has one recognized status and one exact alert reference, signed by its sender and dated no earlier than the alert; stale resolution replay never resets a newer cooldown. Concurrent local sends share a mutex before checking the persisted cooldown.
