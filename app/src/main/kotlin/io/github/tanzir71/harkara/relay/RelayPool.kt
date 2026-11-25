@@ -50,6 +50,7 @@ class RelayPool(
 ) {
     private val connections = ConcurrentHashMap<String, Connection>()
     private val subscriptions = ConcurrentHashMap<String, List<Filter>>()
+    private val resumeSlack = ConcurrentHashMap<String, Long>()
     private val mutableStatus = MutableStateFlow<Map<String, RelayStatus>>(emptyMap())
     private val mutableInfo = MutableStateFlow<Map<String, RelayInfo>>(emptyMap())
     private val mutableIncoming = MutableSharedFlow<IncomingEvent>(extraBufferCapacity = 1024)
@@ -80,9 +81,13 @@ class RelayPool(
         mutableStatus.value = emptyMap()
     }
 
-    /** Opens (or replaces) a subscription on every relay; it survives reconnects. */
-    fun subscribe(id: String, filters: List<Filter>) {
+    /**
+     * Opens (or replaces) a subscription on every relay; it survives reconnects. On a reconnect it resumes
+     * from the last EOSE minus [resumeSlackSeconds] (gift wraps are back-dated up to two days, NIP-59).
+     */
+    fun subscribe(id: String, filters: List<Filter>, resumeSlackSeconds: Long = 0) {
         subscriptions[id] = filters
+        resumeSlack[id] = resumeSlackSeconds
         connections.values.forEach { it.sendReq(id, filters, resume = false) }
     }
 
@@ -181,7 +186,7 @@ class RelayPool(
         fun send(text: String): Boolean = socket?.takeIf { isConnected }?.send(text) ?: false
 
         fun sendReq(id: String, filters: List<Filter>, resume: Boolean) {
-            val since = if (resume) lastEose[id] else null
+            val since = if (resume) lastEose[id]?.let { it - (resumeSlack[id] ?: 0) } else null
             val adjusted = filters.map { f -> if (since != null) f.copy(since = maxOf(f.since ?: 0, since)) else f }
             val maxFilters = mutableInfo.value[url]?.maxFilters
             send(ClientMessage.Req(id, if (maxFilters != null) adjusted.take(maxFilters) else adjusted).toJson())
@@ -189,6 +194,7 @@ class RelayPool(
 
         fun close() {
             closed = true
+            setStatus(RelayStatus.DISCONNECTED)
             reconnectJob?.cancel()
             isConnected = false
             socket?.close(1000, "bye")

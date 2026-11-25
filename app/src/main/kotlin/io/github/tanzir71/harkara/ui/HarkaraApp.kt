@@ -70,6 +70,8 @@ interface PlatformActions {
     fun saveTextDocument(suggestedName: String, text: String, onResult: (saved: Boolean) -> Unit)
     /** Lets the user pick a small text file to open; reports its text, or null when cancelled or unreadable. */
     fun openTextDocument(onResult: (text: String?) -> Unit)
+    /** Asks for the microphone (voice notes) once; reports whether it may be used. */
+    fun requestMicrophone(onResult: (granted: Boolean) -> Unit) = onResult(false)
 
     object None : PlatformActions {
         override fun openUrl(url: String) = Unit

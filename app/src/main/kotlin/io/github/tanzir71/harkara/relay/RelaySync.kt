@@ -17,10 +17,12 @@ import io.github.tanzir71.harkara.core.store.StoredItem
 import io.github.tanzir71.harkara.data.HarkaraDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
@@ -41,12 +43,22 @@ object DefaultRelays {
         runCatching { parse(context.assets.open("default-relays.json").bufferedReader().use { it.readText() }) }.getOrDefault(FALLBACK)
 }
 
-/** Connectivity from the live relay pool and outbox: Online when at least one relay is connected. */
-class LiveConnectivityMonitor(pool: RelayPool, outbox: Outbox, scope: CoroutineScope, configured: () -> Int) : ConnectivityMonitor {
-    override val state: StateFlow<ConnectivityState> = combine(pool.status, outbox.waiting) { status, waiting ->
+/**
+ * Connectivity from the live relay pool and outbox: Online when at least one relay is connected, On local
+ * Wi-Fi when the Wi-Fi room has [lanPeers].
+ */
+class LiveConnectivityMonitor(
+    pool: RelayPool,
+    outbox: Outbox,
+    scope: CoroutineScope,
+    configured: () -> Int,
+    lanPeers: Flow<Int> = flowOf(0),
+) : ConnectivityMonitor {
+    override val state: StateFlow<ConnectivityState> = combine(pool.status, outbox.waiting, lanPeers) { status, waiting, lan ->
         val connected = status.values.count { it == RelayStatus.CONNECTED }
         val available = buildSet {
             if (connected > 0) add(Carrier.ONLINE)
+            if (lan > 0) add(Carrier.NODE)
             add(Carrier.QR)
             add(Carrier.SAVED)
         }

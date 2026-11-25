@@ -34,6 +34,13 @@ class MainActivity : ComponentActivity(), PlatformActions {
         if (granted) deliverLastKnownLocation(callback) else callback(null, null)
     }
 
+    private var pendingMicrophone: ((Boolean) -> Unit)? = null
+
+    private val microphonePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        pendingMicrophone?.invoke(granted)
+        pendingMicrophone = null
+    }
+
     private var pendingSave: Pair<String, (Boolean) -> Unit>? = null
     private var pendingOpen: ((String?) -> Unit)? = null
 
@@ -76,8 +83,11 @@ class MainActivity : ComponentActivity(), PlatformActions {
         super.onStart()
         val container = (application as HarkaraApplication).container
         container.foreground = true
-        // Relays run only while the app is visible (or during a WorkManager sync): battery rule, §4.
-        if (container.settings.state.value.onboarded) container.startRelays()
+        // Relays and the Wi-Fi room run only while the app is visible (or during a WorkManager sync): battery rule, §4.
+        if (container.settings.state.value.onboarded) {
+            container.startRelays()
+            container.startLan()
+        }
         // At most once a day, and only while the app is open and online (§5.5).
         if (isOnline()) {
             lifecycleScope.launch { (application as HarkaraApplication).container.updateChecker.checkIfDue() }
@@ -89,6 +99,7 @@ class MainActivity : ComponentActivity(), PlatformActions {
         val container = (application as HarkaraApplication).container
         container.foreground = false
         container.stopRelays()
+        container.stopLan()
     }
 
     private fun isOnline(): Boolean {
@@ -116,6 +127,15 @@ class MainActivity : ComponentActivity(), PlatformActions {
         } else {
             pendingLocation = onResult
             locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+    }
+
+    override fun requestMicrophone(onResult: (granted: Boolean) -> Unit) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            onResult(true)
+        } else {
+            pendingMicrophone = onResult
+            microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
