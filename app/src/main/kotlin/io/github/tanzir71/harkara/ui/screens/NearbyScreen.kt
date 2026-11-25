@@ -62,6 +62,7 @@ fun NearbyScreen(
     onSearch: () -> Unit = {},
     onVote: (postId: String, up: Boolean) -> Unit = { _, _ -> },
     onMore: (postId: String) -> Unit = {},
+    alerts: (@Composable () -> Unit)? = null,
 ) {
     val c = HarkaraTheme.colors
     var mode by rememberSaveable { mutableIntStateOf(0) }
@@ -113,6 +114,7 @@ fun NearbyScreen(
                     }
                 }
             }
+            if (alerts != null) item { Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { alerts() } }
             if (update != null) {
                 item { UpdateCard(update, onGetUpdate, onDismissUpdate, Modifier.padding(horizontal = 16.dp)) }
             }

@@ -52,6 +52,12 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE kind = 3471 AND target IN (:offerIds)")
     suspend fun stepsFor(offerIds: List<String>): List<EventEntity>
 
+    @Query("SELECT * FROM events WHERE kind IN (:kinds) ORDER BY createdAt DESC LIMIT 500")
+    fun observeKinds(kinds: List<Int>): Flow<List<EventEntity>>
+
+    @Query("SELECT * FROM events WHERE kind IN (:kinds) ORDER BY createdAt DESC LIMIT 500")
+    suspend fun byKinds(kinds: List<Int>): List<EventEntity>
+
     @Query("SELECT * FROM events WHERE kind = :kind ORDER BY createdAt DESC")
     suspend fun byKind(kind: Int): List<EventEntity>
 

@@ -85,8 +85,8 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail }
-private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle }
+private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, Prayer, Torch, Handbook, HandbookPage }
+private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle, Sos }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -145,6 +145,31 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
         if (settings.displayName != null) action() else { afterName = action; sheet = Sheet.Name }
     }
     val taskOp: (suspend () -> Unit) -> Unit = { op -> scope.launch { op() } }
+    val ownSos by remember(settings.onboarded, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) container.sosRepository.activeOwn() else flowOf(null)
+    }.collectAsStateWithLifecycle(null)
+    val incomingSos by remember(center, settings.onboarded, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) container.sosRepository.incoming(center) else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    LaunchedEffect(center, settings.onboarded, relayStatus.size, profilePubkey) { if (settings.onboarded && profilePubkey != null) container.sosRepository.subscribe(center) }
+    LaunchedEffect(incomingSos.firstOrNull()?.event?.id) {
+        // Sound only when the user turned emergency alerts on (§4: no sound otherwise).
+        if (incomingSos.isNotEmpty() && settings.emergencyAlerts) {
+            val tone = io.github.tanzir71.harkara.tools.ToneSiren()
+            tone.beep(1500)
+            kotlinx.coroutines.delay(1600)
+            tone.stop()
+        }
+    }
+    var sosWait by remember { mutableStateOf(0) }
+    var handbookSection by remember { mutableStateOf<io.github.tanzir71.harkara.tools.HandbookSection?>(null) }
+    val language = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language
+    val dial999: () -> Unit = { platform.openUrl("tel:999") }
+    val toggleModule: (io.github.tanzir71.harkara.settings.Module, Boolean) -> Unit = { module, on ->
+        container.settings.setModule(module, on)
+        // Lite mode checks every 60 minutes instead of 30 (§4.1).
+        if (module == io.github.tanzir71.harkara.settings.Module.LITE_MODE) RelaySyncWorker.schedule(context, if (on) 60 else 30)
+    }
     val ious by remember(settings.onboarded) {
         if (settings.onboarded) container.khataRepository.ious() else flowOf(emptyList())
     }.collectAsStateWithLifecycle(emptyList())
@@ -176,7 +201,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
 
     val comingSoon: () -> Unit = { scope.launch { snackbar.showSnackbar(context.getString(R.string.coming_soon)) } }
     val say: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
-    val pill = PillActions(onClick = { sheet = Sheet.Connectivity })
+    val pill = PillActions(onClick = { sheet = Sheet.Connectivity }, onLongClick = { sheet = Sheet.Sos })
 
     HarkaraTheme {
         val c = HarkaraTheme.colors
@@ -202,7 +227,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                 when (page) {
                     Page.Modules -> ModulesScreen(
                         settings,
-                        onToggle = container.settings::setModule,
+                        onToggle = toggleModule,
                         onBack = { page = Page.Tabs },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
@@ -223,6 +248,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         onOpenSource = { platform.openUrl(REPO_URL) },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                         onRelays = { page = Page.Relays },
+                        onEmergencyAlerts = container.settings::setEmergencyAlerts,
                     )
                     Page.Relays -> RelaysScreen(
                         relays = container.relays(),
@@ -233,6 +259,42 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         onBack = { page = Page.Settings },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
+                    Page.Prayer -> {
+                        val today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Dhaka"))
+                        io.github.tanzir71.harkara.ui.screens.PrayerScreen(
+                            day = io.github.tanzir71.harkara.core.tools.PrayerTimesCalc.forDay(center.lat, center.lng, today),
+                            qibla = io.github.tanzir71.harkara.core.tools.PrayerTimesCalc.qibla(center.lat, center.lng),
+                            place = settings.areaName ?: context.getString(R.string.nearby_near_you),
+                            now = java.time.Instant.now(),
+                            onBack = { page = Page.Tabs },
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        )
+                    }
+                    Page.Torch -> {
+                        val mode by container.lights.mode.collectAsStateWithLifecycle()
+                        val lit by container.lights.lit.collectAsStateWithLifecycle()
+                        io.github.tanzir71.harkara.ui.screens.TorchScreen(
+                            mode = mode, lit = lit, torchAvailable = remember { io.github.tanzir71.harkara.tools.CameraTorch(context).available },
+                            onMode = { container.lights.start(it) }, onLeave = { container.lights.stop() }, onBack = { page = Page.Tabs },
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        )
+                    }
+                    Page.Handbook -> io.github.tanzir71.harkara.ui.screens.HandbookScreen(
+                        sections = container.handbook.index.sections,
+                        numbers = container.handbook.index.emergencyNumbers,
+                        language = language,
+                        onOpen = { handbookSection = it; page = Page.HandbookPage },
+                        onCall = { n -> platform.openUrl("tel:" + n.filter { it.isDigit() }) },
+                        onBack = { page = Page.Tabs },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.HandbookPage -> handbookSection?.let { s ->
+                        io.github.tanzir71.harkara.ui.screens.HandbookPage(
+                            markdown = remember(s, language) { container.handbook.page(s, language) },
+                            onBack = { page = Page.Handbook },
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        )
+                    }
                     Page.TaskDetail -> if (openTask == null) {
                         LaunchedEffect(Unit) { page = Page.Tabs }
                     } else {
@@ -282,6 +344,26 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
                                 onCompose = { composeVerdict = null; sheet = Sheet.Compose },
                                 onSearch = comingSoon,
+                                alerts = if (ownSos == null && incomingSos.isEmpty()) null else ({
+                                    ownSos?.let { sos ->
+                                        io.github.tanzir71.harkara.ui.screens.ActiveSosBanner(
+                                            onResolve = { taskOp { container.sosRepository.resolve(sos, io.github.tanzir71.harkara.core.tools.SosStatus.RESOLVED) } },
+                                            onFalseAlarm = { taskOp { container.sosRepository.resolve(sos, io.github.tanzir71.harkara.core.tools.SosStatus.FALSE_ALARM) } },
+                                        )
+                                    }
+                                    incomingSos.take(3).forEach { s ->
+                                        io.github.tanzir71.harkara.ui.screens.SosAlertCard(
+                                            message = s.event.content.ifBlank { context.getString(R.string.sos_incoming) },
+                                            detail = context.getString(
+                                                R.string.sos_incoming_detail,
+                                                s.event.tagValue("name") ?: io.github.tanzir71.harkara.ui.screens.shortKey(s.event.pubkey),
+                                                s.distanceMeters?.let { io.github.tanzir71.harkara.core.geo.GeoMath.distanceLabel(it) } ?: "—",
+                                                io.github.tanzir71.harkara.ui.screens.hhmm(s.event.createdAt),
+                                            ),
+                                            onCall999 = dial999,
+                                        )
+                                    }
+                                }),
                                 onVote = { id, up -> feedItems.firstOrNull { it.post.id == id }?.let { scope.launch { container.feedRepository.vote(it.post, up) } } },
                                 onMore = { id -> sheetPostId = id; sheet = Sheet.CardActions },
                             )
@@ -324,8 +406,15 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 update = visibleUpdate,
                                 onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
-                                onTool = { comingSoon() },
-                                onToggleModule = container.settings::setModule,
+                                onTool = { tool ->
+                                    when (tool.module) {
+                                        io.github.tanzir71.harkara.settings.Module.QIBLA_PRAYER -> page = Page.Prayer
+                                        io.github.tanzir71.harkara.settings.Module.TORCH_TOOLS -> page = Page.Torch
+                                        io.github.tanzir71.harkara.settings.Module.HANDBOOK -> page = Page.Handbook
+                                        else -> comingSoon()
+                                    }
+                                },
+                                onToggleModule = toggleModule,
                                 onAllModules = { page = Page.Modules },
                                 onSettings = { page = Page.Settings },
                                 onLogoTripleTap = { sheet = Sheet.PanicWipe },
@@ -511,6 +600,23 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onSave = { method, trx ->
                                     sheet = Sheet.None
                                     taskOp { container.khataRepository.recordSettlement(s, io.github.tanzir71.harkara.core.khata.Settlement(method.wire, s.terms.amount, trx)) }
+                                },
+                            )
+                        }
+                        Sheet.Sos -> {
+                            LaunchedEffect(Unit) { sosWait = if (profilePubkey != null) container.sosRepository.waitMinutes() else 0 }
+                            io.github.tanzir71.harkara.ui.screens.SosSheetContent(
+                                waitMinutes = sosWait,
+                                onCall999 = dial999,
+                                onSend = { reason, alsoSms ->
+                                    sheet = Sheet.None
+                                    taskOp {
+                                        val sent = container.sosRepository.send(reason, center, settings.displayName)
+                                        if (sent != null) {
+                                            snackbar.showSnackbar(context.getString(R.string.sos_sent))
+                                            if (alsoSms) platform.composeSms(context.getString(R.string.sos_sms_text, (settings.displayName ?: "a neighbour").filter { it.code < 128 }.ifBlank { "a neighbour" }, (settings.areaName ?: "Dhaka").filter { it.code < 128 }))
+                                        }
+                                    }
                                 },
                             )
                         }

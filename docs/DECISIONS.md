@@ -49,3 +49,6 @@ ame; MapLibre's support for Bangla glyph shaping is listed in HARDWARE.md as unv
 - 2026-11-25: Display names travel as a 
 ame tag on task offers and accepts (and later IOUs) so they show on phones that never saw a kind-0 profile; names are free text without digits in the UI.
 - 2026-11-25: Reputation uses NIP-51-style verified-contact lists (owner → keys verified in person); until verified contacts exist, only tasks the viewer took part in count.
+- 2026-11-25: Prayer times use Adhan-Java 1.2.1 (MIT) in core with the Karachi method and Hanafi Asr by default; Qibla uses Adhan's great-circle bearing.
+- 2026-11-25: The SOS hold is a custom 3-second press on the connectivity pill with a filling ring (a completed hold doesn't also count as a tap); accessibility services get a long-press action for it.
+- 2026-11-25: Incoming SOS cards show within 10 km of the area centre and go silent unless the user turns on "Emergency alerts sound" (off by default); SosPolicy drops repeats inside 30 minutes and muted keys.

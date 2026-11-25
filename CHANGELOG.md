@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 (unreleased)
+
+Tools and safety.
+
+- **SOS**: hold the connectivity pill for 3 seconds. **Call 999** comes first; **Send SOS** puts your SOS and location on every open route at top priority (optionally also by SMS from your SMS app). One SOS per 30 minutes; mark it **I'm safe now** or **False alarm**. SOS from people within 10 km show as cards with Call 999; they make a sound only if you turn on Emergency alerts.
+- **Emergency handbook** in Bangla and English, offline: 42 sections on first aid, floods, cyclones, fire, earthquakes, power cuts, crowds and a go-bag, plus Bangladesh's emergency numbers (999 first).
+- **Prayer times and Qibla** for your area, Karachi method with Hanafi Asr.
+- **Torch, strobe, Morse SOS and siren**; everything stops when you leave the screen (the screen flashes if the phone has no controllable torch).
+- **Lite mode** checks for news every 60 minutes instead of 30.
 ## 0.7.0 (unreleased)
 
 Khata: IOUs both people sign.
