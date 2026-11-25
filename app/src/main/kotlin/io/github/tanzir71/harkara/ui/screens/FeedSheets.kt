@@ -62,11 +62,13 @@ fun CardActionsSheetContent(
     onBlock: () -> Unit,
     onMuteWord: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onFetch: (() -> Unit)? = null,
 ) {
     val c = HarkaraTheme.colors
     var word by remember { mutableStateOf("") }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.card_actions_title), style = HarkaraTheme.type.title, color = c.textPrimary, modifier = Modifier.semantics { heading() })
+        if (onFetch != null) HButton(stringResource(R.string.task_fetch), onFetch, Modifier.fillMaxWidth(), variant = HButtonVariant.Accent, icon = R.drawable.ic_tasks)
         Text(stringResource(R.string.card_report), style = HarkaraTheme.type.headline, color = c.textPrimary)
         Text(stringResource(R.string.card_report_body), style = HarkaraTheme.type.caption, color = c.textSecondary)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

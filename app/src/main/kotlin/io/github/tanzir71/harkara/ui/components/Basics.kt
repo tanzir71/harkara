@@ -328,6 +328,12 @@ fun HToggle(
     }
 }
 
+/** "Sumon Ahmed" → "SA", "Rafi" → "RA". */
+fun initialsOf(name: String): String {
+    val words = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    return if (words.size >= 2) "${words[0].first()}${words[1].first()}" else name.trim().take(2)
+}
+
 /** Initials avatar; a live ring in state/online when the person is sharing location. */
 @Composable
 fun Avatar(initials: String, modifier: Modifier = Modifier, size: Dp = 40.dp, live: Boolean = false) {

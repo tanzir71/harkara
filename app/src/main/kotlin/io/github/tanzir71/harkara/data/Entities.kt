@@ -74,3 +74,11 @@ data class MuteEntity(
         const val WORD = "word"
     }
 }
+
+/** Private values that must never leave the phone (e.g. handoff tokens before they are shown). */
+@Entity(tableName = "local_secrets")
+data class LocalSecretEntity(
+    @PrimaryKey val key: String,
+    val value: String,
+    val createdAt: Long,
+)

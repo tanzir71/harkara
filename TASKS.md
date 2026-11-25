@@ -52,8 +52,8 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M7 - Tasks (v0.6.0)
 
-- [ ] NIP-99 offers, task types, signed steps + roles, countersigned accept, handoff token (QR + 6 digits, offline), proof thumbnail, disputes, ratings, reputation, Stock → task.
-- [ ] Gate: state machine + offline handoff tests; screen 05 screenshot.
+- [x] NIP-99 offers, task types, signed steps + roles, countersigned accept, handoff token (QR + 6 digits, offline), proof thumbnail, disputes, ratings, reputation, Stock → task.
+- [x] Gate: state machine + offline handoff tests; screen 05 screenshot.
 
 ## M8 - Khata (v0.7.0)
 

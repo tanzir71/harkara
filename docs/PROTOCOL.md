@@ -193,3 +193,29 @@ The pool connects to data/default-relays.json (three required relays + four chos
 The area feed subscribes to kind 1 with #g = the area's geohash-5 cell and its 8 neighbours, since = 2 days. On relays that list NIP-77, the app first runs a negentropy reconciliation (NEG-OPEN with the same filter and the (created_at, id) pairs it already holds) and then REQs only the missing ids. core/relay/LocalRelay is the same NIP-01 logic without I/O, used by the LAN room and node.
 
 Storage budget: other people's events are capped at 20 MB (oldest received first are dropped) and media at 100 MB; expired posts are purged; the user's own events are never auto-cleared.
+## 13. Tasks
+
+A task offer is NIP-99 kind 30402 signed by the requester's profile key: d, 	itle, summary, published_at, price (["price", "120", "BDT"]), status, 	 = harkara-task and the type (pickup, uy, print, rrand — schemas in data/task-types.json), g at precision 7/6/5, ["field", key, value] for the type's fields, xpiration (24 h by default) and an optional 
+ame.
+
+Steps are kind 3471 with ["a", "30402:<requester>:<d>"], ["e", <offer id>], ["step", …] and p = the other side:
+
+| Step | Who | From | To / effect |
+|---|---|---|---|
+| ccept | anyone but the requester | open | adds a pending offer to help (optional 
+ame) |
+| confirm | requester | open | accepted; needs ["e", <accept id>, "", "accept"] and ["handoff", <commitment>] |
+| decline | runner | accepted | open again |
+| picked_up | runner | accepted | picked up |
+| delivered | runner | accepted, picked up | delivered; needs ["token", <signed token JSON>] or ["code", <6 digits>] |
+| paid | requester | delivered | marks paid by requester; content = NIP-44 to the runner {method, amount, trxId} |
+| paid_ack | runner | delivered + paid | paid |
+| ated | either side, once | delivered, paid | ["rating", 1–5] |
+| cancel | requester | open, accepted, picked up | cancelled |
+| dispute | either side | accepted … paid | disputed; ["reason", item_issue / payment_issue / delivery_issue / safety_or_policy / other] |
+
+Every phone computes the state with TaskStateMachine: steps in time order (lifecycle order for ties), retried until nothing changes; wrong author, wrong state, bad signature or bad proof → dropped. Open offers past xpiration are expired.
+
+Handoff token: kind 3472 signed by the requester, ["a", <offer address>], ["p", <runner>], ["nonce", …]. It's created at confirm and stays on the requester's phone; shown as a QR (harkara:handoff:<token JSON>, checked by signature offline) or as 6 digits = SHA-256("harkara-handoff:" + sig) mod 10^6, checked against the confirm commitment scrypt(code, "harkara-handoff|<address>|<runner>", N=2^14, r=8, p=1). A token or code delivers a task once.
+
+Reputation counts tasks done as runner and ratings received only from keys within two steps of the viewer's verified contacts.

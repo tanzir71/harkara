@@ -82,8 +82,8 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays }
-private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions }
+private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail }
+private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -119,6 +119,29 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     }.collectAsStateWithLifecycle(emptyList())
     val relayStatus by container.relayPool.status.collectAsStateWithLifecycle()
     val presenter = rememberFeedPresenter(container.areas)
+    var openTaskId by rememberSaveable { mutableStateOf<String?>(null) }
+    var taskDraft by remember { mutableStateOf<Pair<String, Map<String, String>>?>(null) }
+    var handoffWrong by remember { mutableStateOf(false) }
+    var afterName by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val taskStates by remember(center, settings.onboarded) {
+        if (settings.onboarded) container.taskRepository.tasks(center) else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    LaunchedEffect(center, settings.onboarded, relayStatus.size, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) container.taskRepository.subscribeArea(center)
+    }
+    LaunchedEffect(taskStates.map { it.offer.event.id }) { container.taskRepository.subscribeSteps(taskStates.map { it.offer.event.id }) }
+    val openTask = taskStates.firstOrNull { it.offer.event.id == openTaskId }
+    var handoff by remember { mutableStateOf<io.github.tanzir71.harkara.tasks.HandoffDisplay?>(null) }
+    LaunchedEffect(openTask?.status, openTaskId) { handoff = openTask?.let { container.taskRepository.handoffFor(it.offer) } }
+    val trusted = remember(profilePubkey) { setOfNotNull(profilePubkey) }
+    val reputation: (String) -> io.github.tanzir71.harkara.core.tasks.Reputation? = { pk ->
+        io.github.tanzir71.harkara.core.tasks.ReputationRules.of(pk, taskStates, trusted).takeIf { it.done > 0 || it.ratingCount > 0 }
+    }
+    /** Runs [action] now if the user has a name, otherwise asks for one first (§4: name only when needed). */
+    val withName: (() -> Unit) -> Unit = { action ->
+        if (settings.displayName != null) action() else { afterName = action; sheet = Sheet.Name }
+    }
+    val taskOp: (suspend () -> Unit) -> Unit = { op -> scope.launch { op() } }
     val connectedRelays = relayStatus.values.count { it == io.github.tanzir71.harkara.relay.RelayStatus.CONNECTED }
     LaunchedEffect(center, settings.onboarded, relayStatus.size) { if (settings.onboarded) container.feedRepository.subscribeArea(center) }
     LaunchedEffect(center, settings.onboarded, connectedRelays) { if (settings.onboarded && connectedRelays > 0) container.feedRepository.catchUp(center) }
@@ -183,6 +206,40 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         onBack = { page = Page.Settings },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
+                    Page.TaskDetail -> if (openTask == null) {
+                        LaunchedEffect(Unit) { page = Page.Tabs }
+                    } else {
+                        io.github.tanzir71.harkara.ui.screens.TaskDetailScreen(
+                            state = openTask,
+                            me = profilePubkey,
+                            types = container.taskTypes,
+                            connectivity = connectivity,
+                            next = container.taskRepository.nextAction(openTask),
+                            handoff = handoff,
+                            reputation = reputation,
+                            pill = pill,
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                            actions = io.github.tanzir71.harkara.ui.screens.TaskActions(
+                                onBack = { page = Page.Tabs },
+                                onAction = { action ->
+                                    when (action) {
+                                        io.github.tanzir71.harkara.tasks.TaskAction.ACCEPT -> withName { taskOp { container.taskRepository.accept(openTask.offer) } }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.CONFIRM_RUNNER -> taskOp { container.taskRepository.confirm(openTask.offer, openTask.pendingAccepts.first()) }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.PICKED_UP -> taskOp { container.taskRepository.pickedUp(openTask.offer) }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.ENTER_CODE -> { handoffWrong = false; sheet = Sheet.HandoffEntry }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.RECORD_PAYMENT -> sheet = Sheet.Payment
+                                        io.github.tanzir71.harkara.tasks.TaskAction.CONFIRM_PAYMENT -> taskOp { container.taskRepository.confirmPayment(openTask) }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.RATE -> sheet = Sheet.Rate
+                                    }
+                                },
+                                onChoose = { accept -> taskOp { container.taskRepository.confirm(openTask.offer, accept) } },
+                                onProblem = { sheet = Sheet.Dispute },
+                                onCancel = { taskOp { container.taskRepository.cancel(openTask) } },
+                                onDecline = { taskOp { container.taskRepository.decline(openTask) } },
+                                onMessage = { comingSoon() },
+                            ),
+                        )
+                    }
                     Page.Tabs -> Column(Modifier.fillMaxSize()) {
                         val content = Modifier.weight(1f).statusBarsPadding()
                         when (tab) {
@@ -202,7 +259,17 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onMore = { id -> sheetPostId = id; sheet = Sheet.CardActions },
                             )
                             HarkaraTab.Chats -> ChatsScreen(connectivity, content, pill)
-                            HarkaraTab.Tasks -> TasksScreen(connectivity, content, pill)
+                            HarkaraTab.Tasks -> TasksScreen(
+                                states = taskStates,
+                                me = profilePubkey,
+                                types = container.taskTypes,
+                                connectivity = connectivity,
+                                modifier = content,
+                                pill = pill,
+                                reputation = reputation,
+                                onOpen = { openTaskId = it.offer.event.id; page = Page.TaskDetail },
+                                onNew = { withName { taskDraft = null; sheet = Sheet.TaskCompose } },
+                            )
                             HarkaraTab.Khata -> KhataScreen(connectivity, content, pill)
                             HarkaraTab.Me -> MeScreen(
                                 settings = settings,
@@ -300,8 +367,63 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                     scope.launch { container.feedRepository.muteWord(word) }
                                     say(context.getString(R.string.card_muted, word))
                                 },
+                                onFetch = item?.takeIf { it.post.category == io.github.tanzir71.harkara.core.Category.STOCK }?.let { stock ->
+                                    {
+                                        val ui = presenter.toUi(stock, System.currentTimeMillis() / 1000)
+                                        val place = container.areas.nearest(stock.post.location.lat, stock.post.location.lng).name
+                                        taskDraft = (context.getString(R.string.task_fetch) + ": " + (ui.detail ?: stock.post.text.take(40))) to
+                                            mapOf("store" to place, "items" to stock.post.text.take(200))
+                                        withName { sheet = Sheet.TaskCompose }
+                                    }
+                                },
                             )
                         }
+                        Sheet.TaskCompose -> io.github.tanzir71.harkara.ui.screens.TaskComposeSheetContent(
+                            types = container.taskTypes,
+                            initialType = if (taskDraft != null) "buy" else container.taskTypes.types.first().id,
+                            initialTitle = taskDraft?.first.orEmpty(),
+                            initialFields = taskDraft?.second.orEmpty(),
+                            onPost = { type, title, price, fields, description ->
+                                sheet = Sheet.None
+                                taskOp {
+                                    container.taskRepository.post(type, title, price, fields, description, center)
+                                    snackbar.showSnackbar(context.getString(R.string.task_posted))
+                                }
+                                tab = HarkaraTab.Tasks
+                            },
+                        )
+                        Sheet.HandoffEntry -> io.github.tanzir71.harkara.ui.screens.HandoffEntrySheetContent(
+                            wrong = handoffWrong,
+                            onCheck = { entered ->
+                                val state = openTask
+                                if (state != null) taskOp {
+                                    if (container.taskRepository.deliver(state, entered)) {
+                                        sheet = Sheet.None
+                                        snackbar.showSnackbar(context.getString(R.string.task_delivered_toast))
+                                    } else {
+                                        handoffWrong = true
+                                    }
+                                }
+                            },
+                        )
+                        Sheet.Payment -> io.github.tanzir71.harkara.ui.screens.PaymentSheetContent(
+                            amount = openTask?.offer?.price ?: 0,
+                            onSave = { method, trx -> sheet = Sheet.None; openTask?.let { s -> taskOp { container.taskRepository.recordPayment(s, method, trx) } } },
+                        )
+                        Sheet.Rate -> io.github.tanzir71.harkara.ui.screens.RateSheetContent(
+                            onRate = { stars -> sheet = Sheet.None; openTask?.let { s -> taskOp { container.taskRepository.rate(s, stars) } } },
+                        )
+                        Sheet.Dispute -> io.github.tanzir71.harkara.ui.screens.DisputeSheetContent(
+                            onSend = { reason, note -> sheet = Sheet.None; openTask?.let { s -> taskOp { container.taskRepository.dispute(s, reason, note) } } },
+                        )
+                        Sheet.Name -> io.github.tanzir71.harkara.ui.screens.NameSheetContent(
+                            onSave = { name ->
+                                container.settings.setDisplayName(name)
+                                sheet = Sheet.None
+                                afterName?.invoke()
+                                afterName = null
+                            },
+                        )
                         Sheet.None -> Unit
                     }
                 }

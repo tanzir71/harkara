@@ -44,3 +44,8 @@ et.zetetic:sqlcipher-android 4.10.0: 4.20.0 requires compileSdk 36 and the hando
 ame:bn first, falling back to 
 ame; MapLibre's support for Bangla glyph shaping is listed in HARDWARE.md as unverified.
 - 2026-11-25: The emergency handbook (data/handbook, 42 sections, en + bn, ~365 KB) ships inside the APK because the Handbook module is on by default and must work with no network; only further translations would be downloads. Handbook pages use the polite আপনি form (public-safety convention); app UI strings use তুমি.
+- 2026-11-25: Task steps are replayed in time order with lifecycle order breaking ties, and steps that aren't valid yet are retried until nothing changes, so a countersign made in the same second as the accept (or from a phone whose clock is behind) still counts.
+- 2026-11-25: The 6-digit handoff code is derived from the requester's signed token; the requester commits to scrypt(code, task address + runner, N=2^14) in the countersign step, so the runner's phone checks a typed code offline while trying all million codes stays impractically slow. The token itself never leaves the requester's phone except as the QR (kept in the local_secrets table, never sent by any carrier).
+- 2026-11-25: Display names travel as a 
+ame tag on task offers and accepts (and later IOUs) so they show on phones that never saw a kind-0 profile; names are free text without digits in the UI.
+- 2026-11-25: Reputation uses NIP-51-style verified-contact lists (owner → keys verified in person); until verified contacts exist, only tasks the viewer took part in count.

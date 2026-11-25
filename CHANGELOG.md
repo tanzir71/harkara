@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 (unreleased)
+
+Tasks: local errands with signed steps and an offline handoff.
+
+- **Tasks** tab: your tasks (posted or running) and open tasks near you. **New task** with schema-driven types from litegig (Pickup, Buy and bring, Photocopy / print, Errand), a price in taka and the type's fields. Your name is asked the first time you post or take a task — never a phone number.
+- Every step is signed: offer to help → the requester **chooses** you (the accept only counts once they countersign) → picked up → delivered → paid → rated. Each phone replays the steps itself; only the right person can make each step, anything else is ignored.
+- **Offline handoff**: the requester's phone shows a QR (their signed, single-use token) and 6 digits. The runner scans the QR or types the digits and their phone checks it with every radio off, then marks the task delivered.
+- **Record payment** as cash or a bKash/Nagad TrxID (encrypted to the runner); the runner confirms, so both sign. Ratings both ways; **Problem** pauses the task with a reason (item, payment, delivery, safety, other).
+- Reputation ("38 done") counts only people within two steps of your verified contacts.
+- A Stock post's menu has **Ask someone to fetch it**, which starts a Buy-and-bring task.
 ## 0.3.0
 
 The Nearby feed is live over public relays, and keeps working offline from what the phone already holds.

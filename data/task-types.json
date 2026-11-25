@@ -1,0 +1,41 @@
+{
+ "source": "litegig task type schemas (Delivery, Buy-and-Bring, Errand) adapted for Dhaka",
+ "types": [
+  {
+   "id": "pickup",
+   "label": { "en": "Pickup", "bn": "পিকআপ" },
+   "fields": [
+    { "key": "from", "label": { "en": "Pick up from", "bn": "কোথা থেকে" }, "required": true },
+    { "key": "to", "label": { "en": "Bring to", "bn": "কোথায় দেবে" }, "required": true },
+    { "key": "note", "label": { "en": "Note for the runner", "bn": "রানারের জন্য নোট" }, "multiline": true }
+   ]
+  },
+  {
+   "id": "buy",
+   "label": { "en": "Buy and bring", "bn": "কিনে আনা" },
+   "fields": [
+    { "key": "store", "label": { "en": "Shop or market", "bn": "দোকান বা বাজার" }, "required": true },
+    { "key": "items", "label": { "en": "What to buy", "bn": "কী কিনবে" }, "required": true, "multiline": true },
+    { "key": "budget", "label": { "en": "Budget for the items (৳)", "bn": "জিনিসের বাজেট (৳)" } },
+    { "key": "to", "label": { "en": "Bring to", "bn": "কোথায় দেবে" }, "required": true }
+   ]
+  },
+  {
+   "id": "print",
+   "label": { "en": "Photocopy / print", "bn": "ফটোকপি / প্রিন্ট" },
+   "fields": [
+    { "key": "shop", "label": { "en": "Shop", "bn": "দোকান" }, "required": true },
+    { "key": "copies", "label": { "en": "What and how many", "bn": "কী, কয় কপি" }, "required": true },
+    { "key": "to", "label": { "en": "Bring to", "bn": "কোথায় দেবে" }, "required": true }
+   ]
+  },
+  {
+   "id": "errand",
+   "label": { "en": "Errand", "bn": "কাজ" },
+   "fields": [
+    { "key": "where", "label": { "en": "Where", "bn": "কোথায়" }, "required": true },
+    { "key": "instructions", "label": { "en": "What needs doing", "bn": "কী করতে হবে" }, "required": true, "multiline": true }
+   ]
+  }
+ ]
+}
