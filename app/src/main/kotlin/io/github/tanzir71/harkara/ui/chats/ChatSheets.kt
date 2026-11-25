@@ -205,15 +205,15 @@ fun NamePromptSheetContent(onSave: (String) -> Unit, onSkip: () -> Unit, modifie
     val verdict = ChatProtocol.checkName(name)
     val error = when {
         name.isBlank() -> null
-        verdict == ChatVerdict.PHONE_NUMBER -> stringResource(R.string.name_phone)
-        verdict == ChatVerdict.TOO_LONG -> stringResource(R.string.name_long)
+        verdict == ChatVerdict.PHONE_NUMBER -> stringResource(R.string.chat_name_phone)
+        verdict == ChatVerdict.TOO_LONG -> stringResource(R.string.chat_name_long)
         else -> null
     }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.name_title), style = HarkaraTheme.type.title, color = c.textPrimary, modifier = Modifier.semantics { heading() })
-        Text(stringResource(R.string.name_body), style = HarkaraTheme.type.caption, color = c.textSecondary)
-        HTextField(name, { name = it }, stringResource(R.string.name_hint), error = error, imeAction = ImeAction.Done)
-        HButton(stringResource(R.string.name_save), { onSave(name.trim()) }, Modifier.fillMaxWidth(), enabled = verdict == ChatVerdict.OK)
-        HButton(stringResource(R.string.name_skip), onSkip, Modifier.fillMaxWidth(), variant = HButtonVariant.Ghost)
+        Text(stringResource(R.string.chat_name_title), style = HarkaraTheme.type.title, color = c.textPrimary, modifier = Modifier.semantics { heading() })
+        Text(stringResource(R.string.chat_name_body), style = HarkaraTheme.type.caption, color = c.textSecondary)
+        HTextField(name, { name = it }, stringResource(R.string.chat_name_hint), error = error, imeAction = ImeAction.Done)
+        HButton(stringResource(R.string.chat_name_save), { onSave(name.trim()) }, Modifier.fillMaxWidth(), enabled = verdict == ChatVerdict.OK)
+        HButton(stringResource(R.string.chat_name_skip), onSkip, Modifier.fillMaxWidth(), variant = HButtonVariant.Ghost)
     }
 }

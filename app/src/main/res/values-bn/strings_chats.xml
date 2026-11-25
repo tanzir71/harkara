@@ -103,11 +103,11 @@
     <string name="checkin_safe">আমি নিরাপদ</string>
 
     <!-- Name prompt -->
-    <string name="name_title">মানুষ তোমাকে কী নামে ডাকবে?</string>
-    <string name="name_body">শুধু যাদের মেসেজ করো তারাই দেখে। কখনো তোমার ফোন নম্বর নয়।</string>
-    <string name="name_hint">তোমার নাম</string>
-    <string name="name_save">রাখো আর পাঠাও</string>
-    <string name="name_skip">নাম ছাড়াই পাঠাও</string>
-    <string name="name_phone">নামে ফোন নম্বর থাকতে পারে না</string>
-    <string name="name_long">৩২ অক্ষরের মধ্যে রাখো</string>
+    <string name="chat_name_title">মানুষ তোমাকে কী নামে ডাকবে?</string>
+    <string name="chat_name_body">শুধু যাদের মেসেজ করো তারাই দেখে। কখনো তোমার ফোন নম্বর নয়।</string>
+    <string name="chat_name_hint">তোমার নাম</string>
+    <string name="chat_name_save">রাখো আর পাঠাও</string>
+    <string name="chat_name_skip">নাম ছাড়াই পাঠাও</string>
+    <string name="chat_name_phone">নামে ফোন নম্বর থাকতে পারে না</string>
+    <string name="chat_name_long">৩২ অক্ষরের মধ্যে রাখো</string>
 </resources>

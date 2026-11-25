@@ -2,6 +2,17 @@ package io.github.tanzir71.harkara.ui.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.onLongClick
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -103,7 +114,15 @@ fun carrierPillLabel(carrier: Carrier, meshPeers: Int = 0): String = when (carri
     Carrier.SAVED -> stringResource(R.string.pill_saved)
 }
 
-/** Connectivity pill: always names the highest rung that can reach people now. */
+/** Set when a hold completed, so the release that follows isn't also treated as a tap. */
+private class HoldFlag {
+    @Volatile var value: Boolean = false
+}
+
+/** How long the pill must be held to raise SOS. */
+const val SOS_HOLD_MS = 3_000L
+
+/** Connectivity pill: always names the highest rung that can reach people now. Hold 3 s for SOS. */
 @Composable
 fun ConnectivityPill(
     carrier: Carrier,
@@ -117,6 +136,11 @@ fun ConnectivityPill(
 ) {
     val c = HarkaraTheme.colors
     val label = labelOverride ?: carrierPillLabel(carrier, meshPeers)
+    val scope = rememberCoroutineScope()
+    val holdProgress = remember { Animatable(0f) }
+    val holdFired = remember { HoldFlag() }
+    val holdColor = c.stateSos
+    val holdHint = stringResource(R.string.sos_hold_hint)
     Row(
         modifier = modifier
             .heightIn(min = if (compact) 32.dp else 36.dp)
@@ -124,15 +148,37 @@ fun ConnectivityPill(
             .background(c.bgSurface)
             .border(1.dp, c.borderDefault, CircleShape)
             .then(
-                if (onClick != null || onLongClick != null) {
-                    Modifier.combinedClickable(onClick = { onClick?.invoke() }, onLongClick = onLongClick)
-                } else {
-                    Modifier
+                when {
+                    onLongClick != null -> Modifier.pointerInput(onClick, onLongClick) {
+                        // Tap opens the sheet; a 3-second hold raises SOS (handover §4), with a filling ring as feedback.
+                        detectTapGestures(
+                            onPress = {
+                                holdFired.value = false
+                                val hold = scope.launch {
+                                    holdProgress.snapTo(0f)
+                                    holdProgress.animateTo(1f, tween(SOS_HOLD_MS.toInt(), easing = LinearEasing))
+                                    holdFired.value = true
+                                    onLongClick()
+                                }
+                                tryAwaitRelease()
+                                hold.cancel()
+                                scope.launch { holdProgress.snapTo(0f) }
+                            },
+                            onTap = { if (!holdFired.value) onClick?.invoke() },
+                        )
+                    }
+                    onClick != null -> Modifier.clickable(role = Role.Button, onClick = onClick)
+                    else -> Modifier
                 },
             )
-            .semantics { contentDescription = label }
-            .padding(start = if (compact) 10.dp else 12.dp, end = if (compact) 10.dp else 14.dp, top = 6.dp, bottom = 6.dp)
-            .padding(vertical = if (compact) 0.dp else 2.dp),
+            .drawBehind {
+                if (holdProgress.value > 0f) drawArc(holdColor, -90f, 360f * holdProgress.value, useCenter = false, style = Stroke(3.dp.toPx()))
+            }
+            .semantics {
+                contentDescription = label
+                if (onLongClick != null) onLongClick(holdHint) { onLongClick(); true }
+            }
+            .padding(start = if (compact) 10.dp else 12.dp, end = if (compact) 10.dp else 14.dp, top = if (compact) 6.dp else 8.dp, bottom = if (compact) 6.dp else 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp),
     ) {
@@ -330,6 +376,12 @@ fun HToggle(
             )
         }
     }
+}
+
+/** "Sumon Ahmed" → "SA", "Rafi" → "RA". */
+fun initialsOf(name: String): String {
+    val words = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    return if (words.size >= 2) "${words[0].first()}${words[1].first()}" else name.trim().take(2)
 }
 
 /** Initials avatar; a live ring in state/online when the person is sharing location. */

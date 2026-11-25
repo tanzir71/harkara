@@ -20,11 +20,16 @@ class InMemoryChatPrefs(
     override var dmSyncedAt: Long = 0,
 ) : ChatPrefs
 
-/** [ChatPrefs] in the app's SharedPreferences, so panic wipe clears them with everything else. */
+/**
+ * [ChatPrefs] in the app's SharedPreferences, so panic wipe clears them with everything else. The name is
+ * the same one Tasks and Khata use.
+ */
 class SettingsChatPrefs(private val settings: AppSettings) : ChatPrefs {
     override var displayName: String?
-        get() = settings.getString(KEY_NAME)
-        set(value) = settings.putString(KEY_NAME, value)
+        get() = settings.state.value.displayName
+        set(value) {
+            if (!value.isNullOrBlank()) settings.setDisplayName(value)
+        }
 
     override var nameAsked: Boolean
         get() = settings.getString(KEY_NAME_ASKED) == "1"
@@ -35,7 +40,6 @@ class SettingsChatPrefs(private val settings: AppSettings) : ChatPrefs {
         set(value) = settings.putLong(KEY_DM_SYNC, value)
 
     private companion object {
-        const val KEY_NAME = "chat.display_name"
         const val KEY_NAME_ASKED = "chat.name_asked"
         const val KEY_DM_SYNC = "chat.dm_synced_at"
     }

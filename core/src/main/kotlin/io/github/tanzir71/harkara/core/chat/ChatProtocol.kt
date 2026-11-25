@@ -46,7 +46,7 @@ enum class ChatVerdict { OK, EMPTY, TOO_LONG, PHONE_NUMBER }
  * Harkara chats on NIP-17: kind 14 rumors (text and cards), kind 15 rumors (voice-note parts) and
  * [Kinds.RECEIPT] rumors, sealed and gift-wrapped to every member and to the sender. Public rooms are
  * signed kind 20000 events: the area channel (`g` = geohash-5, weekly area key) and the Wi-Fi room
- * (`t` = `wifi`, profile key). See docs/PROTOCOL.md §13.
+ * (`t` = `wifi`, profile key). See docs/PROTOCOL.md §15.
  */
 object ChatProtocol {
     /** Display name tag (bitchat's nickname convention); inside the encryption for private chats. */

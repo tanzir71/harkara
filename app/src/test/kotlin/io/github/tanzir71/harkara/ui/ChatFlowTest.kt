@@ -92,10 +92,16 @@ class ChatFlowTest {
         compose.onNodeWithContentDescription("Send").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("What should people call you?").assertIsDisplayed()
-        compose.onNodeWithText("Send without a name").performClick()
+        compose.onNodeWithContentDescription("Your name").performTextInput("Rafi 01711234567")
+        compose.onNodeWithText("A name can't contain a phone number").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Your name").performTextClearance()
+        compose.onNodeWithContentDescription("Your name").performTextInput("Rafi")
+        compose.onNodeWithText("Save and send").performClick()
         compose.waitUntil(15_000) { compose.onAllNodes(hasText("Hello from the hall")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Saved on this phone").assertIsDisplayed()
         assertTrue(container.chatRepository.prefs.nameAsked)
+        // One name for the whole app: Tasks and Khata use it too.
+        assertEquals("Rafi", container.settings.state.value.displayName)
 
         // The second message is not asked about again.
         compose.onNodeWithContentDescription(hint).performTextInput("Second one")
@@ -105,16 +111,35 @@ class ChatFlowTest {
         compose.onNodeWithText("Hello from the hall").performTouchInput { longClick() }
         compose.waitForIdle()
         compose.onNodeWithText("Make it a task").performClick()
-        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Coming soon")).fetchSemanticsNodes().isNotEmpty() }
+        // The task composer opens with the message as the task.
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("New task")).fetchSemanticsNodes().isNotEmpty() }
+        assertTrue(compose.onAllNodes(hasText("Hello from the hall", substring = true)).fetchSemanticsNodes().size >= 2)
+
+        val rows = runBlocking { container.chatRepository.conversations().first() }
+        assertEquals("Second one", rows.single().conversation.lastText)
+    }
+
+    @Test
+    fun `back from a thread returns to the list with the conversation on it`() {
+        val bob = Bech32.encodeNpub(KeyPair.generate().pubkeyHex)
+        container.chatRepository.prefs.nameAsked = true
+        compose.onNodeWithText("New chat").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Their key (npub1…)").performTextInput(bob)
+        compose.onNodeWithContentDescription("Name for them · only on this phone").performTextInput("Sumon")
+        compose.onNodeWithText("Start chat").performClick()
+        val hint = "Message · sends when a route opens"
+        compose.waitUntil(15_000) { compose.onAllNodes(hasContentDescription(hint)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription(hint).performTextInput("Are you home?")
+        compose.onNodeWithContentDescription("Send").performClick()
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Are you home?")).fetchSemanticsNodes().isNotEmpty() }
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodes(hasText("Messages")).fetchSemanticsNodes().isNotEmpty() &&
-                compose.onAllNodes(hasText("Second one")).fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodes(hasText("Are you home?")).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Second one").assertIsDisplayed()
-        val rows = runBlocking { container.chatRepository.conversations().first() }
-        assertEquals(1, rows.size)
+        compose.onNodeWithText("Sumon").assertIsDisplayed()
     }
 
     @Test

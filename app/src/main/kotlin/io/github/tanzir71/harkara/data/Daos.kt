@@ -39,6 +39,25 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE kind IN (7, 1984) AND target IN (:postIds)")
     suspend fun reactionsFor(postIds: List<String>): List<EventEntity>
 
+    /** Task offers nearby, my own, and the ones I took a step on. */
+    @Query(
+        """SELECT * FROM events WHERE kind = 30402 AND (geohash5 IN (:cells) OR own = 1
+           OR id IN (SELECT target FROM events WHERE kind = 3471 AND own = 1)) ORDER BY createdAt DESC LIMIT 200""",
+    )
+    fun observeTaskOffers(cells: List<String>): Flow<List<EventEntity>>
+
+    @Query("SELECT * FROM events WHERE kind = 3471 AND target IN (:offerIds)")
+    fun observeSteps(offerIds: List<String>): Flow<List<EventEntity>>
+
+    @Query("SELECT * FROM events WHERE kind = 3471 AND target IN (:offerIds)")
+    suspend fun stepsFor(offerIds: List<String>): List<EventEntity>
+
+    @Query("SELECT * FROM events WHERE kind IN (:kinds) ORDER BY createdAt DESC LIMIT 500")
+    fun observeKinds(kinds: List<Int>): Flow<List<EventEntity>>
+
+    @Query("SELECT * FROM events WHERE kind IN (:kinds) ORDER BY createdAt DESC LIMIT 500")
+    suspend fun byKinds(kinds: List<Int>): List<EventEntity>
+
     @Query("SELECT * FROM events WHERE kind = :kind ORDER BY createdAt DESC")
     suspend fun byKind(kind: Int): List<EventEntity>
 
@@ -101,4 +120,31 @@ interface MuteDao {
 
     @Query("SELECT * FROM mutes")
     fun observeAll(): Flow<List<MuteEntity>>
+}
+
+@Dao
+interface LocalSecretDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun put(secret: LocalSecretEntity)
+
+    @Query("SELECT value FROM local_secrets WHERE key = :key")
+    suspend fun get(key: String): String?
+
+    @Query("SELECT * FROM local_secrets WHERE key LIKE :prefix || '%'")
+    fun observePrefix(prefix: String): Flow<List<LocalSecretEntity>>
+}
+
+@Dao
+interface IouDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(iou: IouEntity)
+
+    @Query("SELECT * FROM ious WHERE id = :id")
+    suspend fun get(id: String): IouEntity?
+
+    @Query("SELECT * FROM ious ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<IouEntity>>
+
+    @Query("SELECT * FROM ious ORDER BY createdAt DESC")
+    suspend fun all(): List<IouEntity>
 }

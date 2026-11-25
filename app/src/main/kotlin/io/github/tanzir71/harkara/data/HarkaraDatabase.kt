@@ -11,11 +11,11 @@ import java.security.SecureRandom
 /** Room database for everything Harkara keeps on the phone; encrypted with SQLCipher on devices. */
 @Database(
     entities = [
-        EventEntity::class, OutboxEntity::class, RelayAckEntity::class, MuteEntity::class,
+        EventEntity::class, OutboxEntity::class, RelayAckEntity::class, MuteEntity::class, LocalSecretEntity::class, IouEntity::class,
         ConversationEntity::class, ChatMessageEntity::class, ChatWrapEntity::class, ChatReceiptEntity::class,
         VoicePartEntity::class, ContactEntity::class,
     ],
-    version = 3,
+    version = 5,
     exportSchema = false,
 )
 abstract class HarkaraDatabase : RoomDatabase() {
@@ -23,6 +23,8 @@ abstract class HarkaraDatabase : RoomDatabase() {
     abstract fun outboxDao(): OutboxDao
     abstract fun relayAckDao(): RelayAckDao
     abstract fun muteDao(): MuteDao
+    abstract fun localSecretDao(): LocalSecretDao
+    abstract fun iouDao(): IouDao
     abstract fun chatDao(): ChatDao
 
     companion object {

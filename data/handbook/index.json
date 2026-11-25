@@ -1,0 +1,370 @@
+{
+  "version": 1,
+  "updated": "2026-11-25",
+  "sources": [
+    { "title": "International First Aid, Resuscitation and Education Guidelines 2020", "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC)", "url": "https://www.ifrc.org/document/international-first-aid-resuscitation-and-education-guidelines" },
+    { "title": "First aid advice", "publisher": "St John Ambulance", "url": "https://www.sja.org.uk/get-advice/first-aid-advice/" },
+    { "title": "Diarrhoeal disease (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/diarrhoeal-disease" },
+    { "title": "The treatment of diarrhoea: a manual for physicians and other senior health workers", "publisher": "World Health Organization", "url": "https://www.who.int/publications/i/item/9241593180" },
+    { "title": "Cholera (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/cholera" },
+    { "title": "Dengue and severe dengue (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue" },
+    { "title": "Snakebite envenoming (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/snakebite-envenoming" },
+    { "title": "Guidelines for the management of snakebites, 2nd edition", "publisher": "World Health Organization, Regional Office for South-East Asia", "url": "https://www.who.int/publications/i/item/9789290225300" },
+    { "title": "Rabies (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/rabies" },
+    { "title": "Drowning (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/drowning" },
+    { "title": "Climate change and heat: health (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/climate-change-heat-and-health" },
+    { "title": "Epilepsy (fact sheet)", "publisher": "World Health Organization", "url": "https://www.who.int/news-room/fact-sheets/detail/epilepsy" },
+    { "title": "Signs and symptoms of stroke", "publisher": "US Centers for Disease Control and Prevention (CDC)", "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html" },
+    { "title": "Prevent carbon monoxide poisoning", "publisher": "US Centers for Disease Control and Prevention (CDC)", "url": "https://www.cdc.gov/natural-disasters/psa-toolkit/prevent-carbon-monoxide-poisoning.html" },
+    { "title": "Floods and your safety", "publisher": "US Centers for Disease Control and Prevention (CDC)", "url": "https://www.cdc.gov/floods/about/index.html" },
+    { "title": "Safety guidelines: floodwater", "publisher": "US Centers for Disease Control and Prevention (CDC)", "url": "https://www.cdc.gov/floods/safety/floodwater-after-a-disaster-or-emergency-safety.html" },
+    { "title": "Food safety during a power outage", "publisher": "FoodSafety.gov (US Department of Health and Human Services)", "url": "https://www.foodsafety.gov/food-safety-charts/food-safety-during-power-outage" },
+    { "title": "Drop, Cover, and Hold On", "publisher": "Great ShakeOut Earthquake Drills", "url": "https://www.shakeout.org/dropcoverholdon/" },
+    { "title": "Asthma attacks", "publisher": "Asthma + Lung UK", "url": "https://www.asthmaandlung.org.uk/conditions/asthma/asthma-attacks" },
+    { "title": "IVR 1090: disaster early warning by phone", "publisher": "Department of Disaster Management, Bangladesh", "url": "https://ddm.gov.bd/site/page/5de3f14d-66fe-447e-b61a-67300e680fd7/" },
+    { "title": "Ministry of Disaster Management and Relief", "publisher": "Government of Bangladesh", "url": "https://modmr.gov.bd/" },
+    { "title": "Signals (maritime port warning signals)", "publisher": "Bangladesh Meteorological Department", "url": "https://live6.bmd.gov.bd/p/Signals" },
+    { "title": "Inland riverport warning", "publisher": "Bangladesh Meteorological Department", "url": "https://server8.bmd.gov.bd/en/p/Inland-Riverport-Warning" },
+    { "title": "Weather warning signals and their meaning (Bangla, from MoDMR)", "publisher": "The Daily Star (Bangla)", "url": "https://bangla.thedailystar.net/environment/climate-change/natural-disasters/news-478001" },
+    { "title": "Signals for sea and river ports and their meaning (Bangla)", "publisher": "Dhaka Times", "url": "https://www.dhakatimes24.com/2023/10/24/328215" },
+    { "title": "Flood Forecasting and Warning Centre", "publisher": "Bangladesh Water Development Board", "url": "https://ffwc.gov.bd/" },
+    { "title": "Cyclone Preparedness Programme (CPP)", "publisher": "Government of Bangladesh and Bangladesh Red Crescent Society", "url": "https://cpp.gov.bd/" },
+    { "title": "Cyclone Preparedness Programme (CPP)", "publisher": "Bangladesh Red Crescent Society", "url": "https://bdrcs.org/cyclone-preparedness-programm-cpp/" },
+    { "title": "Bangladesh Fire Service and Civil Defence", "publisher": "Government of Bangladesh", "url": "https://fireservice.gov.bd/" },
+    { "title": "Fire Service opens monitoring cell in Dhaka (hotline 16163, 02-223355555, 01730336699)", "publisher": "New Age", "url": "https://www.newagebd.net/article/184553" },
+    { "title": "Call 16163 for assistance in flood affected areas: Fire Service", "publisher": "The Business Standard", "url": "https://www.tbsnews.net/bangladesh/call-16163-assistance-flood-affected-areas-fire-service-680606" },
+    { "title": "Where to call during Durga Puja emergencies: Police issue advisory (Fire Service control room numbers, October 2026)", "publisher": "The Daily Observer", "url": "https://www.observerbd.com/news/599504" },
+    { "title": "National Emergency Service 999", "publisher": "International Telecommunication Union (WSIS stocktaking)", "url": "https://www.itu.int/net4/wsis/archive/stocktaking/Project/Details?projectId=1514906121" },
+    { "title": "Emergency assistance (999 for police, fire and ambulance)", "publisher": "U.S. Embassy in Bangladesh", "url": "https://bd.usembassy.gov/emergency-assistance/" },
+    { "title": "National Helpline Centre (109)", "publisher": "Multi-Sectoral Programme on Violence Against Women, Ministry of Women and Children Affairs", "url": "https://mspvaw109.gov.bd/" },
+    { "title": "109 Helpline: a complaint centre or an info hub?", "publisher": "The Daily Star", "url": "https://www.thedailystar.net/news/bangladesh/news/109-helpline-complaint-centre-or-info-hub-3608521" },
+    { "title": "Child Helpline 1098", "publisher": "Department of Social Services, Bangladesh", "url": "https://dss.gov.bd/pages/static-pages/6922deb1933eb65569e1cab0" },
+    { "title": "Bangladesh Child Helpline 1098", "publisher": "Child Helpline International", "url": "https://childhelplineinternational.org/bangladesh-bangladesh-child-helpline-1098/" },
+    { "title": "Shastho Batayon 16263", "publisher": "Directorate General of Health Services, Bangladesh", "url": "https://16263.dghs.gov.bd/" },
+    { "title": "National health hotline to be back in service within days (November 2026)", "publisher": "The Daily Star", "url": "https://www.thedailystar.net/news/bangladesh/news/national-health-hotline-be-back-service-within-days-4325906" },
+    { "title": "333: National Information and Service Helpline", "publisher": "Aspire to Innovate (a2i), Government of Bangladesh", "url": "https://333.gov.bd/" },
+    { "title": "National Helpline 333", "publisher": "Aspire to Innovate (a2i)", "url": "https://a2i.gov.bd/pages/static-pages/6922df18933eb65569e1fced" },
+    { "title": "Information and services 333 (short code, long code, call charge)", "publisher": "Palli Karma-Sahayak Foundation (PKSF)", "url": "https://pksf.org.bd/%E0%A6%A4%E0%A6%A5%E0%A7%8D%E0%A6%AF-%E0%A6%93-%E0%A6%B8%E0%A7%87%E0%A6%AC%E0%A6%BE-%E0%A7%A9%E0%A7%A9%E0%A7%A9/" },
+    { "title": "National Legal Aid Services Organisation (helpline 16699)", "publisher": "Government of Bangladesh", "url": "https://nlaso.gov.bd/" },
+    { "title": "Legal Aid helpline number changed; new toll-free number is 16699", "publisher": "The Energy Tribune", "url": "https://www.theenergytribune.com/news/2025/11/18/248413" },
+    { "title": "Directorate General of Health Services", "publisher": "Government of Bangladesh", "url": "https://dghs.gov.bd/" },
+    { "title": "icddr,b (Dhaka Hospital, diarrhoeal disease treatment)", "publisher": "icddr,b", "url": "https://www.icddrb.org/" },
+    { "title": "Bangladesh: rabies control", "publisher": "Global Alliance for Rabies Control", "url": "https://rabiesalliance.org/country/bangladesh" }
+  ],
+  "sections": [
+    {
+      "id": "how-to-use", "group": "start", "icon": "handbook",
+      "title": { "en": "How to use this handbook", "bn": "এই হ্যান্ডবুক কীভাবে ব্যবহার করবেন" },
+      "file": { "en": "en/how-to-use.md", "bn": "bn/how-to-use.md" },
+      "keywords": { "en": ["help", "SOS", "999", "offline", "calm", "what to say", "location", "landmark", "panic"], "bn": ["সাহায্য", "SOS", "৯৯৯", "অফলাইন", "শান্ত", "কী বলবেন", "লোকেশন", "ঠিকানা", "আতঙ্ক"] }
+    },
+    {
+      "id": "emergency-numbers", "group": "numbers", "icon": "sos",
+      "title": { "en": "Emergency numbers (Bangladesh)", "bn": "জরুরি নম্বর (বাংলাদেশ)" },
+      "file": { "en": "en/emergency-numbers.md", "bn": "bn/emergency-numbers.md" },
+      "keywords": { "en": ["999", "police", "ambulance", "fire service", "1090", "16263", "109", "1098", "333", "16699", "helpline", "hotline"], "bn": ["৯৯৯", "পুলিশ", "অ্যাম্বুলেন্স", "ফায়ার সার্ভিস", "১০৯০", "স্বাস্থ্য বাতায়ন", "১০৯", "১০৯৮", "৩৩৩", "আইনি সহায়তা", "হেল্পলাইন", "হটলাইন"] }
+    },
+    {
+      "id": "check-and-call", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Check and call: DRSABC", "bn": "দেখুন ও সাহায্য ডাকুন: DRSABC" },
+      "file": { "en": "en/check-and-call.md", "bn": "bn/check-and-call.md" },
+      "keywords": { "en": ["DRSABC", "unconscious", "collapsed", "not breathing", "recovery position", "airway", "first aid"], "bn": ["অজ্ঞান", "অচেতন", "শ্বাস নিচ্ছে না", "রিকভারি পজিশন", "শ্বাসনালি", "প্রাথমিক চিকিৎসা", "পড়ে গেছে"] }
+    },
+    {
+      "id": "cpr-adult", "group": "first-aid", "icon": "sos",
+      "title": { "en": "CPR for adults", "bn": "প্রাপ্তবয়স্কদের সিপিআর" },
+      "file": { "en": "en/cpr-adult.md", "bn": "bn/cpr-adult.md" },
+      "keywords": { "en": ["CPR", "chest compressions", "cardiac arrest", "not breathing", "AED", "defibrillator", "rescue breaths"], "bn": ["সিপিআর", "বুকে চাপ", "হৃৎস্পন্দন বন্ধ", "শ্বাস নেই", "এইডি", "ডিফিব্রিলেটর", "মুখে শ্বাস"] }
+    },
+    {
+      "id": "cpr-child-infant", "group": "first-aid", "icon": "sos",
+      "title": { "en": "CPR for children and babies", "bn": "শিশু ও কোলের শিশুর সিপিআর" },
+      "file": { "en": "en/cpr-child-infant.md", "bn": "bn/cpr-child-infant.md" },
+      "keywords": { "en": ["child CPR", "baby CPR", "infant", "newborn", "not breathing", "rescue breaths"], "bn": ["শিশুর সিপিআর", "কোলের শিশু", "বাচ্চা", "নবজাতক", "শ্বাস নিচ্ছে না", "মুখে শ্বাস"] }
+    },
+    {
+      "id": "choking-adult-child", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Choking: adults and children over 1", "bn": "গলায় কিছু আটকালে: বড়রা ও ১ বছরের বেশি বয়সী শিশু" },
+      "file": { "en": "en/choking-adult-child.md", "bn": "bn/choking-adult-child.md" },
+      "keywords": { "en": ["choking", "food stuck", "cannot breathe", "back blows", "abdominal thrusts", "Heimlich"], "bn": ["গলায় আটকানো", "খাবার আটকে গেছে", "দম বন্ধ", "পিঠে চাপড়", "পেটে চাপ", "হেইমলিখ"] }
+    },
+    {
+      "id": "choking-infant", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Choking: babies under 1 year", "bn": "গলায় কিছু আটকালে: ১ বছরের কম বয়সী শিশু" },
+      "file": { "en": "en/choking-infant.md", "bn": "bn/choking-infant.md" },
+      "keywords": { "en": ["baby choking", "infant choking", "back blows", "chest thrusts", "coin swallowed"], "bn": ["শিশুর গলায় আটকানো", "কোলের শিশু", "পিঠে চাপড়", "বুকে চাপ", "কয়েন গিলে ফেলা"] }
+    },
+    {
+      "id": "bleeding", "group": "first-aid", "icon": "drop",
+      "title": { "en": "Severe bleeding", "bn": "গুরুতর রক্তপাত" },
+      "file": { "en": "en/bleeding.md", "bn": "bn/bleeding.md" },
+      "keywords": { "en": ["bleeding", "blood", "cut", "wound", "tourniquet", "nosebleed", "pressure"], "bn": ["রক্তপাত", "রক্ত", "কেটে গেছে", "ক্ষত", "টর্নিকেট", "নাক দিয়ে রক্ত", "চাপ"] }
+    },
+    {
+      "id": "burns-scalds", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Burns and scalds", "bn": "আগুনে পোড়া ও গরম তরলে ঝলসানো" },
+      "file": { "en": "en/burns-scalds.md", "bn": "bn/burns-scalds.md" },
+      "keywords": { "en": ["burn", "scald", "fire", "hot water", "acid", "chemical burn", "blister"], "bn": ["পোড়া", "ঝলসানো", "আগুন", "গরম পানি", "এসিড", "রাসায়নিক", "ফোসকা"] }
+    },
+    {
+      "id": "fractures-sprains", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Broken bones, dislocations and sprains", "bn": "হাড় ভাঙা, জোড়া সরে যাওয়া ও মচকানো" },
+      "file": { "en": "en/fractures-sprains.md", "bn": "bn/fractures-sprains.md" },
+      "keywords": { "en": ["fracture", "broken bone", "sprain", "dislocation", "splint", "sling", "neck injury", "back injury"], "bn": ["হাড় ভাঙা", "মচকানো", "জোড়া সরে যাওয়া", "স্প্লিন্ট", "স্লিং", "ঘাড়ে আঘাত", "মেরুদণ্ড"] }
+    },
+    {
+      "id": "head-injury", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Head injury", "bn": "মাথায় আঘাত" },
+      "file": { "en": "en/head-injury.md", "bn": "bn/head-injury.md" },
+      "keywords": { "en": ["head injury", "concussion", "knocked out", "fall", "vomiting", "helmet"], "bn": ["মাথায় আঘাত", "মাথা ফাটা", "অজ্ঞান", "পড়ে যাওয়া", "বমি", "হেলমেট"] }
+    },
+    {
+      "id": "shock", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Shock", "bn": "শক" },
+      "file": { "en": "en/shock.md", "bn": "bn/shock.md" },
+      "keywords": { "en": ["shock", "pale", "cold sweat", "weak pulse", "blood loss", "legs raised"], "bn": ["শক", "ফ্যাকাশে", "ঠান্ডা ঘাম", "দুর্বল নাড়ি", "রক্তক্ষরণ", "পা উঁচু"] }
+    },
+    {
+      "id": "fainting", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Fainting", "bn": "অজ্ঞান হয়ে যাওয়া" },
+      "file": { "en": "en/fainting.md", "bn": "bn/fainting.md" },
+      "keywords": { "en": ["fainting", "fainted", "dizzy", "passed out", "light-headed"], "bn": ["অজ্ঞান", "মূর্ছা", "মাথা ঘোরা", "জ্ঞান হারানো", "মাথা হালকা"] }
+    },
+    {
+      "id": "seizures", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Seizures (fits, convulsions)", "bn": "খিঁচুনি" },
+      "file": { "en": "en/seizures.md", "bn": "bn/seizures.md" },
+      "keywords": { "en": ["seizure", "fit", "convulsion", "epilepsy", "febrile seizure", "jerking"], "bn": ["খিঁচুনি", "মৃগী", "জ্বরের খিঁচুনি", "ঝাঁকুনি", "ফিট"] }
+    },
+    {
+      "id": "heat-stroke-dehydration", "group": "first-aid", "icon": "drop",
+      "title": { "en": "Heat stroke, heat exhaustion and dehydration", "bn": "হিট স্ট্রোক, গরমে অবসাদ ও পানিশূন্যতা" },
+      "file": { "en": "en/heat-stroke-dehydration.md", "bn": "bn/heat-stroke-dehydration.md" },
+      "keywords": { "en": ["heat stroke", "heatwave", "dehydration", "ORS", "oral rehydration", "saline recipe", "sweating"], "bn": ["হিট স্ট্রোক", "তাপপ্রবাহ", "পানিশূন্যতা", "খাবার স্যালাইন", "ওআরএস", "স্যালাইন বানানো", "ঘাম"] }
+    },
+    {
+      "id": "drowning", "group": "first-aid", "icon": "drop",
+      "title": { "en": "Drowning", "bn": "পানিতে ডোবা" },
+      "file": { "en": "en/drowning.md", "bn": "bn/drowning.md" },
+      "keywords": { "en": ["drowning", "pond", "water rescue", "swimming", "life jacket", "child in water"], "bn": ["পানিতে ডোবা", "পুকুর", "উদ্ধার", "সাঁতার", "লাইফ জ্যাকেট", "শিশু ডুবে গেছে"] }
+    },
+    {
+      "id": "electric-shock", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Electric shock and lightning", "bn": "বিদ্যুৎস্পৃষ্ট হলে ও বজ্রপাত" },
+      "file": { "en": "en/electric-shock.md", "bn": "bn/electric-shock.md" },
+      "keywords": { "en": ["electric shock", "electrocution", "live wire", "lightning", "thunder", "current"], "bn": ["বিদ্যুৎস্পৃষ্ট", "কারেন্ট", "বিদ্যুতের তার", "বজ্রপাত", "বাজ পড়া", "শক খাওয়া"] }
+    },
+    {
+      "id": "snake-bite", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Snake bite", "bn": "সাপের কামড়" },
+      "file": { "en": "en/snake-bite.md", "bn": "bn/snake-bite.md" },
+      "keywords": { "en": ["snake bite", "snakebite", "cobra", "krait", "Russell's viper", "antivenom", "venom"], "bn": ["সাপের কামড়", "সাপে কাটা", "গোখরা", "কালাচ", "চন্দ্রবোড়া", "রাসেলস ভাইপার", "অ্যান্টিভেনম", "ওঝা"] }
+    },
+    {
+      "id": "dog-bite-rabies", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Dog bites, animal bites and rabies", "bn": "কুকুর ও অন্য প্রাণীর কামড়, জলাতঙ্ক" },
+      "file": { "en": "en/dog-bite-rabies.md", "bn": "bn/dog-bite-rabies.md" },
+      "keywords": { "en": ["dog bite", "cat scratch", "monkey bite", "rabies", "vaccine", "ARV", "animal bite"], "bn": ["কুকুরের কামড়", "বিড়ালের আঁচড়", "বানরের কামড়", "জলাতঙ্ক", "টিকা", "র‍্যাবিস", "প্রাণীর কামড়"] }
+    },
+    {
+      "id": "poisoning", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Poisoning", "bn": "বিষক্রিয়া" },
+      "file": { "en": "en/poisoning.md", "bn": "bn/poisoning.md" },
+      "keywords": { "en": ["poison", "kerosene", "insecticide", "pesticide", "overdose", "rat poison", "bleach", "carbon monoxide"], "bn": ["বিষ", "কেরোসিন", "কীটনাশক", "বেশি ওষুধ", "ইঁদুরের বিষ", "ব্লিচ", "বিষক্রিয়া", "কার্বন মনোক্সাইড"] }
+    },
+    {
+      "id": "allergic-reaction", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Allergic reactions and anaphylaxis", "bn": "অ্যালার্জি ও অ্যানাফাইল্যাক্সিস" },
+      "file": { "en": "en/allergic-reaction.md", "bn": "bn/allergic-reaction.md" },
+      "keywords": { "en": ["allergy", "anaphylaxis", "swelling", "hives", "bee sting", "adrenaline", "epinephrine"], "bn": ["অ্যালার্জি", "অ্যানাফাইল্যাক্সিস", "ফুলে যাওয়া", "চুলকানি", "মৌমাছির হুল", "অ্যাড্রেনালিন"] }
+    },
+    {
+      "id": "stroke", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Stroke: BE FAST", "bn": "স্ট্রোক: BE FAST" },
+      "file": { "en": "en/stroke.md", "bn": "bn/stroke.md" },
+      "keywords": { "en": ["stroke", "BE FAST", "face drooping", "arm weakness", "slurred speech", "paralysis"], "bn": ["স্ট্রোক", "মুখ বেঁকে যাওয়া", "হাত দুর্বল", "কথা জড়িয়ে যাওয়া", "প্যারালাইসিস", "অবশ"] }
+    },
+    {
+      "id": "heart-attack", "group": "first-aid", "icon": "sos",
+      "title": { "en": "Heart attack", "bn": "হার্ট অ্যাটাক" },
+      "file": { "en": "en/heart-attack.md", "bn": "bn/heart-attack.md" },
+      "keywords": { "en": ["heart attack", "chest pain", "aspirin", "cardiac", "breathless", "sweating"], "bn": ["হার্ট অ্যাটাক", "বুকে ব্যথা", "অ্যাসপিরিন", "হৃদ্‌রোগ", "শ্বাসকষ্ট", "ঘাম"] }
+    },
+    {
+      "id": "dengue", "group": "first-aid", "icon": "drop",
+      "title": { "en": "Dengue", "bn": "ডেঙ্গু" },
+      "file": { "en": "en/dengue.md", "bn": "bn/dengue.md" },
+      "keywords": { "en": ["dengue", "fever", "Aedes", "mosquito", "platelets", "paracetamol", "NS1"], "bn": ["ডেঙ্গু", "জ্বর", "এডিস", "মশা", "প্লাটিলেট", "প্যারাসিটামল", "এনএস১"] }
+    },
+    {
+      "id": "diarrhoea-cholera", "group": "first-aid", "icon": "drop",
+      "title": { "en": "Diarrhoea and cholera", "bn": "ডায়রিয়া ও কলেরা" },
+      "file": { "en": "en/diarrhoea-cholera.md", "bn": "bn/diarrhoea-cholera.md" },
+      "keywords": { "en": ["diarrhoea", "diarrhea", "cholera", "loose motion", "ORS", "zinc", "dehydration", "vomiting"], "bn": ["ডায়রিয়া", "কলেরা", "পাতলা পায়খানা", "খাবার স্যালাইন", "জিংক", "পানিশূন্যতা", "বমি"] }
+    },
+    {
+      "id": "asthma-attack", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Asthma attack", "bn": "হাঁপানির টান" },
+      "file": { "en": "en/asthma-attack.md", "bn": "bn/asthma-attack.md" },
+      "keywords": { "en": ["asthma", "wheezing", "inhaler", "breathless", "spacer", "breathing difficulty"], "bn": ["হাঁপানি", "শ্বাসকষ্ট", "ইনহেলার", "শাঁ শাঁ শব্দ", "স্পেসার", "দম আটকে আসা"] }
+    },
+    {
+      "id": "eye-injury", "group": "first-aid", "icon": "handbook",
+      "title": { "en": "Eye injuries", "bn": "চোখে আঘাত" },
+      "file": { "en": "en/eye-injury.md", "bn": "bn/eye-injury.md" },
+      "keywords": { "en": ["eye injury", "chemical in eye", "lime", "dust in eye", "eye wash", "acid"], "bn": ["চোখে আঘাত", "চোখে রাসায়নিক", "চুন", "চোখে ধুলা", "চোখ ধোয়া", "এসিড"] }
+    },
+    {
+      "id": "flood-before", "group": "flood", "icon": "drop",
+      "title": { "en": "Before a flood", "bn": "বন্যার আগে" },
+      "file": { "en": "en/flood-before.md", "bn": "bn/flood-before.md" },
+      "keywords": { "en": ["flood", "warning", "FFWC", "danger level", "1090", "prepare", "monsoon"], "bn": ["বন্যা", "সতর্কবার্তা", "বিপৎসীমা", "১০৯০", "প্রস্তুতি", "বর্ষা", "পূর্বাভাস"] }
+    },
+    {
+      "id": "flood-during", "group": "flood", "icon": "drop",
+      "title": { "en": "During a flood", "bn": "বন্যার সময়" },
+      "file": { "en": "en/flood-during.md", "bn": "bn/flood-during.md" },
+      "keywords": { "en": ["flood", "moving water", "safe water", "boil water", "purification tablets", "snakes", "evacuate"], "bn": ["বন্যা", "স্রোত", "নিরাপদ পানি", "পানি ফোটানো", "বিশুদ্ধকরণ ট্যাবলেট", "সাপ", "সরে যাওয়া"] }
+    },
+    {
+      "id": "flood-after", "group": "flood", "icon": "drop",
+      "title": { "en": "After a flood", "bn": "বন্যার পরে" },
+      "file": { "en": "en/flood-after.md", "bn": "bn/flood-after.md" },
+      "keywords": { "en": ["after flood", "cleaning", "disease", "leptospirosis", "typhoid", "tubewell", "mould"], "bn": ["বন্যার পরে", "পরিষ্কার", "রোগ", "লেপটোস্পাইরোসিস", "টাইফয়েড", "নলকূপ", "জীবাণুমুক্ত"] }
+    },
+    {
+      "id": "waterlogging-dhaka", "group": "flood", "icon": "pin",
+      "title": { "en": "Waterlogged streets in Dhaka", "bn": "ঢাকার রাস্তায় জলাবদ্ধতা" },
+      "file": { "en": "en/waterlogging-dhaka.md", "bn": "bn/waterlogging-dhaka.md" },
+      "keywords": { "en": ["waterlogging", "flooded street", "manhole", "open drain", "live wire", "rain", "Dhaka"], "bn": ["জলাবদ্ধতা", "রাস্তায় পানি", "ম্যানহোল", "খোলা নালা", "বিদ্যুতের তার", "বৃষ্টি", "ঢাকা"] }
+    },
+    {
+      "id": "cyclone-signals", "group": "cyclone", "icon": "relay",
+      "title": { "en": "Cyclone warning signals", "bn": "ঘূর্ণিঝড়ের সতর্ক সংকেত" },
+      "file": { "en": "en/cyclone-signals.md", "bn": "bn/cyclone-signals.md" },
+      "keywords": { "en": ["cyclone", "signal", "great danger", "danger signal", "river port", "CPP flags", "storm"], "bn": ["ঘূর্ণিঝড়", "সংকেত", "মহাবিপদ সংকেত", "বিপদ সংকেত", "নদীবন্দর", "সিপিপি পতাকা", "ঝড়"] }
+    },
+    {
+      "id": "cyclone-shelter", "group": "cyclone", "icon": "pin",
+      "title": { "en": "Cyclone shelters and staying safe in a storm", "bn": "ঘূর্ণিঝড় আশ্রয়কেন্দ্র ও ঝড়ে নিরাপদ থাকা" },
+      "file": { "en": "en/cyclone-shelter.md", "bn": "bn/cyclone-shelter.md" },
+      "keywords": { "en": ["cyclone shelter", "storm surge", "evacuation", "eye of the storm", "coast", "killa"], "bn": ["আশ্রয়কেন্দ্র", "জলোচ্ছ্বাস", "সরে যাওয়া", "ঝড়ের চোখ", "উপকূল", "কিল্লা"] }
+    },
+    {
+      "id": "fire-home-and-building", "group": "fire", "icon": "sos",
+      "title": { "en": "Fire at home and in buildings", "bn": "বাসা ও ভবনে আগুন" },
+      "file": { "en": "en/fire-home-and-building.md", "bn": "bn/fire-home-and-building.md" },
+      "keywords": { "en": ["fire", "smoke", "gas leak", "LPG cylinder", "electrical fire", "high-rise", "extinguisher", "stop drop roll"], "bn": ["আগুন", "ধোঁয়া", "গ্যাস লিক", "গ্যাস সিলিন্ডার", "বৈদ্যুতিক আগুন", "উঁচু ভবন", "অগ্নিনির্বাপক", "গড়াগড়ি"] }
+    },
+    {
+      "id": "fire-markets-slums", "group": "fire", "icon": "pin",
+      "title": { "en": "Fire in markets, crowded areas and chemical stores", "bn": "বাজার, ঘনবসতি ও রাসায়নিক গুদামে আগুন" },
+      "file": { "en": "en/fire-markets-slums.md", "bn": "bn/fire-markets-slums.md" },
+      "keywords": { "en": ["market fire", "Old Dhaka", "chemical warehouse", "bosti", "slum fire", "crowd"], "bn": ["বাজারে আগুন", "পুরান ঢাকা", "রাসায়নিক গুদাম", "বস্তি", "বস্তিতে আগুন", "ভিড়"] }
+    },
+    {
+      "id": "earthquake-during", "group": "earthquake", "icon": "sos",
+      "title": { "en": "During an earthquake", "bn": "ভূমিকম্পের সময়" },
+      "file": { "en": "en/earthquake-during.md", "bn": "bn/earthquake-during.md" },
+      "keywords": { "en": ["earthquake", "drop cover hold on", "tremor", "shaking", "building code"], "bn": ["ভূমিকম্প", "বসে পড়ুন মাথা ঢাকুন", "কম্পন", "ঝাঁকুনি", "ইমারত নির্মাণ বিধিমালা"] }
+    },
+    {
+      "id": "earthquake-after", "group": "earthquake", "icon": "flashlight",
+      "title": { "en": "After an earthquake", "bn": "ভূমিকম্পের পরে" },
+      "file": { "en": "en/earthquake-after.md", "bn": "bn/earthquake-after.md" },
+      "keywords": { "en": ["aftershock", "gas leak", "cracks", "damaged building", "trapped", "torch"], "bn": ["আফটারশক", "পরাঘাত", "গ্যাস লিক", "ফাটল", "ক্ষতিগ্রস্ত ভবন", "আটকে পড়া", "টর্চ"] }
+    },
+    {
+      "id": "building-collapse", "group": "earthquake", "icon": "sos",
+      "title": { "en": "Building collapse and being trapped", "bn": "ভবন ধস ও আটকে পড়া" },
+      "file": { "en": "en/building-collapse.md", "bn": "bn/building-collapse.md" },
+      "keywords": { "en": ["building collapse", "trapped", "rubble", "tap on pipe", "rescue", "crush injury"], "bn": ["ভবন ধস", "আটকে পড়া", "ধ্বংসস্তূপ", "পাইপে টোকা", "উদ্ধার", "চাপা পড়া"] }
+    },
+    {
+      "id": "power-cut-and-heat", "group": "outage", "icon": "battery",
+      "title": { "en": "Power cuts and heat", "bn": "লোডশেডিং ও গরম" },
+      "file": { "en": "en/power-cut-and-heat.md", "bn": "bn/power-cut-and-heat.md" },
+      "keywords": { "en": ["power cut", "load-shedding", "generator", "carbon monoxide", "battery", "Saver mode", "food safety", "heat"], "bn": ["লোডশেডিং", "বিদ্যুৎ নেই", "জেনারেটর", "কার্বন মনোক্সাইড", "ব্যাটারি", "সেভার মোড", "খাবারের নিরাপত্তা", "গরম"] }
+    },
+    {
+      "id": "no-network", "group": "outage", "icon": "mesh",
+      "title": { "en": "When there is no network", "bn": "নেটওয়ার্ক না থাকলে" },
+      "file": { "en": "en/no-network.md", "bn": "bn/no-network.md" },
+      "keywords": { "en": ["no network", "no internet", "mesh", "Bluetooth", "node", "SMS", "QR", "meeting point", "family plan"], "bn": ["নেটওয়ার্ক নেই", "ইন্টারনেট নেই", "মেশ", "ব্লুটুথ", "পাড়ার নোড", "এসএমএস", "QR", "দেখা করার জায়গা", "পারিবারিক পরিকল্পনা"] }
+    },
+    {
+      "id": "crowd-safety", "group": "crowd", "icon": "node",
+      "title": { "en": "Crowd safety", "bn": "ভিড়ে নিরাপত্তা" },
+      "file": { "en": "en/crowd-safety.md", "bn": "bn/crowd-safety.md" },
+      "keywords": { "en": ["crowd", "crowd crush", "stampede", "festival", "concert", "station", "Eid travel"], "bn": ["ভিড়", "ভিড়ে পিষ্ট", "পদদলন", "উৎসব", "কনসার্ট", "স্টেশন", "ঈদযাত্রা"] }
+    },
+    {
+      "id": "go-bag-and-family-plan", "group": "kit", "icon": "flashlight",
+      "title": { "en": "Go-bag and family plan", "bn": "জরুরি ব্যাগ ও পারিবারিক পরিকল্পনা" },
+      "file": { "en": "en/go-bag-and-family-plan.md", "bn": "bn/go-bag-and-family-plan.md" },
+      "keywords": { "en": ["go-bag", "emergency kit", "documents", "whistle", "power bank", "family plan", "checklist"], "bn": ["জরুরি ব্যাগ", "জরুরি সামগ্রী", "কাগজপত্র", "বাঁশি", "পাওয়ার ব্যাংক", "পারিবারিক পরিকল্পনা", "তালিকা"] }
+    }
+  ],
+  "emergencyNumbers": [
+    {
+      "number": "999",
+      "label": { "en": "National Emergency Service: police, fire service, ambulance", "bn": "জাতীয় জরুরি সেবা: পুলিশ, ফায়ার সার্ভিস, অ্যাম্বুলেন্স" },
+      "note": { "en": "Free from any mobile or landline, 24 hours a day.", "bn": "যেকোনো মোবাইল বা ল্যান্ডফোন থেকে বিনা খরচে, দিনরাত ২৪ ঘণ্টা।" },
+      "source": "https://www.itu.int/net4/wsis/archive/stocktaking/Project/Details?projectId=1514906121"
+    },
+    {
+      "number": "16163",
+      "label": { "en": "Fire Service and Civil Defence: central control room hotline", "bn": "ফায়ার সার্ভিস ও সিভিল ডিফেন্স: কেন্দ্রীয় নিয়ন্ত্রণকক্ষের হটলাইন" },
+      "note": { "en": "Use if 999 is busy, or to report a fire risk.", "bn": "৯৯৯ ব্যস্ত থাকলে, বা আগুনের ঝুঁকি জানাতে।" },
+      "source": "https://www.tbsnews.net/bangladesh/call-16163-assistance-flood-affected-areas-fire-service-680606"
+    },
+    {
+      "number": "02-223355555",
+      "label": { "en": "Fire Service headquarters control room, Dhaka", "bn": "ফায়ার সার্ভিস সদর দপ্তরের নিয়ন্ত্রণকক্ষ, ঢাকা" },
+      "note": { "en": "Landline. Listed again by the Fire Service in October 2026.", "bn": "ল্যান্ডফোন। ২০২৬ সালের অক্টোবরেও ফায়ার সার্ভিস এই নম্বর দিয়েছে।" },
+      "source": "https://www.observerbd.com/news/599504"
+    },
+    {
+      "number": "01730-336699",
+      "label": { "en": "Fire Service central monitoring cell (mobile)", "bn": "ফায়ার সার্ভিসের কেন্দ্রীয় মনিটরিং সেল (মোবাইল)" },
+      "note": { "en": "Mobile number, normal call charges apply.", "bn": "মোবাইল নম্বর, সাধারণ কল চার্জ লাগে।" },
+      "source": "https://www.newagebd.net/article/184553"
+    },
+    {
+      "number": "1090",
+      "label": { "en": "Disaster and weather early warning (Department of Disaster Management)", "bn": "দুর্যোগ ও আবহাওয়ার আগাম সতর্কবার্তা (দুর্যোগ ব্যবস্থাপনা অধিদপ্তর)" },
+      "note": { "en": "Free recorded messages, 24 hours: weather, cyclone signals, river levels, floods.", "bn": "বিনা খরচে রেকর্ড করা বার্তা, ২৪ ঘণ্টা: আবহাওয়া, ঘূর্ণিঝড়ের সংকেত, নদীর পানি, বন্যা।" },
+      "source": "https://ddm.gov.bd/site/page/5de3f14d-66fe-447e-b61a-67300e680fd7/"
+    },
+    {
+      "number": "16263",
+      "label": { "en": "Shastho Batayon: government health advice line", "bn": "স্বাস্থ্য বাতায়ন: সরকারি স্বাস্থ্য পরামর্শ লাইন" },
+      "note": { "en": "Doctors by phone, day and night. Stopped for some days in November 2026; if nobody answers, call 999 or go to a hospital.", "bn": "দিনরাত ফোনে ডাক্তারের পরামর্শ। ২০২৬ সালের নভেম্বরে কয়েক দিন বন্ধ ছিল; কেউ না ধরলে ৯৯৯-এ ফোন করুন বা হাসপাতালে যান।" },
+      "source": "https://www.thedailystar.net/news/bangladesh/news/national-health-hotline-be-back-service-within-days-4325906"
+    },
+    {
+      "number": "109",
+      "label": { "en": "National Helpline Centre for Violence against Women and Children", "bn": "নারী ও শিশু নির্যাতন প্রতিরোধে ন্যাশনাল হেল্পলাইন সেন্টার" },
+      "note": { "en": "Free, 24 hours.", "bn": "বিনা খরচে, ২৪ ঘণ্টা।" },
+      "source": "https://mspvaw109.gov.bd/"
+    },
+    {
+      "number": "1098",
+      "label": { "en": "Child Helpline", "bn": "চাইল্ড হেল্পলাইন" },
+      "note": { "en": "Free, 24 hours, for children in danger or distress.", "bn": "বিনা খরচে, ২৪ ঘণ্টা, বিপদে বা কষ্টে থাকা শিশুদের জন্য।" },
+      "source": "https://dss.gov.bd/pages/static-pages/6922deb1933eb65569e1cab0"
+    },
+    {
+      "number": "16699",
+      "label": { "en": "National Legal Aid helpline (NLASO)", "bn": "জাতীয় আইনগত সহায়তা হেল্পলাইন" },
+      "note": { "en": "Free legal advice. Replaced the old number 16430 in November 2025.", "bn": "বিনা খরচে আইনি পরামর্শ। ২০২৫ সালের নভেম্বরে পুরোনো ১৬৪৩০ নম্বরের বদলে চালু হয়েছে।" },
+      "source": "https://www.theenergytribune.com/news/2025/11/18/248413"
+    },
+    {
+      "number": "333",
+      "label": { "en": "National information and service helpline", "bn": "জাতীয় তথ্য ও সেবা হেল্পলাইন" },
+      "note": { "en": "Government services, offices and complaints. About 60 paisa a minute. From a landline or abroad: 09666-789333.", "bn": "সরকারি সেবা, অফিস ও অভিযোগ। মিনিটে প্রায় ৬০ পয়সা। ল্যান্ডফোন বা বিদেশ থেকে: ০৯৬৬৬-৭৮৯৩৩৩।" },
+      "source": "https://a2i.gov.bd/pages/static-pages/6922df18933eb65569e1fced"
+    }
+  ]
+}

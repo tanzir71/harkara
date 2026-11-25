@@ -44,6 +44,8 @@ android {
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
+            // Keep the APK independent of the git checkout for reproducible builds.
+            vcsInfo.include = false
         }
     }
 
@@ -78,6 +80,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    // No Google-encrypted dependency metadata block (F-Droid/IzzyOnDroid friendly, reproducible).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     lint {

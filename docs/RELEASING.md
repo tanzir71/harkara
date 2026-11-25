@@ -36,3 +36,15 @@ repository in `../harkara-signing/` on the owner's machine, and as the repositor
 ```
 
 The app reads `https://tanzir71.github.io/harkara/latest.json` at most once a day while online.
+## Reproducible builds
+
+The build sets fixed archive timestamps and entry order (AbstractArchiveTask in the root build), leaves
+out the dependency-metadata signing block (dependenciesInfo) and VCS info, and pins every dependency in
+the version catalog. eproducible.yml (on every tag, or by hand) builds the unsigned release APKs twice
+from clean checkouts on separate runners and compares them entry by entry with 	ools/compare_apks.py;
+it never gates a release. Remaining differences, if any, are listed here after each run.
+
+## APK size
+
+ci.yml builds the unsigned release APKs with ABI splits and fails if an rm64-v8a or rmeabi-v7a
+APK exceeds 30 MB (	ools/check-apk-size.mjs); the universal APK is reported only.

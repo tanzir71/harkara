@@ -31,6 +31,14 @@ import io.github.tanzir71.harkara.settings.AppSettings
 import io.github.tanzir71.harkara.settings.PanicWipeController
 import io.github.tanzir71.harkara.settings.SettingsState
 import io.github.tanzir71.harkara.update.UpdateChecker
+import io.github.tanzir71.harkara.core.tasks.TaskTypes
+import io.github.tanzir71.harkara.tasks.TaskRepository
+import io.github.tanzir71.harkara.khata.KhataRepository
+import io.github.tanzir71.harkara.tools.CameraTorch
+import io.github.tanzir71.harkara.tools.Handbook
+import io.github.tanzir71.harkara.tools.LightController
+import io.github.tanzir71.harkara.tools.SosRepository
+import io.github.tanzir71.harkara.tools.ToneSiren
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -61,7 +69,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     val identity: IdentityManager by lazy { IdentityManager(FileSeedStore(seedFile(context))) }
 
     val relayPool: RelayPool by lazy { RelayPool(scope) }
-    val RoomEventStore: RoomEventStore by lazy { RoomEventStore(database) }
+    val eventStore: RoomEventStore by lazy { RoomEventStore(database) }
     val outbox: Outbox by lazy { Outbox(database, relayPool).also { it.start(scope) } }
     val wordFilters: WordFilters by lazy {
         WordFilters.parse(context.assets.open("word-filters/filters.json").bufferedReader().use { it.readText() })
@@ -69,7 +77,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     val connectivity: ConnectivityMonitor by lazy { LiveConnectivityMonitor(relayPool, outbox, scope, { relays().size }, lanRoom.peerCount) }
     val feedRepository: FeedRepository by lazy {
         FeedRepository(
-            database, RoomEventStore, outbox, relayPool, wordFilters,
+            database, eventStore, outbox, relayPool, wordFilters,
             areaKey = { g5 -> identity.keyRing().area(g5, IsoWeek.current()) },
             powBits = { powBits },
         ).also { it.startIngest(scope) }
@@ -94,6 +102,23 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     }
 
     fun stopLan() = lanRoom.stop()
+
+    val taskTypes: TaskTypes by lazy { TaskTypes.parse(context.assets.open("task-types.json").bufferedReader().use { it.readText() }) }
+    val taskRepository: TaskRepository by lazy {
+        TaskRepository(database, eventStore, outbox, relayPool, profile = { identity.profile() }, displayName = { settings.state.value.displayName })
+            .also { it.startIngest(scope) }
+    }
+
+    val khataRepository: KhataRepository by lazy {
+        KhataRepository(database, outbox, pools = { listOf(relayPool) }, profile = { identity.profile() }, displayName = { settings.state.value.displayName })
+            .also { it.startIngest(scope, relayPool) }
+    }
+
+    val sosRepository: SosRepository by lazy {
+        SosRepository(database, eventStore, outbox, relayPool, profile = { identity.profile() }).also { it.startIngest(scope) }
+    }
+    val handbook: Handbook by lazy { Handbook.fromAssets(context) }
+    val lights: LightController by lazy { LightController(CameraTorch(context), ToneSiren(), scope) }
 
     /** NIP-13 difficulty tuned once to this phone's speed (~2 s of mining). */
     private val powBits: Int by lazy { PostComposer.tunePowBits(measureHashRate()) }

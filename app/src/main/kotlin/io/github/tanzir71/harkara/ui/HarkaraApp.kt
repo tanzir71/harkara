@@ -44,6 +44,7 @@ import io.github.tanzir71.harkara.ui.screens.ComposeSheetContent
 import io.github.tanzir71.harkara.ui.screens.RelaysScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
 import io.github.tanzir71.harkara.ui.screens.KhataScreen
+import io.github.tanzir71.harkara.ui.screens.toRow
 import io.github.tanzir71.harkara.ui.screens.MeScreen
 import io.github.tanzir71.harkara.ui.screens.ModulesScreen
 import io.github.tanzir71.harkara.ui.screens.NearbyScreen
@@ -72,6 +73,8 @@ interface PlatformActions {
     fun saveTextDocument(suggestedName: String, text: String, onResult: (saved: Boolean) -> Unit)
     /** Lets the user pick a small text file to open; reports its text, or null when cancelled or unreadable. */
     fun openTextDocument(onResult: (text: String?) -> Unit)
+    /** Opens the SMS app with [body] prefilled and no recipient; needs no permission and stores no number. */
+    fun composeSms(body: String) {}
     /** Asks for the microphone (voice notes) once; reports whether it may be used. */
     fun requestMicrophone(onResult: (granted: Boolean) -> Unit) = onResult(false)
 
@@ -86,8 +89,8 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays, ChatThread }
-private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions }
+private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, Prayer, Torch, Handbook, HandbookPage, ChatThread }
+private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle, Sos }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -123,6 +126,78 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     }.collectAsStateWithLifecycle(emptyList())
     val relayStatus by container.relayPool.status.collectAsStateWithLifecycle()
     val presenter = rememberFeedPresenter(container.areas)
+    var openTaskId by rememberSaveable { mutableStateOf<String?>(null) }
+    var taskDraft by remember { mutableStateOf<Pair<String, Map<String, String>>?>(null) }
+    var handoffWrong by remember { mutableStateOf(false) }
+    var afterName by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val taskStates by remember(center, settings.onboarded) {
+        if (settings.onboarded) container.taskRepository.tasks(center) else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    LaunchedEffect(center, settings.onboarded, relayStatus.size, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) container.taskRepository.subscribeArea(center)
+    }
+    LaunchedEffect(taskStates.map { it.offer.event.id }) { container.taskRepository.subscribeSteps(taskStates.map { it.offer.event.id }) }
+    val openTask = taskStates.firstOrNull { it.offer.event.id == openTaskId }
+    var handoff by remember { mutableStateOf<io.github.tanzir71.harkara.tasks.HandoffDisplay?>(null) }
+    LaunchedEffect(openTask?.status, openTaskId) { handoff = openTask?.let { container.taskRepository.handoffFor(it.offer) } }
+    val trusted = remember(profilePubkey) { setOfNotNull(profilePubkey) }
+    val reputation: (String) -> io.github.tanzir71.harkara.core.tasks.Reputation? = { pk ->
+        io.github.tanzir71.harkara.core.tasks.ReputationRules.of(pk, taskStates, trusted).takeIf { it.done > 0 || it.ratingCount > 0 }
+    }
+    /** Runs [action] now if the user has a name, otherwise asks for one first (§4: name only when needed). */
+    val withName: (() -> Unit) -> Unit = { action ->
+        if (settings.displayName != null) action() else { afterName = action; sheet = Sheet.Name }
+    }
+    val taskOp: (suspend () -> Unit) -> Unit = { op -> scope.launch { op() } }
+    val ownSos by remember(settings.onboarded, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) container.sosRepository.activeOwn() else flowOf(null)
+    }.collectAsStateWithLifecycle(null)
+    val incomingSos by remember(center, settings.onboarded, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) container.sosRepository.incoming(center) else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    LaunchedEffect(center, settings.onboarded, relayStatus.size, profilePubkey) { if (settings.onboarded && profilePubkey != null) container.sosRepository.subscribe(center) }
+    LaunchedEffect(incomingSos.firstOrNull()?.event?.id) {
+        // Sound only when the user turned emergency alerts on (§4: no sound otherwise).
+        if (incomingSos.isNotEmpty() && settings.emergencyAlerts) {
+            val tone = io.github.tanzir71.harkara.tools.ToneSiren()
+            tone.beep(1500)
+            kotlinx.coroutines.delay(1600)
+            tone.stop()
+        }
+    }
+    var sosWait by remember { mutableStateOf(0) }
+    var handbookSection by remember { mutableStateOf<io.github.tanzir71.harkara.tools.HandbookSection?>(null) }
+    val language = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language
+    val dial999: () -> Unit = { platform.openUrl("tel:999") }
+    val toggleModule: (io.github.tanzir71.harkara.settings.Module, Boolean) -> Unit = { module, on ->
+        container.settings.setModule(module, on)
+        // Lite mode checks every 60 minutes instead of 30 (§4.1).
+        if (module == io.github.tanzir71.harkara.settings.Module.LITE_MODE) RelaySyncWorker.schedule(context, if (on) 60 else 30)
+    }
+    val ious by remember(settings.onboarded) {
+        if (settings.onboarded) container.khataRepository.ious() else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    LaunchedEffect(settings.onboarded, relayStatus.size, profilePubkey) { if (settings.onboarded && profilePubkey != null) container.khataRepository.subscribe() }
+    var openIouId by remember { mutableStateOf<String?>(null) }
+    var iouPasteBad by remember { mutableStateOf(false) }
+    val openIou = ious.firstOrNull { it.terms.id == openIouId }
+    val khataRows = remember(ious, taskStates, profilePubkey) {
+        val me = profilePubkey ?: return@remember emptyList()
+        val iouRows = ious.map { s -> s.toRow(me, listOfNotNull(s.terms.note.ifBlank { null }, io.github.tanzir71.harkara.ui.screens.hhmm(s.terms.createdAt)).joinToString(" · ")) }
+        // Receipts from paid tasks (settled, read-only).
+        val receipts = taskStates.filter { it.status == io.github.tanzir71.harkara.core.tasks.TaskStatus.PAID && (it.requester == me || it.runner == me) }.map { st ->
+            val iAmRunner = st.runner == me
+            val other = if (iAmRunner) st.requester else st.runner!!
+            val method = container.taskRepository.paymentDetails(st)?.method ?: ""
+            io.github.tanzir71.harkara.ui.screens.KhataRow(
+                "task:" + st.offer.address, io.github.tanzir71.harkara.ui.screens.nameOf(st, other),
+                if (iAmRunner) st.offer.price else -st.offer.price,
+                listOf(st.offer.title, method).filter { it.isNotBlank() }.joinToString(" · "),
+                io.github.tanzir71.harkara.ui.screens.KhataRowStatus.SETTLED,
+            )
+        }
+        iouRows + receipts
+    }
     val connectedRelays = relayStatus.values.count { it == io.github.tanzir71.harkara.relay.RelayStatus.CONNECTED }
     LaunchedEffect(center, settings.onboarded, relayStatus.size) { if (settings.onboarded) container.feedRepository.subscribeArea(center) }
     LaunchedEffect(center, settings.onboarded, connectedRelays) { if (settings.onboarded && connectedRelays > 0) container.feedRepository.catchUp(center) }
@@ -134,7 +209,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
 
     val comingSoon: () -> Unit = { scope.launch { snackbar.showSnackbar(context.getString(R.string.coming_soon)) } }
     val say: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
-    val pill = PillActions(onClick = { sheet = Sheet.Connectivity })
+    val pill = PillActions(onClick = { sheet = Sheet.Connectivity }, onLongClick = { sheet = Sheet.Sos })
 
     HarkaraTheme {
         val c = HarkaraTheme.colors
@@ -160,7 +235,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                 when (page) {
                     Page.Modules -> ModulesScreen(
                         settings,
-                        onToggle = container.settings::setModule,
+                        onToggle = toggleModule,
                         onBack = { page = Page.Tabs },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
@@ -181,6 +256,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         onOpenSource = { platform.openUrl(REPO_URL) },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                         onRelays = { page = Page.Relays },
+                        onEmergencyAlerts = container.settings::setEmergencyAlerts,
                     )
                     Page.Relays -> RelaysScreen(
                         relays = container.relays(),
@@ -195,9 +271,83 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         ChatThreadRoute(
                             container, platform, id, connectivity, pill,
                             onBack = { page = Page.Tabs },
-                            onMakeTask = { comingSoon() },
+                            onMakeTask = { text ->
+                                // Long-press → "Make it a task": the task composer, prefilled with the message.
+                                taskDraft = text.trim().take(80) to mapOf("items" to text.trim().take(200))
+                                withName { sheet = Sheet.TaskCompose }
+                            },
                             say = say,
                             modifier = Modifier.statusBarsPadding(),
+                        )
+                    }
+                    Page.Prayer -> {
+                        val today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Dhaka"))
+                        io.github.tanzir71.harkara.ui.screens.PrayerScreen(
+                            day = io.github.tanzir71.harkara.core.tools.PrayerTimesCalc.forDay(center.lat, center.lng, today),
+                            qibla = io.github.tanzir71.harkara.core.tools.PrayerTimesCalc.qibla(center.lat, center.lng),
+                            place = settings.areaName ?: context.getString(R.string.nearby_near_you),
+                            now = java.time.Instant.now(),
+                            onBack = { page = Page.Tabs },
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        )
+                    }
+                    Page.Torch -> {
+                        val mode by container.lights.mode.collectAsStateWithLifecycle()
+                        val lit by container.lights.lit.collectAsStateWithLifecycle()
+                        io.github.tanzir71.harkara.ui.screens.TorchScreen(
+                            mode = mode, lit = lit, torchAvailable = remember { io.github.tanzir71.harkara.tools.CameraTorch(context).available },
+                            onMode = { container.lights.start(it) }, onLeave = { container.lights.stop() }, onBack = { page = Page.Tabs },
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        )
+                    }
+                    Page.Handbook -> io.github.tanzir71.harkara.ui.screens.HandbookScreen(
+                        sections = container.handbook.index.sections,
+                        numbers = container.handbook.index.emergencyNumbers,
+                        language = language,
+                        onOpen = { handbookSection = it; page = Page.HandbookPage },
+                        onCall = { n -> platform.openUrl("tel:" + n.filter { it.isDigit() }) },
+                        onBack = { page = Page.Tabs },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.HandbookPage -> handbookSection?.let { s ->
+                        io.github.tanzir71.harkara.ui.screens.HandbookPage(
+                            markdown = remember(s, language) { container.handbook.page(s, language) },
+                            onBack = { page = Page.Handbook },
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        )
+                    }
+                    Page.TaskDetail -> if (openTask == null) {
+                        LaunchedEffect(Unit) { page = Page.Tabs }
+                    } else {
+                        io.github.tanzir71.harkara.ui.screens.TaskDetailScreen(
+                            state = openTask,
+                            me = profilePubkey,
+                            types = container.taskTypes,
+                            connectivity = connectivity,
+                            next = container.taskRepository.nextAction(openTask),
+                            handoff = handoff,
+                            reputation = reputation,
+                            pill = pill,
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                            actions = io.github.tanzir71.harkara.ui.screens.TaskActions(
+                                onBack = { page = Page.Tabs },
+                                onAction = { action ->
+                                    when (action) {
+                                        io.github.tanzir71.harkara.tasks.TaskAction.ACCEPT -> withName { taskOp { container.taskRepository.accept(openTask.offer) } }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.CONFIRM_RUNNER -> taskOp { container.taskRepository.confirm(openTask.offer, openTask.pendingAccepts.first()) }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.PICKED_UP -> taskOp { container.taskRepository.pickedUp(openTask.offer) }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.ENTER_CODE -> { handoffWrong = false; sheet = Sheet.HandoffEntry }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.RECORD_PAYMENT -> sheet = Sheet.Payment
+                                        io.github.tanzir71.harkara.tasks.TaskAction.CONFIRM_PAYMENT -> taskOp { container.taskRepository.confirmPayment(openTask) }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.RATE -> sheet = Sheet.Rate
+                                    }
+                                },
+                                onChoose = { accept -> taskOp { container.taskRepository.confirm(openTask.offer, accept) } },
+                                onProblem = { sheet = Sheet.Dispute },
+                                onCancel = { taskOp { container.taskRepository.cancel(openTask) } },
+                                onDecline = { taskOp { container.taskRepository.decline(openTask) } },
+                                onMessage = { comingSoon() },
+                            ),
                         )
                     }
                     Page.Tabs -> Column(Modifier.fillMaxSize()) {
@@ -215,12 +365,60 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
                                 onCompose = { composeVerdict = null; sheet = Sheet.Compose },
                                 onSearch = comingSoon,
+                                alerts = if (ownSos == null && incomingSos.isEmpty()) null else ({
+                                    ownSos?.let { sos ->
+                                        io.github.tanzir71.harkara.ui.screens.ActiveSosBanner(
+                                            onResolve = { taskOp { container.sosRepository.resolve(sos, io.github.tanzir71.harkara.core.tools.SosStatus.RESOLVED) } },
+                                            onFalseAlarm = { taskOp { container.sosRepository.resolve(sos, io.github.tanzir71.harkara.core.tools.SosStatus.FALSE_ALARM) } },
+                                        )
+                                    }
+                                    incomingSos.take(3).forEach { s ->
+                                        io.github.tanzir71.harkara.ui.screens.SosAlertCard(
+                                            message = s.event.content.ifBlank { context.getString(R.string.sos_incoming) },
+                                            detail = context.getString(
+                                                R.string.sos_incoming_detail,
+                                                s.event.tagValue("name") ?: io.github.tanzir71.harkara.ui.screens.shortKey(s.event.pubkey),
+                                                s.distanceMeters?.let { io.github.tanzir71.harkara.core.geo.GeoMath.distanceLabel(it) } ?: "—",
+                                                io.github.tanzir71.harkara.ui.screens.hhmm(s.event.createdAt),
+                                            ),
+                                            onCall999 = dial999,
+                                        )
+                                    }
+                                }),
                                 onVote = { id, up -> feedItems.firstOrNull { it.post.id == id }?.let { scope.launch { container.feedRepository.vote(it.post, up) } } },
                                 onMore = { id -> sheetPostId = id; sheet = Sheet.CardActions },
                             )
                             HarkaraTab.Chats -> ChatsRoute(container, platform, connectivity, pill, onOpen = { id -> chatId = id; page = Page.ChatThread }, say = say, modifier = content)
-                            HarkaraTab.Tasks -> TasksScreen(connectivity, content, pill)
-                            HarkaraTab.Khata -> KhataScreen(connectivity, content, pill)
+                            HarkaraTab.Tasks -> TasksScreen(
+                                states = taskStates,
+                                me = profilePubkey,
+                                types = container.taskTypes,
+                                connectivity = connectivity,
+                                modifier = content,
+                                pill = pill,
+                                reputation = reputation,
+                                onOpen = { openTaskId = it.offer.event.id; page = Page.TaskDetail },
+                                onNew = { withName { taskDraft = null; sheet = Sheet.TaskCompose } },
+                            )
+                            HarkaraTab.Khata -> KhataScreen(
+                                rows = khataRows,
+                                connectivity = connectivity,
+                                modifier = content,
+                                pill = pill,
+                                onOpen = { row -> if (row.iou != null) { openIouId = row.iou.terms.id; sheet = Sheet.IouDetail } },
+                                onNew = { withName { sheet = Sheet.NewIou } },
+                                onExport = {
+                                    val me = profilePubkey ?: ""
+                                    val csv = io.github.tanzir71.harkara.core.khata.KhataExport.csv(ious, me)
+                                    platform.saveTextDocument("harkara-khata.csv", csv) { saved ->
+                                        if (saved) {
+                                            platform.saveTextDocument("harkara-khata.json", io.github.tanzir71.harkara.core.khata.KhataExport.json(ious)) { ok ->
+                                                if (ok) say(context.getString(R.string.khata_export_done))
+                                            }
+                                        }
+                                    }
+                                },
+                            )
                             HarkaraTab.Me -> MeScreen(
                                 settings = settings,
                                 connectivity = connectivity,
@@ -229,8 +427,15 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 update = visibleUpdate,
                                 onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
-                                onTool = { comingSoon() },
-                                onToggleModule = container.settings::setModule,
+                                onTool = { tool ->
+                                    when (tool.module) {
+                                        io.github.tanzir71.harkara.settings.Module.QIBLA_PRAYER -> page = Page.Prayer
+                                        io.github.tanzir71.harkara.settings.Module.TORCH_TOOLS -> page = Page.Torch
+                                        io.github.tanzir71.harkara.settings.Module.HANDBOOK -> page = Page.Handbook
+                                        else -> comingSoon()
+                                    }
+                                },
+                                onToggleModule = toggleModule,
                                 onAllModules = { page = Page.Modules },
                                 onSettings = { page = Page.Settings },
                                 onLogoTripleTap = { sheet = Sheet.PanicWipe },
@@ -316,6 +521,123 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                     sheet = Sheet.None
                                     scope.launch { container.feedRepository.muteWord(word) }
                                     say(context.getString(R.string.card_muted, word))
+                                },
+                                onFetch = item?.takeIf { it.post.category == io.github.tanzir71.harkara.core.Category.STOCK }?.let { stock ->
+                                    {
+                                        val ui = presenter.toUi(stock, System.currentTimeMillis() / 1000)
+                                        val place = container.areas.nearest(stock.post.location.lat, stock.post.location.lng).name
+                                        taskDraft = (context.getString(R.string.task_fetch) + ": " + (ui.detail ?: stock.post.text.take(40))) to
+                                            mapOf("store" to place, "items" to stock.post.text.take(200))
+                                        withName { sheet = Sheet.TaskCompose }
+                                    }
+                                },
+                            )
+                        }
+                        Sheet.TaskCompose -> io.github.tanzir71.harkara.ui.screens.TaskComposeSheetContent(
+                            types = container.taskTypes,
+                            initialType = if (taskDraft != null) "buy" else container.taskTypes.types.first().id,
+                            initialTitle = taskDraft?.first.orEmpty(),
+                            initialFields = taskDraft?.second.orEmpty(),
+                            onPost = { type, title, price, fields, description ->
+                                sheet = Sheet.None
+                                taskOp {
+                                    container.taskRepository.post(type, title, price, fields, description, center)
+                                    snackbar.showSnackbar(context.getString(R.string.task_posted))
+                                }
+                                tab = HarkaraTab.Tasks
+                            },
+                        )
+                        Sheet.HandoffEntry -> io.github.tanzir71.harkara.ui.screens.HandoffEntrySheetContent(
+                            wrong = handoffWrong,
+                            onCheck = { entered ->
+                                val state = openTask
+                                if (state != null) taskOp {
+                                    if (container.taskRepository.deliver(state, entered)) {
+                                        sheet = Sheet.None
+                                        snackbar.showSnackbar(context.getString(R.string.task_delivered_toast))
+                                    } else {
+                                        handoffWrong = true
+                                    }
+                                }
+                            },
+                        )
+                        Sheet.Payment -> io.github.tanzir71.harkara.ui.screens.PaymentSheetContent(
+                            amount = openTask?.offer?.price ?: 0,
+                            onSave = { method, trx -> sheet = Sheet.None; openTask?.let { s -> taskOp { container.taskRepository.recordPayment(s, method, trx) } } },
+                        )
+                        Sheet.Rate -> io.github.tanzir71.harkara.ui.screens.RateSheetContent(
+                            onRate = { stars -> sheet = Sheet.None; openTask?.let { s -> taskOp { container.taskRepository.rate(s, stars) } } },
+                        )
+                        Sheet.Dispute -> io.github.tanzir71.harkara.ui.screens.DisputeSheetContent(
+                            onSend = { reason, note -> sheet = Sheet.None; openTask?.let { s -> taskOp { container.taskRepository.dispute(s, reason, note) } } },
+                        )
+                        Sheet.Name -> io.github.tanzir71.harkara.ui.screens.NameSheetContent(
+                            onSave = { name ->
+                                container.settings.setDisplayName(name)
+                                sheet = Sheet.None
+                                afterName?.invoke()
+                                afterName = null
+                            },
+                        )
+                        Sheet.NewIou -> io.github.tanzir71.harkara.ui.screens.NewIouSheetContent(
+                            onSave = { direction, name, npub, amount, note ->
+                                sheet = Sheet.None
+                                val key = npub.takeIf { it.startsWith("npub1") }?.let { runCatching { Bech32.decodeNpub(it) }.getOrNull() }
+                                taskOp { container.khataRepository.create(direction, io.github.tanzir71.harkara.core.khata.Party(name.trim(), key), amount, note) }
+                            },
+                            onSplit = { names, total, note ->
+                                sheet = Sheet.None
+                                taskOp { container.khataRepository.splitBill(names.map { io.github.tanzir71.harkara.core.khata.Party(it) }, total, note) }
+                            },
+                        )
+                        Sheet.IouDetail -> openIou?.let { s ->
+                            io.github.tanzir71.harkara.ui.screens.IouDetailSheetContent(
+                                state = s,
+                                me = profilePubkey ?: "",
+                                onSign = { taskOp { container.khataRepository.sign(s) } },
+                                onShowQr = { sheet = Sheet.IouQr },
+                                onPasteQr = { iouPasteBad = false; sheet = Sheet.IouPaste },
+                                onRemind = {
+                                    val what = s.terms.note.filter { it.code < 128 }.trim().ifBlank { "our IOU" }
+                                    platform.composeSms(context.getString(R.string.khata_reminder_sms, (settings.displayName ?: "Harkara").filter { it.code < 128 }.ifBlank { "Harkara" }, s.terms.amount.toInt(), what, io.github.tanzir71.harkara.khata.KhataRepository.HELP_URL))
+                                },
+                                onSettle = { sheet = Sheet.IouSettle },
+                                onConfirmSettle = { taskOp { container.khataRepository.confirmSettlement(s) } },
+                            )
+                        }
+                        Sheet.IouQr -> openIou?.let { s -> io.github.tanzir71.harkara.ui.screens.IouQrSheetContent(container.khataRepository.qrFor(s)) }
+                        Sheet.IouPaste -> io.github.tanzir71.harkara.ui.screens.PasteQrSheetContent(
+                            bad = iouPasteBad,
+                            onRead = { text ->
+                                taskOp {
+                                    val st = container.khataRepository.importQr(text)
+                                    if (st == null) iouPasteBad = true else { openIouId = st.terms.id; sheet = Sheet.IouDetail }
+                                }
+                            },
+                        )
+                        Sheet.IouSettle -> openIou?.let { s ->
+                            io.github.tanzir71.harkara.ui.screens.PaymentSheetContent(
+                                amount = s.terms.amount,
+                                onSave = { method, trx ->
+                                    sheet = Sheet.None
+                                    taskOp { container.khataRepository.recordSettlement(s, io.github.tanzir71.harkara.core.khata.Settlement(method.wire, s.terms.amount, trx)) }
+                                },
+                            )
+                        }
+                        Sheet.Sos -> {
+                            LaunchedEffect(Unit) { sosWait = if (profilePubkey != null) container.sosRepository.waitMinutes() else 0 }
+                            io.github.tanzir71.harkara.ui.screens.SosSheetContent(
+                                waitMinutes = sosWait,
+                                onCall999 = dial999,
+                                onSend = { reason, alsoSms ->
+                                    sheet = Sheet.None
+                                    taskOp {
+                                        val sent = container.sosRepository.send(reason, center, settings.displayName)
+                                        if (sent != null) {
+                                            snackbar.showSnackbar(context.getString(R.string.sos_sent))
+                                            if (alsoSms) platform.composeSms(context.getString(R.string.sos_sms_text, (settings.displayName ?: "a neighbour").filter { it.code < 128 }.ifBlank { "a neighbour" }, (settings.areaName ?: "Dhaka").filter { it.code < 128 }))
+                                        }
+                                    }
                                 },
                             )
                         }

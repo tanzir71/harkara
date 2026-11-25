@@ -32,6 +32,11 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 - MapLibre renders Bangla (
 ame:bn) labels with correct conjuncts; if it can't shape Bengali script, labels fall back to 
 ame.
+## Tools
+
+- Camera torch control (CameraManager.setTorchMode) on budget phones; strobe timing at 80/120 ms.
+- Siren volume through STREAM_ALARM and the emergency-alert tone on real speakers.
+- 	el:999 opens the dialer on phones without a SIM.
 
 ## Chats and the Wi-Fi room (M5)
 

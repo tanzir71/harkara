@@ -27,11 +27,3 @@ fun UpcomingTabScreen(
         CalmState(icon, stringResource(title), stringResource(body), tag = stringResource(R.string.coming_soon))
     }
 }
-
-@Composable
-fun TasksScreen(connectivity: ConnectivityState, modifier: Modifier = Modifier, pill: PillActions = PillActions()) =
-    UpcomingTabScreen(R.string.tab_tasks, R.drawable.ic_tasks, R.string.tasks_empty_body, connectivity, modifier, pill = pill)
-
-@Composable
-fun KhataScreen(connectivity: ConnectivityState, modifier: Modifier = Modifier, pill: PillActions = PillActions()) =
-    UpcomingTabScreen(R.string.tab_khata, R.drawable.ic_khata, R.string.khata_empty_body, connectivity, modifier, bangla = "খাতা", pill = pill)

@@ -24,13 +24,13 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | 5 | Deletion | NIP-09 |
 | 7 | Reaction | NIP-25: votes `+`/`-` on posts, `yes`/`no` "still there?" on pins (`e`, `p`, `k`) |
 | 13 | Seal | NIP-59, inside a gift wrap only |
-| 14 | Chat message | NIP-17 rumor: `p` per member, `e` reply, `subject`; Harkara adds `n` (sender's name) and `card` (§13) |
-| 15 | File message | NIP-17 rumor: `file-type`, `encryption-algorithm` `aes-gcm`, `decryption-key`, `decryption-nonce`, `x`; Harkara voice-note parts carry the audio inline (§13) |
+| 14 | Chat message | NIP-17 rumor: `p` per member, `e` reply, `subject`; Harkara adds `n` (sender's name) and `card` (§15) |
+| 15 | File message | NIP-17 rumor: `file-type`, `encryption-algorithm` `aes-gcm`, `decryption-key`, `decryption-nonce`, `x`; Harkara voice-note parts carry the audio inline (§15) |
 | 1059 | Gift wrap | NIP-59: one-time key, `p` recipient |
 | 1984 | Report | NIP-56: `e` + `p` with report type; 3 distinct reporting keys hide a post locally, score ≤ −5 hides |
 | 10000 | Mute list | NIP-51 |
 | 10050 | DM relays | NIP-17 inbox relays |
-| 20000 | Area chat | Ephemeral. Area channel: `g` = geohash-5, signed by the weekly area key. Wi-Fi room: `t` = `wifi`, signed by the profile key, never sent to relays. Both: optional `n`, `expiration` = +24 h (§13) |
+| 20000 | Area chat | Ephemeral. Area channel: `g` = geohash-5, signed by the weekly area key. Wi-Fi room: `t` = `wifi`, signed by the profile key, never sent to relays. Both: optional `n`, `expiration` = +24 h (§15) |
 | 21059 | Ephemeral gift wrap | NIP-59, for live data relays must not store |
 | 30000 | Follow set | NIP-51, opt-in moderator lists per area |
 | 30078 | App data | NIP-78: private pins encrypted to self (`d`) |
@@ -48,7 +48,7 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | 3476 | Check-in | regular | "I got here safe"; top relay priority |
 | 3477 | SOS | regular | Top relay priority; one per 30 min per key; active until an SOS update closes it |
 | 3478 | SOS update | regular | `e` → SOS, `status` = `resolved` · `false_alarm` |
-| 3479 | Chat receipt | rumor, gift-wrapped | To the message author only: `p` author, one `e` per message id (rumor id, or voice-note id), `status` = `delivered` · `read` (M5, §13) |
+| 3479 | Chat receipt | rumor, gift-wrapped | To the message author only: `p` author, one `e` per message id (rumor id, or voice-note id), `status` = `delivered` · `read` (M5, §15) |
 | 23471 | Live location | ephemeral, gift-wrapped (21059) | Session key; `seq` (replay protection), `end` (unix s) |
 | 33471 | Pin | addressable | Shared/public pin: `d`, `g`, `expiration`, `title` |
 
@@ -195,8 +195,39 @@ The pool connects to data/default-relays.json (three required relays + four chos
 The area feed subscribes to kind 1 with #g = the area's geohash-5 cell and its 8 neighbours, since = 2 days. On relays that list NIP-77, the app first runs a negentropy reconciliation (NEG-OPEN with the same filter and the (created_at, id) pairs it already holds) and then REQs only the missing ids. core/relay/LocalRelay is the same NIP-01 logic without I/O, used by the LAN room and node.
 
 Storage budget: other people's events are capped at 20 MB (oldest received first are dropped) and media at 100 MB; expired posts are purged; the user's own events are never auto-cleared.
+## 13. Tasks
 
-## 13. Chats (M5)
+A task offer is NIP-99 kind 30402 signed by the requester's profile key: d, 	itle, summary, published_at, price (["price", "120", "BDT"]), status, 	 = harkara-task and the type (pickup, uy, print, rrand — schemas in data/task-types.json), g at precision 7/6/5, ["field", key, value] for the type's fields, xpiration (24 h by default) and an optional 
+ame.
+
+Steps are kind 3471 with ["a", "30402:<requester>:<d>"], ["e", <offer id>], ["step", …] and p = the other side:
+
+| Step | Who | From | To / effect |
+|---|---|---|---|
+| ccept | anyone but the requester | open | adds a pending offer to help (optional 
+ame) |
+| confirm | requester | open | accepted; needs ["e", <accept id>, "", "accept"] and ["handoff", <commitment>] |
+| decline | runner | accepted | open again |
+| picked_up | runner | accepted | picked up |
+| delivered | runner | accepted, picked up | delivered; needs ["token", <signed token JSON>] or ["code", <6 digits>] |
+| paid | requester | delivered | marks paid by requester; content = NIP-44 to the runner {method, amount, trxId} |
+| paid_ack | runner | delivered + paid | paid |
+| ated | either side, once | delivered, paid | ["rating", 1–5] |
+| cancel | requester | open, accepted, picked up | cancelled |
+| dispute | either side | accepted … paid | disputed; ["reason", item_issue / payment_issue / delivery_issue / safety_or_policy / other] |
+
+Every phone computes the state with TaskStateMachine: steps in time order (lifecycle order for ties), retried until nothing changes; wrong author, wrong state, bad signature or bad proof → dropped. Open offers past xpiration are expired.
+
+Handoff token: kind 3472 signed by the requester, ["a", <offer address>], ["p", <runner>], ["nonce", …]. It's created at confirm and stays on the requester's phone; shown as a QR (harkara:handoff:<token JSON>, checked by signature offline) or as 6 digits = SHA-256("harkara-handoff:" + sig) mod 10^6, checked against the confirm commitment scrypt(code, "harkara-handoff|<address>|<runner>", N=2^14, r=8, p=1). A token or code delivers a task once.
+
+Reputation counts tasks done as runner and ratings received only from keys within two steps of the viewer's verified contacts.
+## 14. Khata (IOUs)
+
+IouTerms = {id, creditor {name, pubkey?}, debtor {name, pubkey?}, amount (taka), currency, note, createdAt, due?, task?}; its hash is SHA-256 of the canonical JSON (fixed field order, defaults included). A party signs with kind 3474 (["h", hash], ["iou", id]); an IOU is **agreed** only when both parties' keys signed the same hash, otherwise it is a **claim** (always the case when one side has no key). A settlement is kind 3475 with content {method, amount, trxId}, ["h", iouHash], ["s", SHA-256(iouHash | settlement JSON)]; **settled** when both sides signed the same s.
+
+Phones exchange the whole IouBundle {terms, signatures[], settlements[]} as the content of a kind 3473 rumor, gift-wrapped (NIP-59) to the other party and to self, and merge bundles by id (only verifying signatures are kept). Face to face, the same bundle goes as a QR: harkara:iou: + base64url(JSON). Split bills create one IOU per member with shares that sum exactly. Paid tasks are shown as settled receipts but are not IOUs.
+
+## 15. Chats (M5)
 
 Code: `core/chat` (`ChatProtocol`, `ChatCards`, `VoiceNotes`), `core/lan/LanRelayServer`, `core/geo/OpenLocationCode`; app `chat/ChatRepository`, `lan/LanRoom`.
 

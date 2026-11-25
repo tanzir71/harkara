@@ -61,6 +61,7 @@ fun SettingsScreen(
     onOpenSource: () -> Unit,
     modifier: Modifier = Modifier,
     onRelays: () -> Unit = {},
+    onEmergencyAlerts: (Boolean) -> Unit = {},
 ) {
     val c = HarkaraTheme.colors
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -74,6 +75,8 @@ fun SettingsScreen(
             )
             HCard(Modifier.fillMaxWidth().padding(top = 8.dp), padding = PaddingValues(vertical = 4.dp)) {
                 Column {
+                    SettingsRow(R.drawable.ic_sos, stringResource(R.string.settings_emergency_alerts), subtitle = stringResource(R.string.settings_emergency_alerts_body), onClick = { onEmergencyAlerts(!settings.emergencyAlerts) }, trailing = { io.github.tanzir71.harkara.ui.components.HToggle(settings.emergencyAlerts, onCheckedChange = null) })
+                    RowDivider()
                     SettingsRow(R.drawable.ic_relay, stringResource(R.string.relays_title), subtitle = stringResource(R.string.relays_body), onClick = onRelays)
                     RowDivider()
                     SettingsRow(R.drawable.ic_drop, stringResource(R.string.settings_share), subtitle = stringResource(R.string.settings_share_body), onClick = onShare)

@@ -103,11 +103,11 @@
     <string name="checkin_safe">I\'m safe</string>
 
     <!-- Name prompt -->
-    <string name="name_title">What should people call you?</string>
-    <string name="name_body">Shown only to the people you message. Never your phone number.</string>
-    <string name="name_hint">Your name</string>
-    <string name="name_save">Save and send</string>
-    <string name="name_skip">Send without a name</string>
-    <string name="name_phone">A name can\'t contain a phone number</string>
-    <string name="name_long">Keep it under 32 characters</string>
+    <string name="chat_name_title">What should people call you?</string>
+    <string name="chat_name_body">Shown only to the people you message. Never your phone number.</string>
+    <string name="chat_name_hint">Your name</string>
+    <string name="chat_name_save">Save and send</string>
+    <string name="chat_name_skip">Send without a name</string>
+    <string name="chat_name_phone">A name can\'t contain a phone number</string>
+    <string name="chat_name_long">Keep it under 32 characters</string>
 </resources>

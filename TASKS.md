@@ -53,13 +53,13 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M7 - Tasks (v0.6.0)
 
-- [ ] NIP-99 offers, task types, signed steps + roles, countersigned accept, handoff token (QR + 6 digits, offline), proof thumbnail, disputes, ratings, reputation, Stock → task.
-- [ ] Gate: state machine + offline handoff tests; screen 05 screenshot.
+- [x] NIP-99 offers, task types, signed steps + roles, countersigned accept, handoff token (QR + 6 digits, offline), proof thumbnail, disputes, ratings, reputation, Stock → task.
+- [x] Gate: state machine + offline handoff tests; screen 05 screenshot.
 
 ## M8 - Khata (v0.7.0)
 
-- [ ] IOU propose/co-sign, claimed vs agreed, settle with TrxID, task receipts, split bill, filters, CSV/JSON export, SMS reminder link.
-- [ ] Gate: co-sign over relay, LAN and QR; screen 06 screenshot.
+- [x] IOU propose/co-sign, claimed vs agreed, settle with TrxID, task receipts, split bill, filters, CSV/JSON export, SMS reminder link.
+- [ ] Gate: co-sign over relay, LAN and QR; screen 06 screenshot. (relay + QR + screenshot done; LAN path after the M5 LAN room merges)
 
 ## M9 - Map, pins, location (v0.8.0)
 
@@ -75,8 +75,10 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M11 - Tools, modules, safety (v0.10.0)
 
-- [ ] Tools shelf, handbook (bn + en), file drop, push-to-talk, SOS flow, Lite mode, battery audit tests.
-- [ ] Gate: module-off tests show no services/sensors; SOS rate-limit + resolve tests.
+- [x] Handbook (bn + en, 42 sections), Qibla + prayer times (Karachi/Hanafi), torch/strobe/Morse SOS/siren, SOS flow (3-s hold, Call 999 first, 30-min limit, resolve), emergency-alert sound switch, Lite mode 60-min checks.
+- [ ] File drop (LocalSend v2) and push-to-talk over the LAN (need the M5 LAN room); compass/QR tools land with M9/M10.
+- [x] Battery audit: with default modules no service, GPS or relay runs in the background (Robolectric).
+- [x] Gate: module-off tests show no services/sensors; SOS rate-limit + resolve tests.
 
 ## M12 - Hardening and distribution (v0.11.0)
 

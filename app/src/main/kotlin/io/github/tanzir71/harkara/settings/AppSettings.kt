@@ -27,6 +27,10 @@ data class SettingsState(
     val modules: Map<Module, Boolean> = Module.entries.associateWith { it.defaultOn },
     val meshMode: MeshMode = MeshMode.SAVER,
     val dismissedUpdateCode: Int = 0,
+    /** Name shown on tasks and IOUs; asked only when first needed. Never a phone number. */
+    val displayName: String? = null,
+    /** Sound for incoming SOS; off means silent cards only (§4). */
+    val emergencyAlerts: Boolean = false,
 ) {
     fun isOn(module: Module): Boolean = modules[module] ?: module.defaultOn
 }
@@ -70,6 +74,10 @@ class AppSettings(private val prefs: SharedPreferences) {
 
     fun dismissUpdate(versionCode: Int) = update { putInt(KEY_DISMISSED_UPDATE, versionCode) }
 
+    fun setDisplayName(name: String) = update { putString(KEY_DISPLAY_NAME, name.trim().take(40)) }
+
+    fun setEmergencyAlerts(on: Boolean) = update { putBoolean(KEY_EMERGENCY_ALERTS, on) }
+
     /** Raw access for small internal timestamps (e.g. last update check). */
     fun getLong(key: String, default: Long = 0L): Long = prefs.getLong(key, default)
 
@@ -98,6 +106,8 @@ class AppSettings(private val prefs: SharedPreferences) {
         modules = Module.entries.associateWith { prefs.getBoolean(MODULE_PREFIX + it.key, it.defaultOn) },
         meshMode = prefs.getString(KEY_MESH_MODE, null)?.let { runCatching { MeshMode.valueOf(it) }.getOrNull() } ?: MeshMode.SAVER,
         dismissedUpdateCode = prefs.getInt(KEY_DISMISSED_UPDATE, 0),
+        displayName = prefs.getString(KEY_DISPLAY_NAME, null)?.takeIf { it.isNotBlank() },
+        emergencyAlerts = prefs.getBoolean(KEY_EMERGENCY_ALERTS, false),
     )
 
     companion object {
@@ -111,6 +121,8 @@ class AppSettings(private val prefs: SharedPreferences) {
         const val KEY_LANGUAGE = "language"
         private const val KEY_MESH_MODE = "mesh_mode"
         private const val KEY_DISMISSED_UPDATE = "dismissed_update"
+        private const val KEY_DISPLAY_NAME = "display_name"
+        private const val KEY_EMERGENCY_ALERTS = "emergency_alerts"
         private const val MODULE_PREFIX = "module."
 
         /** Reads only the language, for `attachBaseContext` before the app container exists. */
