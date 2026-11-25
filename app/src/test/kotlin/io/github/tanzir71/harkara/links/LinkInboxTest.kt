@@ -28,7 +28,8 @@ import io.github.tanzir71.harkara.tasks.TaskRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -84,8 +85,10 @@ class LinkInboxTest {
 
     @After
     fun tearDown() {
-        phones.forEach { it.pool.stop(); it.db.close() }
-        scope.cancel()
+        phones.forEach { it.pool.stop() }
+        // Stop every background writer before the databases close, so nothing leaks into later tests.
+        runBlocking { scope.coroutineContext[Job]!!.cancelAndJoin() }
+        phones.forEach { it.db.close() }
         relay.shutdown()
     }
 

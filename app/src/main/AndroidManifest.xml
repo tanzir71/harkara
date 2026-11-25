@@ -65,12 +65,14 @@
             </intent-filter>
             <!-- The web page for non-users. Not autoVerify: assetlinks.json would have to live at the root of
                  tanzir71.github.io, which this project does not control; the page also offers "Open in Harkara". -->
-            <intent-filter>
+            <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="tanzir71.github.io" android:pathPrefix="/harkara/o/" />
-                <data android:scheme="https" android:host="tanzir71.github.io" android:pathPrefix="/harkara/en/o/" />
+                <data android:scheme="https" />
+                <data android:host="tanzir71.github.io" />
+                <data android:pathPrefix="/harkara/o/" />
+                <data android:pathPrefix="/harkara/en/o/" />
             </intent-filter>
             <!-- A forwarded SMS or a QR text shared to Harkara. -->
             <intent-filter>
