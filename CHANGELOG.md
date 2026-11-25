@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0
+
+- Final handover hardening and distribution milestone. In-app QR camera scanning now complements paste import, multipart event QR, encrypted key-backup restore, task handoff and face-to-face Khata exchange. Scan asks for camera permission only when tapped; Stop, pause, screen disposal and a result release preview and decoding. Disabling the QR module removes scanning controls while paste remains usable.
+- Scanned text is bounded, shown for review and passed through the existing signature/handoff verifier or password-protected backup unlock only on explicit import. No camera frames are saved. Fake camera and permission/lifecycle tests cover denial, driver errors, stale callbacks, module-off behavior and multipart decoding from generated QR pixels; Day/Night goldens include the scanner and import sheet.
+- Distribution checks enforce 30 MB per ABI, matching English/Bangla metadata, 816 translated app resources, 24 normal-text contrast checks and 80 extended Day/Night accessibility states at 1.3× text size. The beta notice remains on the landing page.
+- Clean CI builds compare all unsigned APK variants and retain a complete reproducibility report; final release evidence is recorded in `docs/RELEASING.md`. Signed APKs, checksums and update metadata use the existing signing certificate and Obtainium-compatible asset names.
+- Test hardening waits for the LAN inbox callback independently of socket delivery and verifies restored keys through persistent state rather than a transient snackbar. Real camera, radio, SIM, GPS and sensor behavior remains unverified on hardware, as documented.
+- SOS history replay handles an alert, resolution and new alert sharing the same second: the new alert remains visible and keeps its own cooldown.
+
 ## 0.10.0
 
 - Tools and safety milestone: the English/Bangla emergency handbook, Karachi/Hanafi prayer times, Qibla, compass, QR, flashlight, strobe, Morse SOS and siren are available from Me. Optional LAN file drop and push-to-talk require explicit setup and stop when their screen leaves the foreground.

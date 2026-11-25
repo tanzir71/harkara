@@ -57,7 +57,9 @@ Open Location Code (Plus Codes) specification, WebSocket (RFC 6455) for the Wi-F
 PMTiles v3 (https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md), Hilbert tile ids, geohash.
 
 Libraries linked (not copied): secp256k1-kmp (ACINQ, Apache-2.0, bundles libsecp256k1, MIT),
-BouncyCastle (MIT), ZXing core (Apache-2.0), MapLibre Native Android (BSD-2-Clause,
+BouncyCastle (MIT), ZXing core (Apache-2.0), ZXing Android Embedded 4.3.0 (JourneyApps,
+https://github.com/journeyapps/zxing-android-embedded, Apache-2.0; camera/decoder adapter,
+no source copied), MapLibre Native Android (BSD-2-Clause,
 https://github.com/maplibre/maplibre-native; with its MapLibre GeoJSON/Turf/gestures modules, BSD-2-Clause,
 and Timber, Apache-2.0).
 

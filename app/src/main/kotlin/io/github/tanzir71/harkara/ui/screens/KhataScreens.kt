@@ -322,11 +322,12 @@ fun IouQrSheetContent(qr: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun PasteQrSheetContent(onRead: (String) -> Unit, bad: Boolean, modifier: Modifier = Modifier) {
+fun PasteQrSheetContent(onRead: (String) -> Unit, bad: Boolean, modifier: Modifier = Modifier, scanEnabled: Boolean = true) {
     val c = HarkaraTheme.colors
     var text by remember { mutableStateOf("") }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.khata_action_paste), style = HarkaraTheme.type.title, color = c.textPrimary, modifier = Modifier.semantics { heading() })
+        if (scanEnabled) QrScanControl({ text = it })
         HTextField(text, { text = it.take(8000) }, stringResource(R.string.khata_qr_paste), mono = true, singleLine = false, error = if (bad) stringResource(R.string.khata_qr_bad) else null)
         HButton(stringResource(R.string.khata_qr_import), { onRead(text) }, Modifier.fillMaxWidth(), height = 52.dp, enabled = text.isNotBlank())
     }

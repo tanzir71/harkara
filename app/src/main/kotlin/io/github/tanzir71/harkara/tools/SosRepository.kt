@@ -52,7 +52,15 @@ class SosRepository(
         val alerts = all.filter { it.kind == Kinds.SOS }.associateBy { it.id }
         val closed = all.filter { u -> alerts[u.tagValue("e")]?.let { SosEvents.closes(u, it) } == true }
             .mapNotNull { it.tagValue("e") }.toSet()
-        all.sortedBy { it.createdAt }
+        // Nostr timestamps have one-second precision. A resolution and a new SOS can share it;
+        // replay the closed alert, its update, then the new alert regardless of database row order.
+        all.sortedWith(compareBy<Event> { it.createdAt }.thenBy {
+            when {
+                it.kind == Kinds.SOS && it.id in closed -> 0
+                it.kind == Kinds.SOS_UPDATE -> 1
+                else -> 2
+            }
+        }.thenBy { it.id })
             .filter { policy.accept(it) }
             .filter { it.kind == Kinds.SOS && it.pubkey != me && it.id !in closed && now - it.createdAt in 0 until 24 * 3600 }
             .map { e ->
@@ -66,9 +74,10 @@ class SosRepository(
     /** Minutes until another SOS may be sent (0 = now). */
     suspend fun waitMinutes(): Int {
         val mine = db.eventDao().byKinds(listOf(Kinds.SOS, Kinds.SOS_UPDATE)).map { Event.fromJson(it.json) }.filter { it.pubkey == profile().pubkeyHex }
-        val last = mine.filter { it.kind == Kinds.SOS }.maxByOrNull { it.createdAt } ?: return 0
-        val resolved = mine.any { SosEvents.closes(it, last) }
-        return ((SosEvents.waitSeconds(last.createdAt, now, resolved) + 59) / 60).toInt()
+        val alerts = mine.filter { it.kind == Kinds.SOS }
+        val latestAt = alerts.maxOfOrNull { it.createdAt } ?: return 0
+        val resolved = alerts.filter { it.createdAt == latestAt }.all { alert -> mine.any { SosEvents.closes(it, alert) } }
+        return ((SosEvents.waitSeconds(latestAt, now, resolved) + 59) / 60).toInt()
     }
 
     /** Sends an SOS on every open route. Returns null when the 30-minute limit applies. */

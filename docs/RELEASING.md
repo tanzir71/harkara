@@ -44,6 +44,8 @@ the version catalog. `.github/workflows/reproducible.yml` (on every tag, or by h
 from clean checkouts on separate runners and compares them entry by entry with `tools/compare_apks.py`;
 content/container differences are informational and never gate a release, while missing or invalid comparison inputs fail the check.
 The workflow fixes timezone/locale and `SOURCE_DATE_EPOCH`, disables build/configuration caches, uses the tag's version and retains the complete `reproducibility-report` artifact and job summary.
+Fresh-runner unsigned builds retry at most three times for transient dependency/plugin-resolution failures;
+the two jobs still start from separate clean checkouts, and persistent failures fail the workflow.
 
 The v0.5.0 run `45566932709` compared independent clean builds and reported `MATCH` for arm64, ARMv7 and universal APKs: identical ZIP entry contents/metadata and whole-file hashes. Its report is retained as `reproducibility-report`. This is historical evidence, not a claim about a later tag; each final tag repeats the comparison.
 

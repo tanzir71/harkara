@@ -432,14 +432,15 @@ fun TaskComposeSheetContent(
     }
 }
 
-/** Runner enters the 6 digits (or pastes the QR text); checked offline. */
+/** Runner enters the 6 digits, scans or pastes the QR text; checked offline. */
 @Composable
-fun HandoffEntrySheetContent(onCheck: (String) -> Unit, wrong: Boolean, modifier: Modifier = Modifier, initial: String = "") {
+fun HandoffEntrySheetContent(onCheck: (String) -> Unit, wrong: Boolean, modifier: Modifier = Modifier, initial: String = "", scanEnabled: Boolean = true) {
     val c = HarkaraTheme.colors
     var code by remember(initial) { mutableStateOf(initial) }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.task_code_title), style = HarkaraTheme.type.title, color = c.textPrimary, modifier = Modifier.semantics { heading() })
         Text(stringResource(R.string.task_code_body), style = HarkaraTheme.type.caption, color = c.textSecondary)
+        if (scanEnabled) QrScanControl({ code = it })
         HTextField(code, { code = it.take(4000) }, stringResource(R.string.task_code_label), mono = true, error = if (wrong) stringResource(R.string.task_code_wrong) else null)
         HButton(stringResource(R.string.task_code_check), { onCheck(code) }, Modifier.fillMaxWidth(), height = 52.dp, enabled = code.isNotBlank())
     }

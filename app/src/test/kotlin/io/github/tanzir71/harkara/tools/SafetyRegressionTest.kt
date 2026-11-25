@@ -100,6 +100,23 @@ class SafetyRegressionTest {
         assertEquals(30, sos.waitMinutes())
     }
 
+    @Test fun `same second resolution and new alert preserve visibility and cooldown`() = runBlocking<Unit> {
+        val first = sos.send("First emergency", null, null)!!
+        sos.resolve(first, SosStatus.RESOLVED)
+        val next = sos.send("New emergency", null, null)!!
+        assertEquals(first.createdAt, next.createdAt)
+        assertNull(sos.send("Extra tap", null, null))
+        assertEquals(30, sos.waitMinutes())
+        assertEquals(next.id, sos.activeOwn().first()?.id)
+        // Replay Room history as another phone, without relying on equal-timestamp row ordering.
+        val watcherKeys = KeyPair.generate()
+        val watcher = SosRepository(db, store, Outbox(db, pool), pool, { watcherKeys }, { at * 1000 })
+        assertEquals(next.id, watcher.incoming(LatLng(23.75, 90.38)).first().single().event.id)
+        sos.resolve(first, SosStatus.FALSE_ALARM)
+        assertNull(sos.send("Replayed closure", null, null))
+        assertEquals(next.id, watcher.incoming(LatLng(23.75, 90.38)).first().single().event.id)
+    }
+
     @Test
     @Config(qualifiers = "bn-w360dp-h800dp-mdpi")
     fun `Bangla handbook uses translated group titles rather than English data ids`() {

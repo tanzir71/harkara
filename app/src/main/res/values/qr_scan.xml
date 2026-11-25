@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_scan_start">Scan with camera</string>
+    <string name="qr_scan_stop">Stop camera</string>
+    <string name="qr_scan_hint">Point the camera at one QR code. For a numbered set, scan each code in turn.</string>
+    <string name="qr_scan_viewfinder">QR camera preview</string>
+    <string name="qr_scan_permission">Camera permission is needed to scan. You can still paste the QR text below.</string>
+    <string name="qr_scan_failed">The QR could not be read. Try again, or paste its text below.</string>
+</resources>

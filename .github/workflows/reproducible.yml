@@ -31,7 +31,15 @@ jobs:
           if [[ "$GITHUB_REF_TYPE" == tag ]]; then
             version_args+=("-PharkaraVersion=${GITHUB_REF_NAME#v}")
           fi
-          ./gradlew --no-build-cache --no-configuration-cache :app:assembleRelease -PharkaraAbiSplits=true "${version_args[@]}"
+          # Fresh runners can transiently fail to resolve pinned plugin metadata. Both checkouts
+          # remain independent and caches stay disabled; a persistent build failure still fails.
+          for attempt in 1 2 3; do
+            if ./gradlew --no-build-cache --no-configuration-cache :app:assembleRelease -PharkaraAbiSplits=true "${version_args[@]}"; then
+              exit 0
+            fi
+            if [[ "$attempt" -lt 3 ]]; then sleep 5; fi
+          done
+          exit 1
       - name: Enforce per-ABI size budget
         run: node tools/check-apk-size.mjs
       - uses: actions/upload-artifact@v4

@@ -72,7 +72,7 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 - [x] Prefilled SMS (`SmsComposer`, ACTION_SENDTO smsto:), SMS payload codec (`core/wire/SmsCodec`: GSM-7 line + HK1 payload, 8-byte key refs, Text8 Bangla), SMS-eligible kinds incl. SMS DM 3480, deep links (`harkara:`, `…/harkara/o/#`, shared text) with `DeepLinkRouter` + `LinkInbox`, `site/o/` verifier page (IOU confirm with a throwaway key, follow a task, area feed; CSP-pinned relays).
 - [x] Direct SMS (data SMS, port 7471) + volunteer gateway (100/day, members only) behind default-off switches, disabled receivers, permission asked only on switch-on; restricted-settings guidance screen.
-- [x] QR transport (`harkara:e:` single, `harkara:q:` multi-QR with reassembly), share-as-QR sheet and paste import (camera scanning is hardware).
+- [x] QR transport (`harkara:e:` single, `harkara:q:` multi-QR with reassembly), share-as-QR sheet and paste import; M12 adds permission-gated in-app camera scanning behind a fakeable adapter.
 - [x] Gate: every SMS-eligible type fits two parts (`SmsBudgetTest`); `site/o/` verifies a core-signed payload in Playwright (`tests/site/o.spec.mjs`); grey switches default off (`GreyAreaSmsTest`).
 - [x] Integrated gate with M6/LAN tools: 246 core and 179 app tests, offline Robolectric runtime, screenshots/lint/debug APK; 40 browser checks in both fixture-release and missing-release states.
 
@@ -86,7 +86,8 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M12 - Hardening and distribution (v0.11.0)
 
-- [x] Reproducible settings, fastlane metadata, Obtainium naming, Bangla parity and docs; 39 extended accessibility cases cover 78 Day/Night states at 1.3× font scale; normal-text AA contrast passes 24 checks.
+- [x] Reproducible settings, fastlane metadata, Obtainium naming, Bangla parity and docs; 40 extended accessibility cases cover 80 Day/Night states at 1.3× font scale; normal-text AA contrast passes 24 checks.
+- [x] Complete in-app QR scanning for general imports, encrypted key restore, handoff and Khata: explicit camera permission, QR-module gating, fake camera/lifecycle boundary, bounded reviewed text, generated-pixel multipart decode and Day/Night scanner/import goldens.
 - [x] Map-enabled unsigned ABI APKs: arm64 23,050,590 bytes; ARMv7 22,013,478 bytes, both below 30,000,000 bytes. Size is enforced before publication.
 - [x] Historical independent clean-build comparison: v0.5.0 MATCH for both ABI splits and universal. Final-tag comparison remains to be recorded.
 - [ ] Gate: two clean CI builds compared; size + accessibility checks pass.

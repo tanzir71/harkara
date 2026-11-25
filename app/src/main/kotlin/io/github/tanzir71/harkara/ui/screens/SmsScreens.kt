@@ -119,13 +119,14 @@ fun EventQrSheetContent(codes: List<String>, onCopy: (String) -> Unit, modifier:
     }
 }
 
-/** Paste a link, QR text or forwarded SMS (camera scanning needs hardware; paste always works). */
+/** Scan or paste a link, QR text or forwarded SMS; import remains an explicit action. */
 @Composable
-fun PasteLinkSheetContent(onRead: (String) -> Unit, modifier: Modifier = Modifier, message: String? = null) {
+fun PasteLinkSheetContent(onRead: (String) -> Unit, modifier: Modifier = Modifier, message: String? = null, scanEnabled: Boolean = true, cameraFactory: io.github.tanzir71.harkara.tools.QrCameraFactory = io.github.tanzir71.harkara.tools.QrCameraFactory.Android) {
     val c = HarkaraTheme.colors
     var text by remember { mutableStateOf("") }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.link_paste_title), style = HarkaraTheme.type.title, color = c.textPrimary, modifier = Modifier.semantics { heading() })
+        if (scanEnabled) QrScanControl({ text = it }, cameraFactory = cameraFactory)
         HTextField(text, { text = it.take(8000) }, stringResource(R.string.link_paste_label), mono = true, singleLine = false)
         if (message != null) Text(message, style = HarkaraTheme.type.caption, color = c.textSecondary)
         HButton(stringResource(R.string.link_paste_read), { onRead(text); text = "" }, Modifier.fillMaxWidth(), height = 52.dp, enabled = text.isNotBlank())

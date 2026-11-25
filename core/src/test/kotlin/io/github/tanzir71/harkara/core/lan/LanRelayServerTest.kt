@@ -95,6 +95,8 @@ class LanRelayServerTest {
         val live = bobPeer.next() as RelayMessage.EventMessage
         assertEquals(wrap.id, live.event.id)
         assertEquals("Generator on in the hall?", GiftWrap.unwrap(live.event, bob).content)
+        // Socket delivery and this phone's inbox callback complete independently.
+        waitFor { received.size == 1 }
         assertEquals(listOf(wrap.id), received.map { it.id })
 
         // The room keeps wraps for late joiners, but refuses kinds it does not carry.

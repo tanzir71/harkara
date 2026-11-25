@@ -145,6 +145,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.secp256k1.kmp.jni.android)
     implementation(libs.zxing.core)
+    implementation(libs.zxing.embedded)
     implementation(libs.maplibre.android)
     kapt(libs.androidx.room.compiler)
 

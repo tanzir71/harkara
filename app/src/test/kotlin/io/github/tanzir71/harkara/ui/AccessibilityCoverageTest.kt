@@ -182,6 +182,9 @@ class AccessibilityCoverageTest {
     fun taskHandoff() = check { HandoffEntrySheetContent({}, false) }
 
     @Test
+    fun qrImport() = check { io.github.tanzir71.harkara.ui.screens.PasteLinkSheetContent({}) }
+
+    @Test
     fun sos() = check { SosSheetContent(0, {}, { _, _ -> }) }
 
     @Test

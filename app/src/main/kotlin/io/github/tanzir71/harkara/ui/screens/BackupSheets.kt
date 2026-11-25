@@ -99,7 +99,7 @@ fun BackupSheetContent(
     }
 }
 
-/** Restore sheet content: paste or open an `ncryptsec`, type its password, restore. */
+/** Restore sheet content: scan, paste or open an `ncryptsec`, type its password, restore. */
 @Composable
 fun RestoreSheetContent(
     backup: String,
@@ -111,11 +111,13 @@ fun RestoreSheetContent(
     onOpenFile: () -> Unit,
     onRestore: () -> Unit,
     modifier: Modifier = Modifier,
+    scanEnabled: Boolean = true,
 ) {
     val c = HarkaraTheme.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SheetTitle(stringResource(R.string.restore_title))
         Text(stringResource(R.string.restore_body), style = HarkaraTheme.type.body, color = c.textSecondary)
+        if (scanEnabled && !working) QrScanControl(onBackup)
         HTextField(backup, onBackup, stringResource(R.string.restore_backup), mono = true)
         HButton(stringResource(R.string.restore_open_file), onOpenFile, variant = HButtonVariant.Ghost, icon = R.drawable.ic_handbook, height = 40.dp)
         HTextField(password, onPassword, stringResource(R.string.backup_password), password = true, error = error, imeAction = ImeAction.Done)
@@ -193,6 +195,7 @@ fun RestoreSheet(
     openFile: (onResult: (String?) -> Unit) -> Unit,
     onRestored: () -> Unit,
     modifier: Modifier = Modifier,
+    scanEnabled: Boolean = true,
 ) {
     var backup by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -201,6 +204,7 @@ fun RestoreSheet(
     val scope = rememberCoroutineScope()
     val wrong = stringResource(R.string.restore_failed)
     RestoreSheetContent(
+        scanEnabled = scanEnabled,
         backup = backup,
         password = password,
         working = working,

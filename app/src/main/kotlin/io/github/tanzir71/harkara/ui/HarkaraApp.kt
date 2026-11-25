@@ -739,6 +739,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                             },
                         )
                         Sheet.Restore -> RestoreSheet(
+                            scanEnabled = settings.isOn(Module.QR),
                             restore = { backup, password -> runCatching { container.identity.restore(backup, password) }.isSuccess },
                             openFile = platform::openTextDocument,
                             onRestored = {
@@ -806,6 +807,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                             },
                         )
                         Sheet.HandoffEntry -> io.github.tanzir71.harkara.ui.screens.HandoffEntrySheetContent(
+                            scanEnabled = settings.isOn(Module.QR),
                             initial = handoffPrefill,
                             wrong = handoffWrong,
                             onCheck = { entered ->
@@ -868,6 +870,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         }
                         Sheet.IouQr -> openIou?.let { s -> io.github.tanzir71.harkara.ui.screens.IouQrSheetContent(container.khataRepository.qrFor(s)) }
                         Sheet.IouPaste -> io.github.tanzir71.harkara.ui.screens.PasteQrSheetContent(
+                            scanEnabled = settings.isOn(Module.QR),
                             bad = iouPasteBad,
                             onRead = { text ->
                                 taskOp {
@@ -923,6 +926,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                             EventQrSheetContent(remember(e) { QrTransport.encode(e) }, onCopy = { platform.copyToClipboard(context.getString(R.string.app_name), it); notify(R.string.qr_copied) })
                         }
                         Sheet.PasteLink -> PasteLinkSheetContent(
+                            scanEnabled = settings.isOn(Module.QR),
                             onRead = { text -> DeepLinkRouter.parse(text)?.let(handleLink) ?: run { pasteMessage = context.getString(R.string.link_unverified) } },
                             message = pasteMessage,
                         )

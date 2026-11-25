@@ -21,6 +21,7 @@ import io.github.tanzir71.harkara.ui.screens.GreyAreaSheetContent
 import io.github.tanzir71.harkara.ui.screens.RestrictedSettingsScreen
 import io.github.tanzir71.harkara.ui.screens.SendSmsSheetContent
 import io.github.tanzir71.harkara.ui.screens.SmsGatewayScreen
+import io.github.tanzir71.harkara.ui.screens.PasteLinkSheetContent
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -41,6 +42,13 @@ class SmsScreenshotTest {
     }
 
     private val sos = signed(Kinds.SOS, listOf(listOf("g", "wh0r0dkq7"), listOf("place", "Mirpur 10")), "পানি বাড়ছে, ছাদে আটকে আছি")
+
+    @Test
+    fun scanOrPaste() = captureDayNight("screen-qr-import", padded = false) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            SheetSurface { PasteLinkSheetContent({}) }
+        }
+    }
 
     @Test
     fun sendBySms() = captureDayNight("screen-sms-send", padded = false) {

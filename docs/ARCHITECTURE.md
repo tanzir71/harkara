@@ -71,6 +71,10 @@ Everything in `core` is tested on the JVM with JUnit 5, including the official N
 - **SMS and QR**: `LinkInbox` handles pasted/deep-linked events through feature repositories. Ordinary SMS
   opens the user's SMS app with a cost-visible preview; permissioned direct/gateway paths remain off by
   default. The static `o/` page verifies events locally and uses no central account or application server.
+  `QrScanControl` uses an explicitly started, permission-gated `QrCamera` adapter around ZXing's QR-only
+  preview. Pause/disposal/Stop/result release it, and stale callbacks are ignored. A scan fills the import,
+  task-handoff, Khata or encrypted-backup field; the user then invokes the existing verifier or password
+  unlock. Camera frames stay in memory.
 - **Map packs and rendering**: `MapPackManager` (`map/`) fetches the newest `maps-YYYYMM` manifest and a
   chosen pack only on explicit user action. Packs live outside Room under `files/maps/`, alongside
   `pack.json`; downloaded bytes/size/SHA-256 are checked against `maps.json`, and install checks PMTiles v3

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_scan_start">ক্যামেরা দিয়ে স্ক্যান করো</string>
+    <string name="qr_scan_stop">ক্যামেরা বন্ধ করো</string>
+    <string name="qr_scan_hint">একটি QR কোডের দিকে ক্যামেরা ধরো। নম্বর দেওয়া সেট হলে একে একে প্রতিটি কোড স্ক্যান করো।</string>
+    <string name="qr_scan_viewfinder">QR ক্যামেরার দৃশ্য</string>
+    <string name="qr_scan_permission">স্ক্যান করতে ক্যামেরার অনুমতি দরকার। নিচে QR-এর লেখা পেস্ট করেও ব্যবহার করতে পারো।</string>
+    <string name="qr_scan_failed">QR পড়া যায়নি। আবার চেষ্টা করো, বা নিচে এর লেখা পেস্ট করো।</string>
+</resources>
