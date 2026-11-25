@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0
 
 The protocol core: everything Harkara sends is now a signed Nostr event.
 
