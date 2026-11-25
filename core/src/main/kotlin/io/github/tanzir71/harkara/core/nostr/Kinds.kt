@@ -47,6 +47,8 @@ object Kinds {
     const val SOS = 3477
     /** SOS follow-up: `e` to the SOS, `status` = resolved|false_alarm. */
     const val SOS_UPDATE = 3478
+    /** Chat receipt rumor, gift-wrapped to the author: `e` per message, `status` = delivered|read. */
+    const val RECEIPT = 3479
     /** Live location point: ephemeral, gift-wrapped to named people, `seq` + `end`. */
     const val LIVE_LOCATION = 23471
     /** Shared or public pin: addressable (`d`), `g` + `expiration`. */
