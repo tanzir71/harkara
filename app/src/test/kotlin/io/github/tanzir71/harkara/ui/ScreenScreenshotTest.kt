@@ -19,7 +19,6 @@ import io.github.tanzir71.harkara.ui.screens.BackupSheetContent
 import io.github.tanzir71.harkara.ui.screens.BackupStep
 import io.github.tanzir71.harkara.ui.screens.RestoreSheetContent
 import io.github.tanzir71.harkara.ui.screens.CardActionsSheetContent
-import io.github.tanzir71.harkara.ui.screens.ChatsScreen
 import io.github.tanzir71.harkara.ui.screens.ComposeSheetContent
 import io.github.tanzir71.harkara.ui.screens.RelaysScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
@@ -57,11 +56,6 @@ class ScreenScreenshotTest {
     @Test
     fun nearbyEmptySaved() = captureDayNight("screen-01b-nearby-empty", padded = false) {
         WithTabs(HarkaraTab.Nearby) { NearbyScreen("Dhanmondi 27", areaAuto = false, connectivity = ConnectivityState.Saved, posts = emptyList(), modifier = it) }
-    }
-
-    @Test
-    fun chatsUpcoming() = captureDayNight("screen-04-chats-upcoming", padded = false) {
-        WithTabs(HarkaraTab.Chats) { ChatsScreen(SampleData.meshOnly, it) }
     }
 
     @Test

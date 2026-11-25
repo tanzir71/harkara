@@ -62,8 +62,9 @@ interface ChatDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertWrap(wrap: ChatWrapEntity)
 
-    @Query("UPDATE chat_wraps SET lanState = :state WHERE wrapId = :wrapId")
-    suspend fun setLanState(wrapId: String, state: String)
+    /** Moves a wrap's Wi-Fi room state up (never down), atomically: only from one of [below]. */
+    @Query("UPDATE chat_wraps SET lanState = :state WHERE wrapId = :wrapId AND lanState IN (:below)")
+    suspend fun raiseLanState(wrapId: String, state: String, below: List<String>): Int
 
     @Query("SELECT * FROM chat_wraps WHERE wrapId = :wrapId")
     suspend fun wrap(wrapId: String): ChatWrapEntity?

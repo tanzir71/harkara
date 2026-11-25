@@ -111,12 +111,15 @@ fun ConnectivityPill(
     meshPeers: Int = 0,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    labelOverride: String? = null,
+    /** Tighter padding for crowded headers (the chat thread). */
+    compact: Boolean = false,
 ) {
     val c = HarkaraTheme.colors
-    val label = carrierPillLabel(carrier, meshPeers)
+    val label = labelOverride ?: carrierPillLabel(carrier, meshPeers)
     Row(
         modifier = modifier
-            .heightIn(min = 36.dp)
+            .heightIn(min = if (compact) 32.dp else 36.dp)
             .clip(CircleShape)
             .background(c.bgSurface)
             .border(1.dp, c.borderDefault, CircleShape)
@@ -128,13 +131,14 @@ fun ConnectivityPill(
                 },
             )
             .semantics { contentDescription = label }
-            .padding(start = 12.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = if (compact) 10.dp else 12.dp, end = if (compact) 10.dp else 14.dp, top = 6.dp, bottom = 6.dp)
+            .padding(vertical = if (compact) 0.dp else 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp),
     ) {
         Box(Modifier.size(8.dp).clip(CircleShape).background(c.carrierColor(carrier)))
-        HIcon(carrierIcon(carrier), tint = c.carrierColor(carrier), size = 16.dp)
-        Text(label, style = HarkaraTheme.type.label.copy(fontSize = Tokens.Text.caption.sizeSp), color = c.textPrimary, maxLines = 1)
+        HIcon(carrierIcon(carrier), tint = c.carrierColor(carrier), size = if (compact) 14.dp else 16.dp)
+        Text(label, style = if (compact) HarkaraTheme.type.label else HarkaraTheme.type.label.copy(fontSize = Tokens.Text.caption.sizeSp), color = c.textPrimary, maxLines = 1)
     }
 }
 

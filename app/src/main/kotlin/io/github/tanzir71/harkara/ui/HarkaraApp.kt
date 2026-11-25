@@ -28,7 +28,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.tanzir71.harkara.AppContainer
 import io.github.tanzir71.harkara.BuildConfig
 import io.github.tanzir71.harkara.R
+import io.github.tanzir71.harkara.core.geo.GeoHash
 import io.github.tanzir71.harkara.core.nostr.Bech32
+import io.github.tanzir71.harkara.ui.chats.ChatThreadRoute
+import io.github.tanzir71.harkara.ui.chats.ChatsRoute
 import io.github.tanzir71.harkara.ui.components.HarkaraTab
 import io.github.tanzir71.harkara.ui.components.TabBar
 import io.github.tanzir71.harkara.ui.screens.BackupSheet
@@ -37,7 +40,6 @@ import io.github.tanzir71.harkara.core.feed.ComposeVerdict
 import io.github.tanzir71.harkara.feed.rememberFeedPresenter
 import io.github.tanzir71.harkara.relay.RelaySyncWorker
 import io.github.tanzir71.harkara.ui.screens.CardActionsSheetContent
-import io.github.tanzir71.harkara.ui.screens.ChatsScreen
 import io.github.tanzir71.harkara.ui.screens.ComposeSheetContent
 import io.github.tanzir71.harkara.ui.screens.RelaysScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
@@ -84,7 +86,7 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays }
+private enum class Page { Tabs, Modules, Settings, Relays, ChatThread }
 private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
@@ -125,6 +127,10 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     LaunchedEffect(center, settings.onboarded, relayStatus.size) { if (settings.onboarded) container.feedRepository.subscribeArea(center) }
     LaunchedEffect(center, settings.onboarded, connectedRelays) { if (settings.onboarded && connectedRelays > 0) container.feedRepository.catchUp(center) }
     LaunchedEffect(feedItems.map { it.post.id }) { container.feedRepository.subscribeReactions(feedItems.map { it.post.id }) }
+    var chatId by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(center, settings.onboarded) {
+        if (settings.onboarded) withContext(Dispatchers.Default) { container.chatRepository.subscribe(GeoHash.encode(center.lat, center.lng, 5)) }
+    }
 
     val comingSoon: () -> Unit = { scope.launch { snackbar.showSnackbar(context.getString(R.string.coming_soon)) } }
     val say: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
@@ -185,6 +191,15 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         onBack = { page = Page.Settings },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
+                    Page.ChatThread -> chatId?.let { id ->
+                        ChatThreadRoute(
+                            container, platform, id, connectivity, pill,
+                            onBack = { page = Page.Tabs },
+                            onMakeTask = { comingSoon() },
+                            say = say,
+                            modifier = Modifier.statusBarsPadding(),
+                        )
+                    }
                     Page.Tabs -> Column(Modifier.fillMaxSize()) {
                         val content = Modifier.weight(1f).statusBarsPadding()
                         when (tab) {
@@ -203,7 +218,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onVote = { id, up -> feedItems.firstOrNull { it.post.id == id }?.let { scope.launch { container.feedRepository.vote(it.post, up) } } },
                                 onMore = { id -> sheetPostId = id; sheet = Sheet.CardActions },
                             )
-                            HarkaraTab.Chats -> ChatsScreen(connectivity, content, pill)
+                            HarkaraTab.Chats -> ChatsRoute(container, platform, connectivity, pill, onOpen = { id -> chatId = id; page = Page.ChatThread }, say = say, modifier = content)
                             HarkaraTab.Tasks -> TasksScreen(connectivity, content, pill)
                             HarkaraTab.Khata -> KhataScreen(connectivity, content, pill)
                             HarkaraTab.Me -> MeScreen(

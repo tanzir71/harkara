@@ -29,10 +29,6 @@ fun UpcomingTabScreen(
 }
 
 @Composable
-fun ChatsScreen(connectivity: ConnectivityState, modifier: Modifier = Modifier, pill: PillActions = PillActions()) =
-    UpcomingTabScreen(R.string.tab_chats, R.drawable.ic_chats, R.string.chats_empty_body, connectivity, modifier, pill = pill)
-
-@Composable
 fun TasksScreen(connectivity: ConnectivityState, modifier: Modifier = Modifier, pill: PillActions = PillActions()) =
     UpcomingTabScreen(R.string.tab_tasks, R.drawable.ic_tasks, R.string.tasks_empty_body, connectivity, modifier, pill = pill)
 

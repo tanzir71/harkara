@@ -392,7 +392,7 @@ class ChatRepository(
                 if (row != null && (row.state == Delivery.Saved.name || row.state == Delivery.LeftPhone.name)) {
                     db.outboxDao().setState(w.wrapId, Delivery.Delivered.name, row.carrier)
                 }
-                if (w.lanState == Delivery.Saved.name || w.lanState == Delivery.LeftPhone.name) dao.setLanState(w.wrapId, Delivery.Delivered.name)
+                raiseLan(w.wrapId, Delivery.Delivered)
             }
         }
     }
@@ -437,9 +437,7 @@ class ChatRepository(
     }
 
     private suspend fun raiseLan(wrapId: String, state: Delivery) {
-        val w = dao.wrap(wrapId) ?: return
-        val current = runCatching { Delivery.valueOf(w.lanState) }.getOrDefault(Delivery.Saved)
-        if (state > current) dao.setLanState(wrapId, state.name)
+        dao.raiseLanState(wrapId, state.name, Delivery.entries.filter { it < state }.map { it.name })
     }
 
     private suspend fun storeMessage(
