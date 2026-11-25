@@ -13,6 +13,7 @@ import io.github.tanzir71.harkara.core.nostr.Kinds
 import io.github.tanzir71.harkara.core.relay.Filter
 import io.github.tanzir71.harkara.data.HarkaraDatabase
 import io.github.tanzir71.harkara.data.IouEntity
+import io.github.tanzir71.harkara.lan.LanRoom
 import io.github.tanzir71.harkara.relay.Outbox
 import io.github.tanzir71.harkara.relay.Priority
 import io.github.tanzir71.harkara.relay.RelayPool
@@ -37,6 +38,8 @@ class KhataRepository(
     private val profile: () -> KeyPair,
     private val displayName: () -> String? = { null },
     private val nowMillis: () -> Long = System::currentTimeMillis,
+    /** "Everyone on this Wi-Fi": IOU bundles also travel over the room, so co-signing works with no internet. */
+    private val lan: LanRoom? = null,
 ) {
     private val now get() = nowMillis() / 1000
 
@@ -49,11 +52,14 @@ class KhataRepository(
     /** Gift wraps addressed to us, on every pool (relays and LAN). */
     fun subscribe() {
         val me = profile().pubkeyHex
-        pools().forEach { it.subscribe(SUB_KHATA, listOf(Filter(kinds = listOf(Kinds.GIFT_WRAP), tags = mapOf("p" to listOf(me)), since = now - 7 * 86_400))) }
+        val filter = Filter(kinds = listOf(Kinds.GIFT_WRAP), tags = mapOf("p" to listOf(me)), since = now - 7 * 86_400)
+        pools().forEach { it.subscribe(SUB_KHATA, listOf(filter)) }
+        lan?.subscribe(SUB_KHATA, listOf(filter))
     }
 
     fun startIngest(scope: CoroutineScope, pool: RelayPool) {
         scope.launch { pool.incoming.collect { ingestWrap(it.event) } }
+        lan?.let { room -> scope.launch { room.incoming.collect { ingestWrap(it) } } }
     }
 
     /** Opens a gift wrap; returns true when it carried an IOU bundle that changed our view. */
@@ -92,7 +98,10 @@ class KhataRepository(
         val keys = profile()
         val other = listOfNotNull(bundle.terms.creditor.pubkey, bundle.terms.debtor.pubkey).filter { it != keys.pubkeyHex }
         val rumor = GiftWrap.createRumor(keys.pubkeyHex, Kinds.IOU, bundle.toJson(), listOf(listOf("iou", bundle.terms.id)), now)
-        GiftWrap.wrapForGroup(rumor, keys, other).forEach { outbox.enqueue(it, Priority.TASK) }
+        GiftWrap.wrapForGroup(rumor, keys, other).forEach {
+            outbox.enqueue(it, Priority.TASK)
+            lan?.publish(it)
+        }
     }
 
     /** Proposes an IOU and signs it ourselves (it's a claim until the other side signs). */

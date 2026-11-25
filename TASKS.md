@@ -59,7 +59,7 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 ## M8 - Khata (v0.7.0)
 
 - [x] IOU propose/co-sign, claimed vs agreed, settle with TrxID, task receipts, split bill, filters, CSV/JSON export, SMS reminder link.
-- [ ] Gate: co-sign over relay, LAN and QR; screen 06 screenshot. (relay + QR + screenshot done; LAN path after the M5 LAN room merges)
+- [x] Gate: co-sign over relay, LAN and QR; screen 06 screenshot.
 
 ## M9 - Map, pins, location (v0.8.0)
 

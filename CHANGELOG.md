@@ -1,34 +1,5 @@
 # Changelog
 
-## 0.10.0 (unreleased)
-
-Tools and safety.
-
-- **SOS**: hold the connectivity pill for 3 seconds. **Call 999** comes first; **Send SOS** puts your SOS and location on every open route at top priority (optionally also by SMS from your SMS app). One SOS per 30 minutes; mark it **I'm safe now** or **False alarm**. SOS from people within 10 km show as cards with Call 999; they make a sound only if you turn on Emergency alerts.
-- **Emergency handbook** in Bangla and English, offline: 42 sections on first aid, floods, cyclones, fire, earthquakes, power cuts, crowds and a go-bag, plus Bangladesh's emergency numbers (999 first).
-- **Prayer times and Qibla** for your area, Karachi method with Hanafi Asr.
-- **Torch, strobe, Morse SOS and siren**; everything stops when you leave the screen (the screen flashes if the phone has no controllable torch).
-- **Lite mode** checks for news every 60 minutes instead of 30.
-## 0.7.0 (unreleased)
-
-Khata: IOUs both people sign.
-
-- **Khata** tab: what you'll get and what you owe, filters (All, Waiting, Agreed, Settled) and the ledger. **New IOU**: they owe me / I owe them, amount, what for, their name and (optionally) their Harkara key.
-- An IOU is only a **claim** until both people sign exactly the same terms; then it's **agreed**. Updates travel end-to-end encrypted (gift-wrapped) to the other person, or **face to face as a QR** with no network: show yours, they scan and sign, they show theirs back.
-- **Settle** with cash or a bKash/Nagad TrxID typed as text; it's settled once both sign the same settlement.
-- **Split a bill**: one IOU per person, shares that add up exactly.
-- **Remind by SMS** opens your SMS app with a short Latin-letter reminder and a help link (no number is stored). **Export** the ledger as CSV and JSON.
-- Paid tasks show up as settled receipts.
-## 0.6.0 (unreleased)
-
-Tasks: local errands with signed steps and an offline handoff.
-
-- **Tasks** tab: your tasks (posted or running) and open tasks near you. **New task** with schema-driven types from litegig (Pickup, Buy and bring, Photocopy / print, Errand), a price in taka and the type's fields. Your name is asked the first time you post or take a task — never a phone number.
-- Every step is signed: offer to help → the requester **chooses** you (the accept only counts once they countersign) → picked up → delivered → paid → rated. Each phone replays the steps itself; only the right person can make each step, anything else is ignored.
-- **Offline handoff**: the requester's phone shows a QR (their signed, single-use token) and 6 digits. The runner scans the QR or types the digits and their phone checks it with every radio off, then marks the task delivered.
-- **Record payment** as cash or a bKash/Nagad TrxID (encrypted to the runner); the runner confirms, so both sign. Ratings both ways; **Problem** pauses the task with a reason (item, payment, delivery, safety, other).
-- Reputation ("38 done") counts only people within two steps of your verified contacts.
-- A Stock post's menu has **Ask someone to fetch it**, which starts a Buy-and-bring task.
 ## 0.4.0
 
 Chats: message people and groups, talk to your area, and chat with everyone on the same Wi-Fi even when the internet is down.
@@ -43,6 +14,43 @@ Chats: message people and groups, talk to your area, and chat with everyone on t
 - **Cards in chats**: share a one-off location card (exact, about 100 m, or just the area, with a Plus Code) or an "I'm safe" check-in; task, IOU and pin cards show up in chats as those features arrive.
 - Long-press a message to **copy** it, **make it a task** (opens the task composer with the message) or **block** the sender.
 - Your name (the same one Tasks and Khata use) is asked once, the first time you send if you haven't set it yet; only the people you message see it, and it can't contain a phone number.
+
+### Also in this release
+
+These milestones finished ahead of their own version tags and ship here first.
+
+#### Tasks
+
+Tasks: local errands with signed steps and an offline handoff.
+
+- **Tasks** tab: your tasks (posted or running) and open tasks near you. **New task** with schema-driven types from litegig (Pickup, Buy and bring, Photocopy / print, Errand), a price in taka and the type's fields. Your name is asked the first time you post or take a task — never a phone number.
+- Every step is signed: offer to help → the requester **chooses** you (the accept only counts once they countersign) → picked up → delivered → paid → rated. Each phone replays the steps itself; only the right person can make each step, anything else is ignored.
+- **Offline handoff**: the requester's phone shows a QR (their signed, single-use token) and 6 digits. The runner scans the QR or types the digits and their phone checks it with every radio off, then marks the task delivered.
+- **Record payment** as cash or a bKash/Nagad TrxID (encrypted to the runner); the runner confirms, so both sign. Ratings both ways; **Problem** pauses the task with a reason (item, payment, delivery, safety, other).
+- Reputation ("38 done") counts only people within two steps of your verified contacts.
+- A Stock post's menu has **Ask someone to fetch it**, which starts a Buy-and-bring task.
+
+#### Khata
+
+Khata: IOUs both people sign.
+
+- **Khata** tab: what you'll get and what you owe, filters (All, Waiting, Agreed, Settled) and the ledger. **New IOU**: they owe me / I owe them, amount, what for, their name and (optionally) their Harkara key.
+- An IOU is only a **claim** until both people sign exactly the same terms; then it's **agreed**. Updates travel end-to-end encrypted (gift-wrapped) to the other person, or **face to face as a QR** with no network: show yours, they scan and sign, they show theirs back.
+- **Settle** with cash or a bKash/Nagad TrxID typed as text; it's settled once both sign the same settlement.
+- **Split a bill**: one IOU per person, shares that add up exactly.
+- **Remind by SMS** opens your SMS app with a short Latin-letter reminder and a help link (no number is stored). **Export** the ledger as CSV and JSON.
+- Paid tasks show up as settled receipts.
+- IOUs also travel over the Wi-Fi room, so two people on the same Wi-Fi can co-sign and settle with no internet.
+
+#### Tools and safety
+
+Tools and safety.
+
+- **SOS**: hold the connectivity pill for 3 seconds. **Call 999** comes first; **Send SOS** puts your SOS and location on every open route at top priority (optionally also by SMS from your SMS app). One SOS per 30 minutes; mark it **I'm safe now** or **False alarm**. SOS from people within 10 km show as cards with Call 999; they make a sound only if you turn on Emergency alerts.
+- **Emergency handbook** in Bangla and English, offline: 42 sections on first aid, floods, cyclones, fire, earthquakes, power cuts, crowds and a go-bag, plus Bangladesh's emergency numbers (999 first).
+- **Prayer times and Qibla** for your area, Karachi method with Hanafi Asr.
+- **Torch, strobe, Morse SOS and siren**; everything stops when you leave the screen (the screen flashes if the phone has no controllable torch).
+- **Lite mode** checks for news every 60 minutes instead of 30.
 
 ## 0.3.0
 

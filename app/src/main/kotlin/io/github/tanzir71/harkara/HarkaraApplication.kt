@@ -110,7 +110,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     }
 
     val khataRepository: KhataRepository by lazy {
-        KhataRepository(database, outbox, pools = { listOf(relayPool) }, profile = { identity.profile() }, displayName = { settings.state.value.displayName })
+        KhataRepository(database, outbox, pools = { listOf(relayPool) }, profile = { identity.profile() }, displayName = { settings.state.value.displayName }, lan = lanRoom)
             .also { it.startIngest(scope, relayPool) }
     }
 
