@@ -69,9 +69,7 @@ class LiveShareService : Service() {
 
         private fun notification(context: Context, people: Int, end: Long): Notification {
             val manager = context.getSystemService(NotificationManager::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                manager?.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.live_channel), NotificationManager.IMPORTANCE_LOW))
-            }
+            manager?.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.live_channel), NotificationManager.IMPORTANCE_LOW))
             val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
             val stop = PendingIntent.getService(
                 context, 1, Intent(context, LiveShareService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE,

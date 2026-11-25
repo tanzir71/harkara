@@ -126,8 +126,9 @@ fun NearbyMapHost(
     val selected = markers.firstOrNull { it.id == selectedId }
     val surface = LocalMapSurface.current
     val lite = settings.isOn(Module.NO_MAP_LITE) || settings.isOn(Module.LITE_MODE) || !settings.isOn(Module.OFFLINE_MAP) || installed == null
+    val bangla = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "bn"
     val style = installed?.takeIf { !lite }?.let {
-        MapStyleSpec(it.path, it.maxZoom, HarkaraTheme.isNight, HarkaraTheme.colors.mapColors(), if (settings.language.tag == "bn" || context.resources.configuration.locales[0].language == "bn") LabelLanguage.BANGLA else LabelLanguage.ENGLISH)
+        MapStyleSpec(it.path, it.maxZoom, HarkaraTheme.isNight, HarkaraTheme.colors.mapColors(), if (bangla) LabelLanguage.BANGLA else LabelLanguage.ENGLISH)
     }
     val here = user ?: center
     val pinOf: (MapMarker) -> PinView? = { m -> pins.firstOrNull { "pin:${it.pin.address}" == m.id } }

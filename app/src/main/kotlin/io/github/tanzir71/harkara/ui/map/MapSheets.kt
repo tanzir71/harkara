@@ -71,7 +71,7 @@ private fun Note(text: String) {
 
 /** People field: npubs, checked as you type. */
 @Composable
-private fun PeopleField(value: String, onChange: (String) -> Unit, label: String = stringResource(R.string.map_people_keys)): List<String>? {
+private fun peopleField(value: String, onChange: (String) -> Unit, label: String = stringResource(R.string.map_people_keys)): List<String>? {
     val keys = parseKeys(value)
     HTextField(
         value, { onChange(it.take(2_000)) }, label, mono = true, singleLine = false,
@@ -121,7 +121,7 @@ fun PinEditorSheetContent(
             ),
         )
         var keys: List<String>? = emptyList()
-        if (visibility == PinVisibility.SHARED) keys = PeopleField(people, { people = it })
+        if (visibility == PinVisibility.SHARED) keys = peopleField(people, { people = it })
         if (visibility == PinVisibility.PUBLIC) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(1 to R.string.pin_ttl_day, 7 to R.string.pin_ttl_week, 30 to R.string.pin_ttl_month).forEach { (d, label) ->
@@ -201,7 +201,7 @@ fun LiveShareSheetContent(
             Note(stringResource(R.string.live_sent, running.sent))
             HButton(stringResource(R.string.live_stop), onStop, Modifier.fillMaxWidth(), height = 52.dp)
         } else {
-            val keys = PeopleField(people, { people = it })
+            val keys = peopleField(people, { people = it })
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Chip(stringResource(R.string.live_15m), duration == LiveDuration.MIN_15, onClick = { duration = LiveDuration.MIN_15 })
                 Chip(stringResource(R.string.live_1h), duration == LiveDuration.HOUR_1, onClick = { duration = LiveDuration.HOUR_1 })
@@ -237,7 +237,7 @@ fun CheckInSheetContent(
         if (tab == 0 || !tripsEnabled) {
             HTextField(place, { place = it.take(60) }, stringResource(R.string.checkin_place))
             HTextField(note, { note = it.take(140) }, stringResource(R.string.checkin_note))
-            val keys = PeopleField(people, { people = it })
+            val keys = peopleField(people, { people = it })
             val watchers = trip?.watchers.orEmpty()
             HButton(
                 stringResource(R.string.checkin_send), { onCheckIn(place, keys.orEmpty(), note) }, Modifier.fillMaxWidth(), height = 52.dp,
@@ -251,7 +251,7 @@ fun CheckInSheetContent(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(30, 60, 120, 240).forEach { m -> Chip(tripLabel(m), minutes == m, onClick = { minutes = m }) }
             }
-            val keys = PeopleField(people, { people = it })
+            val keys = peopleField(people, { people = it })
             Note(stringResource(R.string.trip_note))
             HButton(
                 stringResource(R.string.trip_start), { onStartTrip(destination, minutes, keys.orEmpty()) }, Modifier.fillMaxWidth(), height = 52.dp,
