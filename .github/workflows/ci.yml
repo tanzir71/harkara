@@ -48,6 +48,35 @@ jobs:
           node tools/build-tokens.mjs --check
           node tools/icons-to-vectors.mjs --check
 
+  site:
+    # Landing site: build without network (coming-soon state) and with the release fixture; static checks + Playwright for both.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Coming-soon state
+        run: |
+          node tools/build-site.mjs --offline
+          node tools/verify-site.mjs
+          npx playwright test
+      - name: Release state (fixture)
+        run: |
+          node tools/build-site.mjs --release-file tools/fixtures/release-v0.1.0.json
+          node tools/verify-site.mjs
+          npx playwright test
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-screenshots
+          path: artifacts/site-screenshots
+          if-no-files-found: ignore
+          retention-days: 7
+
   emulator:
     # Optional: instrumented tests on an emulator. Allowed to fail, never gates anything.
     if: github.event_name == 'push'

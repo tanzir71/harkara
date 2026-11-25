@@ -30,8 +30,13 @@ Every post, message, task, pin and IOU is a signed Nostr-shaped event carried ov
 
 ```
 ./gradlew :core:test :app:testDebugUnitTest :app:assembleDebug
-node tools/build-site.mjs && node tools/verify-site.mjs
+
+npm ci && npx playwright install chromium
+node tools/build-site.mjs [--offline | --release-file tools/fixtures/release-v0.1.0.json]
+node tools/verify-site.mjs && npx playwright test
 ```
+
+The landing site's templates live in `tools/site/`; `build-site.mjs` writes the pages into `site/` (generated files are git-ignored).
 
 JDK 17, Android SDK 35. See `AGENTS.md`, `TASKS.md` and `docs/`.
 

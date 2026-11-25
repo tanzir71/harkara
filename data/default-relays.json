@@ -1,0 +1,34 @@
+{
+  "updated": "2026-11-24",
+  "required": [
+    "wss://relay.damus.io",
+    "wss://relay.primal.net",
+    "wss://relay.nostr.net"
+  ],
+  "relays": [
+    "wss://relay.damus.io",
+    "wss://relay.primal.net",
+    "wss://relay.nostr.net",
+    "wss://purplerelay.com",
+    "wss://relay.snort.social",
+    "wss://nos.lol",
+    "wss://nostr.mom"
+  ],
+  "lastCheck": {
+    "wss://relay.damus.io": "websocket error",
+    "wss://relay.primal.net": "ok",
+    "wss://relay.nostr.net": "ok",
+    "wss://nos.lol": "ok",
+    "wss://relay.snort.social": "ok",
+    "wss://nostr.mom": "ok",
+    "wss://offchain.pub": "ok",
+    "wss://relay.nostr.bg": "fetch failed",
+    "wss://nostr-pub.wellorder.net": "NIP-11 HTTP 503",
+    "wss://nostr.oxtr.dev": "rejected: Write error: mdb_txn_commit: No space left on device",
+    "wss://purplerelay.com": "ok",
+    "wss://relay.nostr.band": "The operation was aborted due to timeout",
+    "wss://nostr.bitcoiner.social": "ok",
+    "wss://relay.mostr.pub": "websocket error",
+    "wss://nostr.land": "payment or auth required"
+  }
+}

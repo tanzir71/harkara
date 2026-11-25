@@ -1,0 +1,11 @@
+<p><b>No signal? Harkara gets through.</b></p>
+<p>Harkara (হরকরা — the old dak runner who carried letters hand to hand) is a neighbourhood and campus app for Dhaka that keeps working during floods, power cuts and everyday network trouble.</p>
+<p>Every post, message, task, pin and IOU is a small signed message that phones carry for each other. It goes over whichever route is open: public internet relays, a nearby phone with data, a neighbourhood node on local Wi-Fi, Bluetooth mesh, SMS, a QR code — or it waits on your phone and leaves the moment a route opens.</p>
+<ul>
+<li><b>Nearby</b> — an anonymous local feed (Traffic, Food, Crowd, Stock, Alert, Chatter) where posts fade when they expire.</li>
+<li><b>Chats</b> — end-to-end encrypted DMs, groups, area channels and "everyone on this Wi-Fi".</li>
+<li><b>Tasks</b> — local errands with signed steps and an offline handoff code.</li>
+<li><b>Khata</b> — IOUs both people sign; settle with a bKash or Nagad TrxID.</li>
+<li><b>Me</b> — your keys, offline tools (compass, Qibla, torch, emergency handbook) and optional modules.</li>
+</ul>
+<p>No sign-up, no phone number, no server, no ads, no tracking. Free software under AGPL-3.0-or-later.</p>

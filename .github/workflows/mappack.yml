@@ -1,0 +1,78 @@
+name: Map pack
+# Monthly + manual: cut the Dhaka offline map packs from the latest Protomaps daily build and publish them
+# to a maps-YYYYMM release. Touches the public internet; never gates a build or an app release.
+on:
+  schedule:
+    - cron: '23 4 2 * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mappack
+  cancel-in-progress: false
+env:
+  BBOX: '90.30,23.65,90.55,23.92'
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Install the pmtiles CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo protomaps/go-pmtiles --pattern '*Linux_x86_64.tar.gz' --dir /tmp/pmtiles
+          tar -xzf /tmp/pmtiles/*.tar.gz -C /tmp/pmtiles
+          sudo install /tmp/pmtiles/pmtiles /usr/local/bin/pmtiles
+          pmtiles version || true
+      - name: Find the newest Protomaps daily build
+        id: source
+        run: |
+          for i in $(seq 0 10); do
+            d=$(date -u -d "-$i day" +%Y%m%d)
+            if curl -sfI "https://build.protomaps.com/$d.pmtiles" > /dev/null; then
+              echo "url=https://build.protomaps.com/$d.pmtiles" >> "$GITHUB_OUTPUT"
+              echo "date=$d" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "No Protomaps build found in the last 10 days" >&2
+          exit 1
+      - name: Extract Dhaka (z15 detailed, z13 schematic)
+        run: |
+          mkdir -p out
+          pmtiles extract "${{ steps.source.outputs.url }}" out/dhaka-z15.pmtiles --bbox="$BBOX" --maxzoom=15
+          pmtiles extract "${{ steps.source.outputs.url }}" out/dhaka-z13.pmtiles --bbox="$BBOX" --maxzoom=13
+          pmtiles show out/dhaka-z15.pmtiles | head -40
+          ls -l out
+      - name: Manifest
+        run: |
+          cd out
+          z15=$(stat -c %s dhaka-z15.pmtiles); z13=$(stat -c %s dhaka-z13.pmtiles)
+          s15=$(sha256sum dhaka-z15.pmtiles | cut -d' ' -f1); s13=$(sha256sum dhaka-z13.pmtiles | cut -d' ' -f1)
+          cat > maps.json <<EOF
+          {
+            "source": "${{ steps.source.outputs.url }}",
+            "sourceDate": "${{ steps.source.outputs.date }}",
+            "bbox": [90.30, 23.65, 90.55, 23.92],
+            "attribution": "© OpenStreetMap contributors · Protomaps",
+            "packs": [
+              { "name": "dhaka-z15.pmtiles", "maxzoom": 15, "bytes": $z15, "sha256": "$s15" },
+              { "name": "dhaka-z13.pmtiles", "maxzoom": 13, "bytes": $z13, "sha256": "$s13" }
+            ]
+          }
+          EOF
+          cat maps.json
+      - name: Publish maps-YYYYMM (never marked latest, so releases/latest stays the APK)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="maps-$(date -u +%Y%m)"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" out/dhaka-z15.pmtiles out/dhaka-z13.pmtiles out/maps.json --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" out/dhaka-z15.pmtiles out/dhaka-z13.pmtiles out/maps.json \
+              --repo "$GITHUB_REPOSITORY" --target main --latest=false \
+              --title "Dhaka map pack $(date -u +%Y-%m)" \
+              --notes "Offline map packs for Dhaka (bbox $BBOX) cut from the Protomaps daily build ${{ steps.source.outputs.date }}. Map data © OpenStreetMap contributors (ODbL), basemap by Protomaps. Downloaded by the app when you ask; phones can pass packs to each other."
+          fi

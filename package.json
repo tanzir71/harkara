@@ -1,0 +1,23 @@
+{
+  "name": "harkara-tools",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Node tooling for Harkara: landing site build, static checks and Playwright checks. The Android app builds with Gradle.",
+  "license": "AGPL-3.0-or-later",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "site:build": "node tools/build-site.mjs",
+    "site:build:offline": "node tools/build-site.mjs --offline",
+    "site:build:fixture": "node tools/build-site.mjs --release-file tools/fixtures/release-v0.1.0.json",
+    "site:verify": "node tools/verify-site.mjs",
+    "site:e2e": "playwright test",
+    "site:serve": "node tests/site/serve.mjs",
+    "site:check": "npm run site:build:offline && npm run site:verify && npm run site:build:fixture && npm run site:verify && npm run site:e2e"
+  },
+  "devDependencies": {
+    "@noble/curves": "^1.9.7",
+    "@playwright/test": "1.65.1"
+  }
+}

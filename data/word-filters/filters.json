@@ -1,0 +1,41 @@
+{
+ "source": "loka/lib/contentFilter.ts",
+ "englishBlockedWords": [
+  "asshole",
+  "bitch",
+  "fuck",
+  "fucker",
+  "shit",
+  "whore"
+ ],
+ "banglaBlockedFragments": [
+  "খানকি",
+  "চুদ",
+  "বোকাচোদা",
+  "মাদারচোদ",
+  "শুয়োরেরবাচ্চা"
+ ],
+ "spamPhrases": [
+  "buy now",
+  "click here",
+  "earn money",
+  "free money",
+  "guaranteed profit",
+  "limited offer",
+  "work from home income"
+ ],
+ "rules": {
+  "maxTextLength": 400,
+  "maxLinks": 1,
+  "noPhoneNumbersIn": [
+   "chatter",
+   "alert"
+  ],
+  "phoneDigitsMin": 10,
+  "phoneDigitsMax": 15
+ },
+ "moderation": {
+  "hideAfterDistinctReports": 3,
+  "hideAtScore": -5
+ }
+}

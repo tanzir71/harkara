@@ -13,6 +13,16 @@ artifacts/
 test-results/
 playwright-report/
 
+# Landing site: written by tools/build-site.mjs (templates live in tools/site/).
+# Committed under site/: config.json, .nojekyll, assets/tokens.css (build-tokens), assets/fonts/.
+site/index.html
+site/404.html
+site/latest.json
+site/en/
+site/privacy/
+site/assets/site.css
+site/assets/favicon.svg
+
 # Signing material must never be committed (kept outside the repo in ../harkara-signing/)
 *.keystore
 *.jks

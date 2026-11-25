@@ -1,0 +1,33 @@
+name: Relay check
+# Weekly: re-test public relays (NIP-11 + write-then-read) and commit data/default-relays.json if the pick changed.
+# Touches the public internet; never gates a build or release.
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: relay-check
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - run: node tools/relay-check.mjs
+      - name: Commit if the default list changed
+        run: |
+          if git diff --quiet -- data/default-relays.json; then
+            echo "No change."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/default-relays.json
+          git commit -m "[relay-check] Update default relays"
+          git push
