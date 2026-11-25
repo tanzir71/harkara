@@ -22,7 +22,7 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | 0 | Metadata | Name/photo, only when the user chooses to add one |
 | 1 | Feed post | Signed by the **area key**. Tags (`EventBuilder.feedPost`): `g` at geohash precisions 6, 5 and 4 (relays filter `#g` by exact value), `t` category (`traffic`, `food`, `crowd`, `stock`, `alert`, `chatter`), `expiration` (Traffic 3 h, Crowd 4 h, Alert 12 h, Stock 24 h, Chatter 48 h, Food none), NIP-13 `["nonce", n, target]` with 16–20 bits |
 | 5 | Deletion | NIP-09 |
-| 7 | Reaction | NIP-25: votes `+`/`-` on posts, `yes`/`no` "still there?" on pins (`e`, `p`, `k`) |
+| 7 | Reaction | NIP-25: votes `+`/`-` on posts (`e`, `p`, `k`); `yes`/`no` "still there?" on pins (`a`, `p`, `k` 33471) |
 | 13 | Seal | NIP-59, inside a gift wrap only |
 | 14 | Chat message | NIP-17 rumor: `p` per member, `e` reply, `subject` |
 | 15 | File message | NIP-17 rumor: `file-type`, `encryption-algorithm` `aes-gcm`, `decryption-key`, `decryption-nonce`, `x` |
@@ -45,11 +45,11 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | 3473 | IOU | regular, gift-wrapped | Terms as rumor to both people: `amount`, `currency`, `p` |
 | 3474 | IOU signature | regular, gift-wrapped | `x` = SHA-256 of the IOU terms; agreed only when both sign the same hash (M8) |
 | 3475 | Settle | regular, gift-wrapped | `e` IOU, optional `trxid` (bKash/Nagad as text), signed by both (M8) |
-| 3476 | Check-in | regular | "I got here safe"; top relay priority |
+| 3476 | Check-in | regular, gift-wrapped | `status` = `safe` · `trip` · `overdue` · `cancelled`, `place`, optional `g` (geohash-5), `trip`, `dest`, `due`; top relay priority (§17) |
 | 3477 | SOS | regular | Top relay priority; one per 30 min per key; active until an SOS update closes it |
 | 3478 | SOS update | regular | `e` → SOS, `status` = `resolved` · `false_alarm` |
-| 23471 | Live location | ephemeral, gift-wrapped (21059) | Session key; `seq` (replay protection), `end` (unix s) |
-| 33471 | Pin | addressable | Shared/public pin: `d`, `g`, `expiration`, `title` |
+| 23471 | Live location | ephemeral, gift-wrapped (21059) | Session key; `share`, `seq` (replay protection), `end` (unix s); the start is a 1059 wrap from the profile key with `session` (§16) |
+| 33471 | Pin | addressable | Shared/public pin: `d`, `title`, `g` 9/6/5, `color`, `visibility`, `expiration` (§15) |
 
 ## 3. Private messages (NIP-17 / NIP-59 / NIP-44 v2)
 
@@ -224,3 +224,59 @@ Reputation counts tasks done as runner and ratings received only from keys withi
 IouTerms = {id, creditor {name, pubkey?}, debtor {name, pubkey?}, amount (taka), currency, note, createdAt, due?, task?}; its hash is SHA-256 of the canonical JSON (fixed field order, defaults included). A party signs with kind 3474 (["h", hash], ["iou", id]); an IOU is **agreed** only when both parties' keys signed the same hash, otherwise it is a **claim** (always the case when one side has no key). A settlement is kind 3475 with content {method, amount, trxId}, ["h", iouHash], ["s", SHA-256(iouHash | settlement JSON)]; **settled** when both sides signed the same s.
 
 Phones exchange the whole IouBundle {terms, signatures[], settlements[]} as the content of a kind 3473 rumor, gift-wrapped (NIP-59) to the other party and to self, and merge bundles by id (only verifying signatures are kept). Face to face, the same bundle goes as a QR: harkara:iou: + base64url(JSON). Split bills create one IOU per member with shares that sum exactly. Paid tasks are shown as settled receipts but are not IOUs.
+
+## 15. Pins
+
+A pin is a saved place (`core/pins/Pins.kt`). Its `d` tag is the pin id; **replaceable semantics**: phones keep only the newest version per address (`<kind>:<owner>:<d>`), higher `created_at` wins, a tie goes to the lower id (NIP-01). An edit is a new version of the same `d`; a delete is a newer version with `["status", "deleted"]` (public: `expiration` one day later, so relays drop it).
+
+| Visibility | Event | Carried as |
+|---|---|---|
+| Private | kind 30078 (NIP-78) signed by the profile key, tags `[["d", id]]` only; content = NIP-44 v2 to the owner's own key (conversation key of the profile key with itself) of `{"type":"harkara-pin","title","note","lat","lng","color","deleted"}` | the signed event; a restored phone fetches it with `authors = [me]` |
+| Shared | kind 33471 **rumor** by the profile key with the pin tags below plus `p` per person | one NIP-59 gift wrap (1059) per person and one to the owner; the wrap carries the pin's `expiration` |
+| Public | kind 33471 signed by the profile key: `d`, `title`, `g` at precision **9**, 6 and 5 (the 9-character cell is the pin's spot, ±2.4 m), `color` (a feed category tag, for the dot colour), `visibility` = `public`, NIP-40 `expiration` (1, 7 or 30 days; default 7) | the signed event; phones subscribe to `#g` = the area's geohash-5 cell and its neighbours |
+
+Titles ≤ 80 characters, notes ≤ 400. A pin whose `visibility` tag doesn't match how it arrived (e.g. a "shared" pin published openly) is ignored.
+
+**Still there?** NIP-25 kind 7, content `yes` or `no`, tags `["a", "33471:<owner>:<d>"]`, `["p", owner]`, `["k", "33471"]`, signed by the voter's **weekly area key** (anonymous, like feed votes). The tally counts each key's latest answer from the last 7 days.
+
+**Files.** Pins export to GPX 1.1 waypoints, KML placemarks or a GeoJSON FeatureCollection of points; imports read only points from those formats (DTDs and external entities refused) and become private pins.
+
+## 16. Live location
+
+`core/location/LiveLocation.kt`. One share = one **session key** `KeyRing.session(shareId)`, an end time (15 min, 1 h or 8 h after the start, never more) and the people it goes to.
+
+1. **Start** — rumor kind 23471 by the **profile key**: `["share", id]`, `["session", <session pubkey>, <binding>]`, `["end", unix]`, `p` per person, optional `["name", …]`. `binding` = the session key's BIP-340 signature over SHA-256(`harkara-live|<owner pubkey>|<share id>|<end>`), so nobody can claim someone else's session key. Sent as a normal gift wrap (1059) with NIP-40 `expiration` = end, so a phone that comes online later still learns the key.
+2. **Points** — rumor kind 23471 by the **session key**: `["share", id]`, `["seq", n]` (1, 2, 3 …), `["end", unix]`, content `{"lat","lng","acc"}` (5 decimals, accuracy in metres). Sealed by the session key and wrapped as **ephemeral gift wraps (21059)**, one per person, with seal and wrap timestamps = the point's time (live data is delivered as it happens; backdating hides nothing). Points go straight to connected relays and are never queued or stored. At most one point per 20 s unless the phone moved 25 m.
+3. **Stop** — a point with `["status", "stopped"]` and no position, sent ephemerally and as a 1059 wrap expiring at the end.
+
+Receivers (`LiveShareTracker`) accept a point only if: a verified start bound its session key to the owner; `share` and `end` match that start; `seq` is above the last seen; the point was written before the end and it is not yet the end; the share wasn't stopped (a stop seen before its start is remembered, because relays may re-send stored wraps in any order). Everything else — replays, foreign or unknown session keys, late points — is dropped. The sender's phone reads GPS only while its share runs (foreground service of type `location`, with a Stop action in the notification) and stops by itself at the end.
+
+## 17. Check-ins, trip plans and overdue alerts
+
+`core/location/CheckIns.kt`. A check-in is a short rumor kind 3476 by the profile key, sealed (signed) and gift-wrapped (1059) to the chosen people **and to the sender**, queued at SOS priority. Check-ins are never public: where someone is right now is nobody else's business.
+
+| Tag | Meaning |
+|---|---|
+| `status` | `safe` ("I got here safe"), `trip` (a trip plan), `overdue` (automatic alert), `cancelled` |
+| `place` | label typed by the user (≤ 60 characters) |
+| `g` | optional geohash-5 (~5 km), never the exact spot |
+| `trip`, `dest`, `due` | trip id, destination label, expected arrival (unix s); required for `trip` and `overdue` |
+| `p` | each person it goes to |
+
+Content: an optional note (≤ 140 characters).
+
+**Trip plan.** The traveller sets a destination, an expected arrival and the people who watch. The phone sends a `trip` check-in to them and schedules **one** WorkManager job at the expected arrival (nothing is scheduled while no trip is active). When it runs: if the traveller sent a `safe` check-in since the trip started (untagged, or tagged with this trip), the trip is marked arrived and nothing is sent; otherwise the phone sends an `overdue` check-in to the watchers (and tries the relays at once; the outbox keeps it until any rung opens). A run that wakes before the deadline queues itself again. A safe check-in during the trip closes it and cancels the job; Cancel sends `cancelled`.
+
+## 18. Location cards
+
+`core/location/LocationCard.kt`. A one-off location rides as one tag on a chat rumor (M5) or as plain text elsewhere:
+
+```
+["card", "location", "<lat>", "<lng>", "<precision>", "<label>", "<plus code>"]
+```
+
+`lat`/`lng` have 5 decimals with Latin digits. `precision`: `exact` (the fix, 10-digit Plus Code), `100m` (the centre of a ~100 m grid cell — every fix in the cell gives the same card, so repeated shares can't be averaged; 10-digit code of that centre), `area` (the geohash-5 cell centre and the area's name; 6-digit padded code like `7MMGQ800+`). Plus Codes are Open Location Code (`core/geo/OpenLocationCode.kt`, checked against the official test data) and are shown shortened against central Dhaka (`Q8V2+QX Dhaka`). Shared as text, the card is `label · code` plus an OpenStreetMap link.
+
+## 19. Map packs
+
+The `mappack.yml` workflow publishes `dhaka-z15.pmtiles`, `dhaka-z13.pmtiles` and `maps.json` (`{source, sourceDate, bbox, attribution, packs: [{name, maxzoom, bytes, sha256}]}`) to a `maps-YYYYMM` release. Only when the user taps it, the app lists `GET https://api.github.com/repos/tanzir71/harkara/releases`, picks the newest `maps-YYYYMM` with a `maps.json`, downloads the chosen pack (z15 by default; z13 in Lite mode or when free space is under three times the pack), and installs it only if its size and **SHA-256** match the manifest and the file is a PMTiles v3 vector archive whose bounds cover Dhaka (`core/map/PmTiles.kt` reads the header and directories). A pack passed phone to phone (`MapPackManager.import`) gets the same checks. MapLibre reads the installed file directly (`pmtiles://file://…`); the style (`core/map/MapStyle.kt`) uses the `map/*` colour tokens, Bangla labels (`name:bn`, then `name`, which is Bangla for most of Dhaka) or English (`name:en`, then `name`), glyphs bundled in the APK (Noto Sans: Latin, Bengali, punctuation) and shows "© OpenStreetMap contributors · Protomaps".

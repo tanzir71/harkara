@@ -62,8 +62,9 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M9 - Map, pins, location (v0.8.0)
 
-- [ ] `mappack.yml` + maps release, MapLibre + PMTiles behind an interface, layers, pins, GPX/KML/GeoJSON, location card, live share, meet-up arrow, compass, check-ins, trip plan, no-map Lite view.
-- [ ] Gate: pin sync, live-share replay protection, check-in tests; style JSON + layer builder unit tests; screen 02 screenshot.
+- [x] `mappack.yml` + maps release, MapLibre + PMTiles behind an interface, layers, pins, GPX/KML/GeoJSON, location card, live share, meet-up arrow, compass, check-ins, trip plan, no-map Lite view.
+- [x] Map pack download (SHA-256 checked) and phone-to-phone import; PMTiles reader, Open Location Code (official vectors), APK ≤ 30 MB per ABI with MapLibre.
+- [x] Gate: pin sync, live-share replay protection, check-in + overdue tests; style JSON + layer builder unit tests; map screen Compose test on a fake surface; screen 02 screenshot.
 
 ## M10 - SMS, QR, web page for non-users (v0.9.0)
 

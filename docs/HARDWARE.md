@@ -27,8 +27,15 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 - WorkManager's 30-minute relay check actually runs on budget phones with aggressive battery managers.
 - Live WebSocket connections to the public relays survive switching between mobile data and Wi-Fi.
 
-## Maps
+## Maps, location and sensors
 
-- MapLibre renders Bangla (
-ame:bn) labels with correct conjuncts; if it can't shape Bengali script, labels fall back to 
-ame.
+- MapLibre Native 13.7.1 renders the installed pack through `pmtiles://file://…` on real phones (OpenGL ES, TextureView mode) on API 26-35, including 32-bit armeabi-v7a; untested on any device. If it fails, the fallback is a small local HTTP handler over `core/map/PmTiles.kt`.
+- Bangla labels: MapLibre Native has no complex-script shaping for Bengali, so `name` / `name:bn` labels (glyphs from the bundled Noto Sans 2304-2559 range) may show broken conjuncts and misplaced vowel signs. Unverified on hardware; switching the app to English shows `name:en` labels instead.
+- Native libraries stored compressed (`useLegacyPackaging`) extract correctly at install on budget phones and the ~20 MB extra installed size is acceptable.
+- Map frame rate, memory and battery while panning the z15 pack on a 2 GB phone; Compose markers staying aligned with the map during fast pans and zooms.
+- GPS / fused accuracy on real phones: the live share and the map use LocationManager (fused provider on Android 12+, else GPS and network) with no Play Services. Accuracy indoors, under Dhaka's dense buildings and with only approximate permission is untested.
+- The live-share foreground service (type `location`) keeps sending with the screen off on Xiaomi, vivo, OPPO and Realme battery managers, and stops at the share's end; Android 14+ accepts starting it right after the permission prompt.
+- Compass: rotation-vector sensor (fallback accelerometer + magnetometer) and the magnetic declination correction; calibration and interference near steel structures and inside rickshaws/buses are untested. Phones without a magnetometer show the bearing from north instead.
+- The trip-plan WorkManager job fires near the expected arrival with the phone idle (Doze may delay it by minutes) and the overdue alert goes out as soon as any rung opens.
+- Map pack download (22.8 MB) over slow mobile data resumes cleanly after a dropped connection (it restarts from zero today) and the SHA-256 check finishes quickly on a budget phone.
+- Importing a pack or a GPX/KML/GeoJSON file through the Storage Access Framework from OEM file pickers.

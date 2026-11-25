@@ -138,6 +138,8 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     }
 
     suspend fun panicWipe() {
+        if (placesStarted.get()) runCatching { liveShareRepository.stop() }
+        runCatching { androidx.work.WorkManager.getInstance(context).cancelUniqueWork(io.github.tanzir71.harkara.places.OverdueWorker.NAME) }
         stopRelays()
         withContext(Dispatchers.IO) { identity.wipe() }
         PanicWipeController.wipeEverything(context, database, settings)

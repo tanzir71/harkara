@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0 (unreleased)
+
+Map, pins and location.
+
+- **Nearby → Map** shows an offline map of Dhaka with posts in their category colours, your pins, places other people pinned, people sharing their location with you ("Rafi · 38 min left"), tasks with their price and neighbourhood nodes. Layer chips turn each one on or off; the compass button turns the map north up and the locate button finds you.
+- **Map packs** (Me → Tools): the Dhaka map downloads only when you ask — 22.8 MB detailed or 2.8 MB light — and is checked before use. A friend can hand you the pack file. Labels are in Bangla or English with your app language. Until a pack is on the phone, or with the **No-map Lite view** on, Map mode is a list of what's around with distance and a direction arrow.
+- **Pins**: drop a pin on the map — **private** (encrypted to you, comes back after a restore), **shared** with people you name, or **public** for everyone nearby, who can answer "Still there?". Edit or delete them any time. **My pins** imports and exports GPX, KML and GeoJSON.
+- **Share your location once** as a card: exact, about 100 m, or just the area, with a Plus Code and a map link.
+- **Live location** for 15 min, 1 hour or 8 hours with the people you name, end-to-end encrypted with a key made for that share. It stops by itself; GPS runs only while it does, and a notification lets you stop it any time.
+- **Meet-up arrow and compass**: points to a pin or to someone sharing with you, with distance and direction. The sensor runs only while the screen is open.
+- **Check-ins**: one tap tells the people you choose "I got here safe". **Trip plan**: say where you're going and by when; if you haven't checked in by then, your phone tells them you're overdue.
+- All of these are switches in Settings → Modules. The app is still under 30 MB per phone type.
+
 ## 0.7.0 (unreleased)
 
 Khata: IOUs both people sign.
