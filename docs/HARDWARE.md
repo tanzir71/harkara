@@ -11,5 +11,13 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 
 ## Crypto providers
 
-- secp256k1 JNI library loads on arm64-v8a and armeabi-v7a phones running API 26–35.
+- secp256k1 JNI library loads on arm64-v8a and armeabi-v7a phones running API 26-35.
+- secp256k1-kmp 0.16.0's `libsecp256k1-jni.so` is not 16 KB page aligned; it may fail to load on 16 KB page-size devices (Android 15+ with 16 KB pages) until the library is upgraded.
 - SQLCipher native library loads on API 26 phones.
+
+## Keys and backup
+
+- Keystore wrapping unverified on hardware: the root seed is sealed with an AndroidKeyStore AES-256-GCM key (`AndroidKeystoreSeedWrapper`). Robolectric has no AndroidKeyStore, so tests cover the plain-file fallback and a fake AES-GCM wrapper only. Also unverified: behaviour after a keystore reset (the app should start a new identity and offer restore).
+- NIP-49 backup and restore use scrypt with log_n 16 (64 MiB, about 0.5 s on a laptop JVM); time and memory on a 2 GB budget phone are untested.
+- "Save to a file…" and "Open a file…" go through the Storage Access Framework; OEM file pickers (Xiaomi, vivo, OPPO, Realme) are untested.
+- The backup QR (240 dp, error correction M) has not been scanned by a real camera yet (the in-app scanner arrives in M10).

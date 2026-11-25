@@ -26,9 +26,10 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M3 - Protocol core (v0.2.0)
 
-- [ ] NIP-01 events, BIP-340 Schnorr, NIP-44 v2 + NIP-59/NIP-17, rotating mesh IDs, key derivation, NIP-49 backup (file + QR), binary codec.
-- [ ] Official NIP vectors; FakeTransport gates on events.
-- [ ] Gate: core green; app creates, backs up and restores a key in Robolectric.
+- [x] NIP-01 events, BIP-340 Schnorr, NIP-44 v2 + NIP-59/NIP-17, rotating mesh IDs, key derivation, NIP-49 backup (file + QR), binary codec.
+- [x] Official NIP vectors; FakeTransport gates on events.
+- [x] Peer rate limits (1/min, 10/h, 30/day), NIP-13 PoW, 2-of-3 recovery cards, `docs/PROTOCOL.md` rewritten.
+- [x] Gate: core green; app creates, backs up and restores a key in Robolectric (`IdentityManagerTest`, `BackupFlowTest`).
 
 ## M4 - Store, relays, Nearby feed online (v0.3.0)
 

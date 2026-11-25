@@ -15,4 +15,24 @@ Third-party files and snippets
 Each entry: file(s) in this repo — origin — licence.
 
   - gradlew, gradlew.bat, gradle/wrapper/gradle-wrapper.jar
-      Gradle Wrapper — https://github.com/gradle/gradle — Apache-2.0
+      Gradle Wrapper - https://github.com/gradle/gradle - Apache-2.0
+
+  - core/src/test/resources/nip44.vectors.json
+      NIP-44 v2 test vectors - https://github.com/paulmillr/nip44 - MIT (Copyright (c) Paul Miller)
+
+  - core/src/test/resources/bip340-test-vectors.csv
+      BIP-340 test vectors - https://github.com/bitcoin/bips/blob/master/bip-0340/test-vectors.csv - BSD-2-Clause
+
+  - core/src/test/kotlin/io/github/tanzir71/harkara/core/nostr/NipExamples.kt, and the NIP-19/NIP-49
+    vectors in Bech32Test.kt and Nip49Test.kt
+      Example events, keys and vectors quoted from the NIP-01, NIP-13, NIP-17, NIP-19, NIP-49 and NIP-59
+      specifications - https://github.com/nostr-protocol/nips - published as open specifications
+
+  - core/src/test/kotlin/io/github/tanzir71/harkara/core/nostr/Nip49Test.kt (HChaCha20 vector)
+      draft-irtf-cfrg-xchacha, section 2.2.1 - https://datatracker.ietf.org/doc/draft-irtf-cfrg-xchacha/ - IETF Trust
+
+Algorithms implemented from specifications (no code copied): NIP-01/13/17/19/44/49/59, BIP-173 bech32,
+HChaCha20 (draft-irtf-cfrg-xchacha), HKDF (RFC 5869), Shamir secret sharing over GF(2^8).
+
+Libraries linked (not copied): secp256k1-kmp (ACINQ, Apache-2.0, bundles libsecp256k1, MIT),
+BouncyCastle (MIT), ZXing core (Apache-2.0).
