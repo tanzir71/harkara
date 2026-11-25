@@ -133,5 +133,7 @@ class AppFlowTest {
         }
         override fun requestLocation(onResult: (lat: Double?, lng: Double?) -> Unit) = onResult(null, null)
         override fun applyLanguage() = Unit
+        override fun saveTextDocument(suggestedName: String, text: String, onResult: (saved: Boolean) -> Unit) = onResult(false)
+        override fun openTextDocument(onResult: (text: String?) -> Unit) = onResult(null)
     }
 }

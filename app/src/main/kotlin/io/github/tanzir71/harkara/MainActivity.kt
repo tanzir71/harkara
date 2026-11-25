@@ -34,6 +34,33 @@ class MainActivity : ComponentActivity(), PlatformActions {
         if (granted) deliverLastKnownLocation(callback) else callback(null, null)
     }
 
+    private var pendingSave: Pair<String, (Boolean) -> Unit>? = null
+    private var pendingOpen: ((String?) -> Unit)? = null
+
+    private val createDocument = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        val (text, callback) = pendingSave ?: return@registerForActivityResult
+        pendingSave = null
+        if (uri == null) return@registerForActivityResult callback(false)
+        val saved = runCatching {
+            contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+        }.isSuccess
+        callback(saved)
+    }
+
+    private val openDocument = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val callback = pendingOpen ?: return@registerForActivityResult
+        pendingOpen = null
+        if (uri == null) return@registerForActivityResult callback(null)
+        // Backups are a few hundred bytes; refuse to read anything big.
+        val text = runCatching {
+            contentResolver.openInputStream(uri)!!.use { input ->
+                val bytes = input.readNBytesCompat(MAX_OPEN_BYTES + 1)
+                if (bytes.size > MAX_OPEN_BYTES) null else bytes.toString(Charsets.UTF_8)
+            }
+        }.getOrNull()
+        callback(text)
+    }
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(withLanguageOverride(newBase))
     }
@@ -95,7 +122,36 @@ class MainActivity : ComponentActivity(), PlatformActions {
         recreate()
     }
 
+    override fun saveTextDocument(suggestedName: String, text: String, onResult: (saved: Boolean) -> Unit) {
+        pendingSave = text to onResult
+        runCatching { createDocument.launch(suggestedName) }.onFailure {
+            pendingSave = null
+            onResult(false)
+        }
+    }
+
+    override fun openTextDocument(onResult: (text: String?) -> Unit) {
+        pendingOpen = onResult
+        runCatching { openDocument.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) }.onFailure {
+            pendingOpen = null
+            onResult(null)
+        }
+    }
+
     companion object {
+        private const val MAX_OPEN_BYTES = 16 * 1024
+
+        private fun java.io.InputStream.readNBytesCompat(limit: Int): ByteArray {
+            val out = java.io.ByteArrayOutputStream()
+            val buffer = ByteArray(4096)
+            while (out.size() < limit) {
+                val n = read(buffer, 0, minOf(buffer.size, limit - out.size()))
+                if (n < 0) break
+                out.write(buffer, 0, n)
+            }
+            return out.toByteArray()
+        }
+
         /** Wraps [base] with the in-app language override, or returns it unchanged for "phone default". */
         fun withLanguageOverride(base: Context): Context {
             val tag = AppSettings.readLanguage(base).tag ?: return base

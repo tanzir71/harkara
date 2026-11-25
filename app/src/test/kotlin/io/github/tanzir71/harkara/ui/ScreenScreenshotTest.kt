@@ -15,6 +15,9 @@ import io.github.tanzir71.harkara.settings.SettingsState
 import io.github.tanzir71.harkara.ui.components.HarkaraTab
 import io.github.tanzir71.harkara.ui.components.SheetSurface
 import io.github.tanzir71.harkara.ui.components.TabBar
+import io.github.tanzir71.harkara.ui.screens.BackupSheetContent
+import io.github.tanzir71.harkara.ui.screens.BackupStep
+import io.github.tanzir71.harkara.ui.screens.RestoreSheetContent
 import io.github.tanzir71.harkara.ui.screens.ChatsScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
 import io.github.tanzir71.harkara.ui.screens.MeScreen
@@ -61,7 +64,34 @@ class ScreenScreenshotTest {
     @Test
     fun meTools() = captureDayNight("screen-07-me-tools", padded = false) {
         WithTabs(HarkaraTab.Me) {
-            MeScreen(SettingsState(onboarded = true, areaName = "Dhanmondi 27"), SampleData.online, it)
+            MeScreen(SettingsState(onboarded = true, areaName = "Dhanmondi 27"), SampleData.online, it, npub = SampleData.npub)
+        }
+    }
+
+    @Test
+    fun backupSheet() = captureDayNight("screen-backup-sheet", padded = false) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            SheetSurface {
+                BackupSheetContent(BackupStep.Password, "amar notun phone", "amar notun phone", {}, {}, {}, {}, {}, Modifier.fillMaxWidth().padding(bottom = 8.dp))
+            }
+        }
+    }
+
+    @Test
+    fun backupQr() = captureDayNight("screen-backup-qr", padded = false) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            SheetSurface {
+                BackupSheetContent(BackupStep.Qr(SampleData.ncryptsec), "", "", {}, {}, {}, {}, {}, Modifier.fillMaxWidth().padding(bottom = 8.dp))
+            }
+        }
+    }
+
+    @Test
+    fun restoreSheet() = captureDayNight("screen-restore-sheet", padded = false) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            SheetSurface {
+                RestoreSheetContent(SampleData.ncryptsec, "purono", false, "Wrong password or damaged backup", {}, {}, {}, {}, Modifier.fillMaxWidth().padding(bottom = 8.dp))
+            }
         }
     }
 
@@ -96,6 +126,6 @@ class ScreenScreenshotTest {
     @Test
     @Config(qualifiers = "bn-w360dp-h800dp-mdpi")
     fun meToolsBangla() = captureDayNight("screen-07-me-tools-bn", padded = false) {
-        WithTabs(HarkaraTab.Me) { MeScreen(SettingsState(onboarded = true), ConnectivityState.Saved, it) }
+        WithTabs(HarkaraTab.Me) { MeScreen(SettingsState(onboarded = true), ConnectivityState.Saved, it, npub = SampleData.npub) }
     }
 }

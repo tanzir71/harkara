@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.tanzir71.harkara.R
 import io.github.tanzir71.harkara.core.ConnectivityState
+import io.github.tanzir71.harkara.identity.shortNpub
 import io.github.tanzir71.harkara.settings.Module
 import io.github.tanzir71.harkara.settings.SettingsState
 import io.github.tanzir71.harkara.ui.components.Avatar
@@ -74,20 +76,35 @@ fun MeScreen(
     onAllModules: () -> Unit = {},
     onSettings: () -> Unit = {},
     onLogoTripleTap: () -> Unit = {},
+    npub: String? = null,
+    onBackup: () -> Unit = {},
 ) {
     val c = HarkaraTheme.colors
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
         TitleBar(stringResource(R.string.tab_me), connectivity, pill, leading = { LogoMark(size = 28.dp, onTripleTap = onLogoTripleTap) })
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (update != null) UpdateCard(update, onGetUpdate, onDismissUpdate)
-            HCard(Modifier.fillMaxWidth()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Avatar("?", size = 48.dp)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(stringResource(R.string.me_anonymous), style = HarkaraTheme.type.headline, color = c.textPrimary)
-                        Text(stringResource(R.string.me_anonymous_body), style = HarkaraTheme.type.caption, color = c.textSecondary)
+            HCard(Modifier.fillMaxWidth(), padding = PaddingValues(top = 16.dp, bottom = 4.dp)) {
+                Column {
+                    Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Avatar("?", size = 48.dp)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(stringResource(R.string.me_anonymous), style = HarkaraTheme.type.headline, color = c.textPrimary)
+                            Text(stringResource(R.string.me_anonymous_body), style = HarkaraTheme.type.caption, color = c.textSecondary)
+                            if (npub != null) {
+                                Text(shortNpub(npub), style = HarkaraTheme.type.mono, color = c.textSecondary, maxLines = 1, modifier = Modifier.padding(top = 2.dp))
+                            }
+                        }
                     }
+                    Box(Modifier.padding(top = 12.dp).fillMaxWidth().height(1.dp).background(c.borderSubtle))
+                    SettingsRow(
+                        R.drawable.ic_lock,
+                        stringResource(R.string.me_backup),
+                        subtitle = stringResource(R.string.me_backup_sub),
+                        onClick = onBackup,
+                        trailing = { HIcon(R.drawable.ic_chevron_right, tint = c.textTertiary, size = 18.dp) },
+                    )
                 }
             }
             SectionHeader(stringResource(R.string.me_tools), Modifier.padding(top = 8.dp), trailing = stringResource(R.string.me_tools_note))

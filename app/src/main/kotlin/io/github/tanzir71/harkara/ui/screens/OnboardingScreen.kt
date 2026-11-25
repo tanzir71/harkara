@@ -34,6 +34,7 @@ fun OnboardingScreen(
     onUseLocation: () -> Unit,
     onPickArea: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onRestore: () -> Unit = {},
 ) {
     val c = HarkaraTheme.colors
     Column(
@@ -61,5 +62,13 @@ fun OnboardingScreen(
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             areas.forEach { area -> Chip(area, selected = false, onClick = { onPickArea(area) }) }
         }
+        HButton(
+            stringResource(R.string.onboarding_restore),
+            onRestore,
+            Modifier.padding(top = 8.dp),
+            variant = HButtonVariant.Ghost,
+            icon = R.drawable.ic_lock,
+            height = 40.dp,
+        )
     }
 }

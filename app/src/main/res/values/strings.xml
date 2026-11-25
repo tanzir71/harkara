@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">Harkara</string>
     <string name="app_name_bn" translatable="false">হরকরা</string>
 
@@ -78,6 +78,34 @@
     <string name="me_all_modules">All modules</string>
     <string name="me_settings">Settings</string>
     <string name="logo_description">Harkara logo</string>
+    <string name="done">Done</string>
+
+    <!-- Key backup and restore -->
+    <string name="me_backup">Back up key</string>
+    <string name="me_backup_sub">Password-locked file or QR</string>
+    <string name="backup_title">Back up your key</string>
+    <string name="backup_body">Your key lives only on this phone. Lock a copy with a password so you can restore it on a new phone. Nobody can reset this password.</string>
+    <string name="backup_password">Password</string>
+    <string name="backup_confirm">Password again</string>
+    <string name="backup_password_short">Use at least 8 characters</string>
+    <string name="backup_password_mismatch">The passwords don\'t match</string>
+    <string name="backup_save_file">Save to a file…</string>
+    <string name="backup_show_qr">Show as QR</string>
+    <string name="backup_working">Locking your backup…</string>
+    <string name="backup_saved">Backup saved</string>
+    <string name="backup_save_failed">The backup was not saved</string>
+    <string name="backup_qr_title">Scan this on your new phone</string>
+    <string name="backup_qr_body">The code is locked with your password. Keep both private.</string>
+    <string name="backup_qr_description">QR code of your locked key backup</string>
+    <string name="backup_file_name" translatable="false">harkara-key-backup.txt</string>
+    <string name="restore_title">Restore your key</string>
+    <string name="restore_body" tools:ignore="Typos">Paste your backup (it starts with ncryptsec1) or open the file, then type its password.</string>
+    <string name="restore_backup">Backup</string>
+    <string name="restore_open_file">Open a file…</string>
+    <string name="restore_action">Restore</string>
+    <string name="restore_working">Unlocking…</string>
+    <string name="restore_failed">Wrong password or damaged backup</string>
+    <string name="restore_done">Key restored</string>
 
     <!-- Settings -->
     <string name="settings_language">Language</string>
@@ -111,6 +139,7 @@
     <string name="onboarding_use_location">Use my location</string>
     <string name="onboarding_location_note">Optional. Only used to pick your area; it never leaves the phone.</string>
     <string name="onboarding_pick_area">Or pick your area</string>
+    <string name="onboarding_restore">Restore from backup</string>
 
     <!-- Connectivity sheet -->
     <string name="conn_title">How messages get out</string>

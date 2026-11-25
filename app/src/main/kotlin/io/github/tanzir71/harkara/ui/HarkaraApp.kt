@@ -13,6 +13,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,8 +28,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.tanzir71.harkara.AppContainer
 import io.github.tanzir71.harkara.BuildConfig
 import io.github.tanzir71.harkara.R
+import io.github.tanzir71.harkara.core.nostr.Bech32
 import io.github.tanzir71.harkara.ui.components.HarkaraTab
 import io.github.tanzir71.harkara.ui.components.TabBar
+import io.github.tanzir71.harkara.ui.screens.BackupSheet
+import io.github.tanzir71.harkara.ui.screens.RestoreSheet
 import io.github.tanzir71.harkara.ui.screens.ChatsScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
 import io.github.tanzir71.harkara.ui.screens.KhataScreen
@@ -42,7 +46,9 @@ import io.github.tanzir71.harkara.ui.screens.SettingsScreen
 import io.github.tanzir71.harkara.ui.screens.TasksScreen
 import io.github.tanzir71.harkara.ui.theme.HarkaraTheme
 import io.github.tanzir71.harkara.update.UpdateChecker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Things only the Android host can do; faked in tests. */
 interface PlatformActions {
@@ -53,6 +59,10 @@ interface PlatformActions {
     fun requestLocation(onResult: (lat: Double?, lng: Double?) -> Unit)
     /** Re-applies the language override (recreates the activity). */
     fun applyLanguage()
+    /** Lets the user pick where to save [text] (Storage Access Framework); reports whether it was written. */
+    fun saveTextDocument(suggestedName: String, text: String, onResult: (saved: Boolean) -> Unit)
+    /** Lets the user pick a small text file to open; reports its text, or null when cancelled or unreadable. */
+    fun openTextDocument(onResult: (text: String?) -> Unit)
 
     object None : PlatformActions {
         override fun openUrl(url: String) = Unit
@@ -60,11 +70,13 @@ interface PlatformActions {
         override fun copyToClipboard(label: String, text: String) = Unit
         override fun requestLocation(onResult: (lat: Double?, lng: Double?) -> Unit) = onResult(null, null)
         override fun applyLanguage() = Unit
+        override fun saveTextDocument(suggestedName: String, text: String, onResult: (saved: Boolean) -> Unit) = onResult(false)
+        override fun openTextDocument(onResult: (text: String?) -> Unit) = onResult(null)
     }
 }
 
 private enum class Page { Tabs, Modules, Settings }
-private enum class Sheet { None, Connectivity, PanicWipe }
+private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -76,9 +88,16 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     val connectivity by container.connectivity.state.collectAsStateWithLifecycle()
     val update by container.updateChecker.available.collectAsStateWithLifecycle()
     val visibleUpdate = update?.takeIf { it.versionCode > settings.dismissedUpdateCode }
+    val profilePubkey by container.identity.profilePubkey.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+
+    // Keys are made silently once an area is chosen: no sign-up step.
+    LaunchedEffect(settings.onboarded) {
+        if (settings.onboarded) withContext(Dispatchers.Default) { container.identity.keyRing() }
+    }
+    val notify: (Int) -> Unit = { res -> scope.launch { snackbar.showSnackbar(context.getString(res)) } }
 
     var tab by rememberSaveable { mutableStateOf(HarkaraTab.Nearby) }
     var page by rememberSaveable { mutableStateOf(Page.Tabs) }
@@ -101,6 +120,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                     },
                     onPickArea = { container.settings.completeOnboarding(it, auto = false) },
                     modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    onRestore = { sheet = Sheet.Restore },
                 )
             } else {
                 when (page) {
@@ -159,6 +179,8 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onAllModules = { page = Page.Modules },
                                 onSettings = { page = Page.Settings },
                                 onLogoTripleTap = { sheet = Sheet.PanicWipe },
+                                npub = profilePubkey?.let(Bech32::encodeNpub),
+                                onBackup = { sheet = Sheet.Backup },
                             )
                         }
                         TabBar(tab, { tab = it })
@@ -185,6 +207,26 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 scope.launch { container.panicWipe() }
                             },
                             onCancel = { sheet = Sheet.None },
+                        )
+                        Sheet.Backup -> BackupSheet(
+                            export = container.identity::exportBackup,
+                            saveFile = platform::saveTextDocument,
+                            onFinished = { saved ->
+                                sheet = Sheet.None
+                                when (saved) {
+                                    true -> notify(R.string.backup_saved)
+                                    false -> notify(R.string.backup_save_failed)
+                                    null -> Unit
+                                }
+                            },
+                        )
+                        Sheet.Restore -> RestoreSheet(
+                            restore = { backup, password -> runCatching { container.identity.restore(backup, password) }.isSuccess },
+                            openFile = platform::openTextDocument,
+                            onRestored = {
+                                sheet = Sheet.None
+                                notify(R.string.restore_done)
+                            },
                         )
                         Sheet.None -> Unit
                     }

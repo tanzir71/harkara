@@ -75,6 +75,33 @@
     <string name="me_all_modules">সব মডিউল</string>
     <string name="me_settings">সেটিংস</string>
     <string name="logo_description">হরকরা লোগো</string>
+    <string name="done">হয়ে গেছে</string>
+
+    <!-- Key backup and restore -->
+    <string name="me_backup">কী ব্যাকআপ করো</string>
+    <string name="me_backup_sub">পাসওয়ার্ডে তালা দেওয়া ফাইল বা QR</string>
+    <string name="backup_title">তোমার কী ব্যাকআপ করো</string>
+    <string name="backup_body">তোমার কী শুধু এই ফোনেই আছে। পাসওয়ার্ড দিয়ে একটা কপি তালাবন্ধ করো, তাহলে নতুন ফোনে ফিরিয়ে আনতে পারবে। এই পাসওয়ার্ড কেউ রিসেট করতে পারে না।</string>
+    <string name="backup_password">পাসওয়ার্ড</string>
+    <string name="backup_confirm">আবার পাসওয়ার্ড</string>
+    <string name="backup_password_short">অন্তত ৮টি অক্ষর দাও</string>
+    <string name="backup_password_mismatch">দুটো পাসওয়ার্ড মিলছে না</string>
+    <string name="backup_save_file">ফাইলে রাখো…</string>
+    <string name="backup_show_qr">QR হিসেবে দেখাও</string>
+    <string name="backup_working">ব্যাকআপ তালাবন্ধ হচ্ছে…</string>
+    <string name="backup_saved">ব্যাকআপ রাখা হয়েছে</string>
+    <string name="backup_save_failed">ব্যাকআপ রাখা যায়নি</string>
+    <string name="backup_qr_title">নতুন ফোনে এটা স্ক্যান করো</string>
+    <string name="backup_qr_body">কোডটা তোমার পাসওয়ার্ডে তালাবন্ধ। দুটোই গোপন রাখো।</string>
+    <string name="backup_qr_description">তোমার তালাবন্ধ কী ব্যাকআপের QR কোড</string>
+    <string name="restore_title">তোমার কী ফিরিয়ে আনো</string>
+    <string name="restore_body">ব্যাকআপ পেস্ট করো (শুরু হয় ncryptsec1 দিয়ে) বা ফাইল খোলো, তারপর পাসওয়ার্ড লেখো।</string>
+    <string name="restore_backup">ব্যাকআপ</string>
+    <string name="restore_open_file">ফাইল খোলো…</string>
+    <string name="restore_action">ফিরিয়ে আনো</string>
+    <string name="restore_working">খোলা হচ্ছে…</string>
+    <string name="restore_failed">ভুল পাসওয়ার্ড বা নষ্ট ব্যাকআপ</string>
+    <string name="restore_done">কী ফিরে এসেছে</string>
 
     <!-- Settings -->
     <string name="settings_language">ভাষা</string>
@@ -108,6 +135,7 @@
     <string name="onboarding_use_location">আমার লোকেশন নাও</string>
     <string name="onboarding_location_note">ঐচ্ছিক। শুধু এলাকা বাছতে লাগে; ফোনের বাইরে যায় না।</string>
     <string name="onboarding_pick_area">অথবা এলাকা বাছো</string>
+    <string name="onboarding_restore">ব্যাকআপ থেকে ফিরিয়ে আনো</string>
 
     <!-- Connectivity sheet -->
     <string name="conn_title">মেসেজ কীভাবে বের হয়</string>

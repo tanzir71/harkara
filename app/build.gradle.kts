@@ -115,6 +115,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+    implementation(libs.secp256k1.kmp.jni.android)
+    implementation(libs.zxing.core)
     kapt(libs.androidx.room.compiler)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
@@ -133,4 +135,6 @@ dependencies {
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit.rule)
+    // JVM build of libsecp256k1 so Robolectric and plain JVM tests can sign and verify.
+    testImplementation(libs.secp256k1.kmp.jni.jvm)
 }

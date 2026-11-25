@@ -82,6 +82,12 @@ object SampleData {
         waiting = 4,
     )
 
+    /** The NIP-19 example npub, so screenshots need no crypto. */
+    const val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
+
+    /** The NIP-49 spec vector, a real ncryptsec for the QR golden. */
+    const val ncryptsec = "ncryptsec1qgg9947rlpvqu76pj5ecreduf9jxhselq2nae2kghhvd5g7dgjtcxfqtd67p9m0w57lspw8gsq6yphnm8623nsl8xn9j4jdzz84zm3frztj3z7s35vpzmqf6ksu8r89qk5z2zxfmu5gv8th8wclt0h4p"
+
     val meshOnly = ConnectivityState(
         available = setOf(Carrier.MESH, Carrier.QR, Carrier.SAVED),
         meshPeers = 12,
