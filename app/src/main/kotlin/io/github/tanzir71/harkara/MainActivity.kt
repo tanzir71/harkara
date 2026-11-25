@@ -141,6 +141,11 @@ class MainActivity : ComponentActivity(), PlatformActions {
         }
     }
 
+    override fun composeSms(body: String) {
+        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")).putExtra("sms_body", body)
+        runCatching { startActivity(intent) }
+    }
+
     override fun openTextDocument(onResult: (text: String?) -> Unit) {
         pendingOpen = onResult
         runCatching { openDocument.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) }.onFailure {

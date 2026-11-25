@@ -127,3 +127,18 @@ interface LocalSecretDao {
     @Query("SELECT * FROM local_secrets WHERE key LIKE :prefix || '%'")
     fun observePrefix(prefix: String): Flow<List<LocalSecretEntity>>
 }
+
+@Dao
+interface IouDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(iou: IouEntity)
+
+    @Query("SELECT * FROM ious WHERE id = :id")
+    suspend fun get(id: String): IouEntity?
+
+    @Query("SELECT * FROM ious ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<IouEntity>>
+
+    @Query("SELECT * FROM ious ORDER BY createdAt DESC")
+    suspend fun all(): List<IouEntity>
+}

@@ -10,8 +10,8 @@ import java.security.SecureRandom
 
 /** Room database for everything Harkara keeps on the phone; encrypted with SQLCipher on devices. */
 @Database(
-    entities = [EventEntity::class, OutboxEntity::class, RelayAckEntity::class, MuteEntity::class, LocalSecretEntity::class],
-    version = 3,
+    entities = [EventEntity::class, OutboxEntity::class, RelayAckEntity::class, MuteEntity::class, LocalSecretEntity::class, IouEntity::class],
+    version = 4,
     exportSchema = false,
 )
 abstract class HarkaraDatabase : RoomDatabase() {
@@ -20,6 +20,7 @@ abstract class HarkaraDatabase : RoomDatabase() {
     abstract fun relayAckDao(): RelayAckDao
     abstract fun muteDao(): MuteDao
     abstract fun localSecretDao(): LocalSecretDao
+    abstract fun iouDao(): IouDao
 
     companion object {
         const val NAME = "harkara.db"

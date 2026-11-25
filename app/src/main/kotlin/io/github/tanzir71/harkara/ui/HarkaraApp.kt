@@ -42,6 +42,7 @@ import io.github.tanzir71.harkara.ui.screens.ComposeSheetContent
 import io.github.tanzir71.harkara.ui.screens.RelaysScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
 import io.github.tanzir71.harkara.ui.screens.KhataScreen
+import io.github.tanzir71.harkara.ui.screens.toRow
 import io.github.tanzir71.harkara.ui.screens.MeScreen
 import io.github.tanzir71.harkara.ui.screens.ModulesScreen
 import io.github.tanzir71.harkara.ui.screens.NearbyScreen
@@ -70,6 +71,8 @@ interface PlatformActions {
     fun saveTextDocument(suggestedName: String, text: String, onResult: (saved: Boolean) -> Unit)
     /** Lets the user pick a small text file to open; reports its text, or null when cancelled or unreadable. */
     fun openTextDocument(onResult: (text: String?) -> Unit)
+    /** Opens the SMS app with [body] prefilled and no recipient; needs no permission and stores no number. */
+    fun composeSms(body: String) {}
 
     object None : PlatformActions {
         override fun openUrl(url: String) = Unit
@@ -83,7 +86,7 @@ interface PlatformActions {
 }
 
 private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail }
-private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name }
+private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -142,6 +145,30 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
         if (settings.displayName != null) action() else { afterName = action; sheet = Sheet.Name }
     }
     val taskOp: (suspend () -> Unit) -> Unit = { op -> scope.launch { op() } }
+    val ious by remember(settings.onboarded) {
+        if (settings.onboarded) container.khataRepository.ious() else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    LaunchedEffect(settings.onboarded, relayStatus.size, profilePubkey) { if (settings.onboarded && profilePubkey != null) container.khataRepository.subscribe() }
+    var openIouId by remember { mutableStateOf<String?>(null) }
+    var iouPasteBad by remember { mutableStateOf(false) }
+    val openIou = ious.firstOrNull { it.terms.id == openIouId }
+    val khataRows = remember(ious, taskStates, profilePubkey) {
+        val me = profilePubkey ?: return@remember emptyList()
+        val iouRows = ious.map { s -> s.toRow(me, listOfNotNull(s.terms.note.ifBlank { null }, io.github.tanzir71.harkara.ui.screens.hhmm(s.terms.createdAt)).joinToString(" · ")) }
+        // Receipts from paid tasks (settled, read-only).
+        val receipts = taskStates.filter { it.status == io.github.tanzir71.harkara.core.tasks.TaskStatus.PAID && (it.requester == me || it.runner == me) }.map { st ->
+            val iAmRunner = st.runner == me
+            val other = if (iAmRunner) st.requester else st.runner!!
+            val method = container.taskRepository.paymentDetails(st)?.method ?: ""
+            io.github.tanzir71.harkara.ui.screens.KhataRow(
+                "task:" + st.offer.address, io.github.tanzir71.harkara.ui.screens.nameOf(st, other),
+                if (iAmRunner) st.offer.price else -st.offer.price,
+                listOf(st.offer.title, method).filter { it.isNotBlank() }.joinToString(" · "),
+                io.github.tanzir71.harkara.ui.screens.KhataRowStatus.SETTLED,
+            )
+        }
+        iouRows + receipts
+    }
     val connectedRelays = relayStatus.values.count { it == io.github.tanzir71.harkara.relay.RelayStatus.CONNECTED }
     LaunchedEffect(center, settings.onboarded, relayStatus.size) { if (settings.onboarded) container.feedRepository.subscribeArea(center) }
     LaunchedEffect(center, settings.onboarded, connectedRelays) { if (settings.onboarded && connectedRelays > 0) container.feedRepository.catchUp(center) }
@@ -270,7 +297,25 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onOpen = { openTaskId = it.offer.event.id; page = Page.TaskDetail },
                                 onNew = { withName { taskDraft = null; sheet = Sheet.TaskCompose } },
                             )
-                            HarkaraTab.Khata -> KhataScreen(connectivity, content, pill)
+                            HarkaraTab.Khata -> KhataScreen(
+                                rows = khataRows,
+                                connectivity = connectivity,
+                                modifier = content,
+                                pill = pill,
+                                onOpen = { row -> if (row.iou != null) { openIouId = row.iou.terms.id; sheet = Sheet.IouDetail } },
+                                onNew = { withName { sheet = Sheet.NewIou } },
+                                onExport = {
+                                    val me = profilePubkey ?: ""
+                                    val csv = io.github.tanzir71.harkara.core.khata.KhataExport.csv(ious, me)
+                                    platform.saveTextDocument("harkara-khata.csv", csv) { saved ->
+                                        if (saved) {
+                                            platform.saveTextDocument("harkara-khata.json", io.github.tanzir71.harkara.core.khata.KhataExport.json(ious)) { ok ->
+                                                if (ok) say(context.getString(R.string.khata_export_done))
+                                            }
+                                        }
+                                    }
+                                },
+                            )
                             HarkaraTab.Me -> MeScreen(
                                 settings = settings,
                                 connectivity = connectivity,
@@ -424,6 +469,51 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 afterName = null
                             },
                         )
+                        Sheet.NewIou -> io.github.tanzir71.harkara.ui.screens.NewIouSheetContent(
+                            onSave = { direction, name, npub, amount, note ->
+                                sheet = Sheet.None
+                                val key = npub.takeIf { it.startsWith("npub1") }?.let { runCatching { Bech32.decodeNpub(it) }.getOrNull() }
+                                taskOp { container.khataRepository.create(direction, io.github.tanzir71.harkara.core.khata.Party(name.trim(), key), amount, note) }
+                            },
+                            onSplit = { names, total, note ->
+                                sheet = Sheet.None
+                                taskOp { container.khataRepository.splitBill(names.map { io.github.tanzir71.harkara.core.khata.Party(it) }, total, note) }
+                            },
+                        )
+                        Sheet.IouDetail -> openIou?.let { s ->
+                            io.github.tanzir71.harkara.ui.screens.IouDetailSheetContent(
+                                state = s,
+                                me = profilePubkey ?: "",
+                                onSign = { taskOp { container.khataRepository.sign(s) } },
+                                onShowQr = { sheet = Sheet.IouQr },
+                                onPasteQr = { iouPasteBad = false; sheet = Sheet.IouPaste },
+                                onRemind = {
+                                    val what = s.terms.note.filter { it.code < 128 }.trim().ifBlank { "our IOU" }
+                                    platform.composeSms(context.getString(R.string.khata_reminder_sms, (settings.displayName ?: "Harkara").filter { it.code < 128 }.ifBlank { "Harkara" }, s.terms.amount.toInt(), what, io.github.tanzir71.harkara.khata.KhataRepository.HELP_URL))
+                                },
+                                onSettle = { sheet = Sheet.IouSettle },
+                                onConfirmSettle = { taskOp { container.khataRepository.confirmSettlement(s) } },
+                            )
+                        }
+                        Sheet.IouQr -> openIou?.let { s -> io.github.tanzir71.harkara.ui.screens.IouQrSheetContent(container.khataRepository.qrFor(s)) }
+                        Sheet.IouPaste -> io.github.tanzir71.harkara.ui.screens.PasteQrSheetContent(
+                            bad = iouPasteBad,
+                            onRead = { text ->
+                                taskOp {
+                                    val st = container.khataRepository.importQr(text)
+                                    if (st == null) iouPasteBad = true else { openIouId = st.terms.id; sheet = Sheet.IouDetail }
+                                }
+                            },
+                        )
+                        Sheet.IouSettle -> openIou?.let { s ->
+                            io.github.tanzir71.harkara.ui.screens.PaymentSheetContent(
+                                amount = s.terms.amount,
+                                onSave = { method, trx ->
+                                    sheet = Sheet.None
+                                    taskOp { container.khataRepository.recordSettlement(s, io.github.tanzir71.harkara.core.khata.Settlement(method.wire, s.terms.amount, trx)) }
+                                },
+                            )
+                        }
                         Sheet.None -> Unit
                     }
                 }

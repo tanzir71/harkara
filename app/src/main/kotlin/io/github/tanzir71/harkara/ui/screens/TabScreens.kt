@@ -33,6 +33,4 @@ fun ChatsScreen(connectivity: ConnectivityState, modifier: Modifier = Modifier, 
     UpcomingTabScreen(R.string.tab_chats, R.drawable.ic_chats, R.string.chats_empty_body, connectivity, modifier, pill = pill)
 
 
-@Composable
-fun KhataScreen(connectivity: ConnectivityState, modifier: Modifier = Modifier, pill: PillActions = PillActions()) =
-    UpcomingTabScreen(R.string.tab_khata, R.drawable.ic_khata, R.string.khata_empty_body, connectivity, modifier, bangla = "খাতা", pill = pill)
+

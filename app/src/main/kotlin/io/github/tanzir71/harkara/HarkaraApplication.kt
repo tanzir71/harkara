@@ -25,6 +25,7 @@ import io.github.tanzir71.harkara.settings.SettingsState
 import io.github.tanzir71.harkara.update.UpdateChecker
 import io.github.tanzir71.harkara.core.tasks.TaskTypes
 import io.github.tanzir71.harkara.tasks.TaskRepository
+import io.github.tanzir71.harkara.khata.KhataRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,6 +74,11 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     val taskRepository: TaskRepository by lazy {
         TaskRepository(database, eventStore, outbox, relayPool, profile = { identity.profile() }, displayName = { settings.state.value.displayName })
             .also { it.startIngest(scope) }
+    }
+
+    val khataRepository: KhataRepository by lazy {
+        KhataRepository(database, outbox, pools = { listOf(relayPool) }, profile = { identity.profile() }, displayName = { settings.state.value.displayName })
+            .also { it.startIngest(scope, relayPool) }
     }
 
     /** NIP-13 difficulty tuned once to this phone's speed (~2 s of mining). */

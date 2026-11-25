@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 (unreleased)
+
+Khata: IOUs both people sign.
+
+- **Khata** tab: what you'll get and what you owe, filters (All, Waiting, Agreed, Settled) and the ledger. **New IOU**: they owe me / I owe them, amount, what for, their name and (optionally) their Harkara key.
+- An IOU is only a **claim** until both people sign exactly the same terms; then it's **agreed**. Updates travel end-to-end encrypted (gift-wrapped) to the other person, or **face to face as a QR** with no network: show yours, they scan and sign, they show theirs back.
+- **Settle** with cash or a bKash/Nagad TrxID typed as text; it's settled once both sign the same settlement.
+- **Split a bill**: one IOU per person, shares that add up exactly.
+- **Remind by SMS** opens your SMS app with a short Latin-letter reminder and a help link (no number is stored). **Export** the ledger as CSV and JSON.
+- Paid tasks show up as settled receipts.
 ## 0.6.0 (unreleased)
 
 Tasks: local errands with signed steps and an offline handoff.

@@ -82,3 +82,13 @@ data class LocalSecretEntity(
     val value: String,
     val createdAt: Long,
 )
+
+/** One IOU as this phone knows it: the merged bundle of terms, signatures and settlements (Khata). */
+@Entity(tableName = "ious", indices = [Index("updatedAt")])
+data class IouEntity(
+    @PrimaryKey val id: String,
+    val bundleJson: String,
+    val counterpartyPubkey: String?,
+    val createdAt: Long,
+    val updatedAt: Long,
+)
