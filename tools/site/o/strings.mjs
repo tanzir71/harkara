@@ -45,7 +45,7 @@ export const oStrings = {
     3476: { bn: 'Check-in: nirapode pouchechi', en: 'Check-in: I got here safe' },
     3477: { bn: 'SOS: shahajjo dorkar', en: 'SOS: needs help' },
     3478: { bn: 'SOS update', en: 'SOS update' },
-    3479: { bn: 'Gopon message (shudhu app-e khole)', en: 'Private message (only the app can open it)' },
+    3480: { bn: 'Gopon message (shudhu app-e khole)', en: 'Private message (only the app can open it)' },
     30402: { bn: 'Task', en: 'Task' },
     other: { bn: 'Signed message (kind {kind})', en: 'Signed message (kind {kind})' },
   },

@@ -400,7 +400,7 @@ async function showEvent(frag, payload) {
     const st = tag(e, 'status');
     if (T.status[st]) body.push(h('p', { class: 'o-text' }, T.status[st]));
     if (e.content) body.push(h('p', { class: 'o-text' }, e.content));
-  } else if (e.kind !== 3479 && e.kind !== 3474 && e.content) {
+  } else if (e.kind !== 3480 && e.kind !== 3474 && e.content) {
     body.push(h('p', { class: 'o-text', id: 'o-content' }, e.content));
   }
   const place = tag(e, 'place');

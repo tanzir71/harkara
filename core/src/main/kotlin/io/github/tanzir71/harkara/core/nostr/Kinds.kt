@@ -2,7 +2,7 @@ package io.github.tanzir71.harkara.core.nostr
 
 /**
  * Event kinds Harkara uses. Standard NIP kinds first, then Harkara app kinds in a block no NIP uses
- * (3471-3479 regular, 23471 ephemeral, 33471 addressable). See docs/PROTOCOL.md for the tags of each.
+ * (3471-3480 regular, 23471 ephemeral, 33471 addressable). See docs/PROTOCOL.md for the tags of each.
  */
 object Kinds {
     // Standard NIP kinds
@@ -51,7 +51,7 @@ object Kinds {
      * Short DM for the SMS rung: NIP-44 v2 content to the single `p` recipient, signed by the sender, not
      * gift-wrapped (a NIP-59 wrap cannot fit two SMS; the carrier sees both numbers anyway).
      */
-    const val SMS_DM = 3479
+    const val SMS_DM = 3480
     /** Live location point: ephemeral, gift-wrapped to named people, `seq` + `end`. */
     const val LIVE_LOCATION = 23471
     /** Shared or public pin: addressable (`d`), `g` + `expiration`. */

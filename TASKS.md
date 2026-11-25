@@ -67,7 +67,7 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M10 - SMS, QR, web page for non-users (v0.9.0)
 
-- [x] Prefilled SMS (`SmsComposer`, ACTION_SENDTO smsto:), SMS payload codec (`core/wire/SmsCodec`: GSM-7 line + HK1 payload, 8-byte key refs, Text8 Bangla), SMS-eligible kinds incl. SMS DM 3479, deep links (`harkara:`, `…/harkara/o/#`, shared text) with `DeepLinkRouter` + `LinkInbox`, `site/o/` verifier page (IOU confirm with a throwaway key, follow a task, area feed; CSP-pinned relays).
+- [x] Prefilled SMS (`SmsComposer`, ACTION_SENDTO smsto:), SMS payload codec (`core/wire/SmsCodec`: GSM-7 line + HK1 payload, 8-byte key refs, Text8 Bangla), SMS-eligible kinds incl. SMS DM 3480, deep links (`harkara:`, `…/harkara/o/#`, shared text) with `DeepLinkRouter` + `LinkInbox`, `site/o/` verifier page (IOU confirm with a throwaway key, follow a task, area feed; CSP-pinned relays).
 - [x] Direct SMS (data SMS, port 7471) + volunteer gateway (100/day, members only) behind default-off switches, disabled receivers, permission asked only on switch-on; restricted-settings guidance screen.
 - [x] QR transport (`harkara:e:` single, `harkara:q:` multi-QR with reassembly), share-as-QR sheet and paste import (camera scanning is hardware).
 - [x] Gate: every SMS-eligible type fits two parts (`SmsBudgetTest`); `site/o/` verifies a core-signed payload in Playwright (`tests/site/o.spec.mjs`); grey switches default off (`GreyAreaSmsTest`).

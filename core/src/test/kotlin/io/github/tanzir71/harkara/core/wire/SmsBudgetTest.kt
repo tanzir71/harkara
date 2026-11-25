@@ -134,9 +134,9 @@ class SmsBudgetTest {
         assertTrue(text.encodeToByteArray().size <= SmsLimits.DM_BYTES, "${text.encodeToByteArray().size} bytes")
         val longest = "Ami thik achi, chinta koro na!!!"
         assertEquals(SmsLimits.DM_BYTES, longest.encodeToByteArray().size)
-        check("SMS DM, Bangla (3479)", SmsDm.build(runner, friend.pubkeyHex, text, now))
+        check("SMS DM, Bangla (3480)", SmsDm.build(runner, friend.pubkeyHex, text, now))
         val dm = SmsDm.build(runner, friend.pubkeyHex, longest, now)
-        check("SMS DM, 32 bytes (3479)", dm)
+        check("SMS DM, 32 bytes (3480)", dm)
         assertEquals(longest, SmsDm.open(dm, friend))
     }
 

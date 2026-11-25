@@ -79,7 +79,7 @@ object SmsEligibility {
     fun smsText(event: Event): String? = if (isEligibleType(event)) SmsCodec.textFitting(event, refsFor(event)) else null
 }
 
-/** Kind 3479: a DM short enough for the SMS rung, NIP-44 v2 encrypted to one recipient. */
+/** Kind 3480: a DM short enough for the SMS rung, NIP-44 v2 encrypted to one recipient. */
 object SmsDm {
     fun build(sender: KeyPair, recipient: String, text: String, createdAt: Long): Event {
         require(Hex.isLowerHex(recipient, 32)) { "recipient must be an x-only pubkey" }
