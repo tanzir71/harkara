@@ -51,6 +51,25 @@ import io.github.tanzir71.harkara.ui.screens.PanicWipeSheetContent
 import io.github.tanzir71.harkara.ui.screens.PillActions
 import io.github.tanzir71.harkara.ui.screens.SettingsScreen
 import io.github.tanzir71.harkara.ui.screens.TasksScreen
+import io.github.tanzir71.harkara.core.links.HarkaraLink
+import io.github.tanzir71.harkara.core.links.HarkaraLinks
+import io.github.tanzir71.harkara.core.nostr.Event
+import io.github.tanzir71.harkara.core.nostr.Kinds
+import io.github.tanzir71.harkara.core.sms.GatewayCard
+import io.github.tanzir71.harkara.core.sms.GatewayConfig
+import io.github.tanzir71.harkara.core.wire.QrTransport
+import io.github.tanzir71.harkara.links.DeepLinkRouter
+import io.github.tanzir71.harkara.links.LinkInbox
+import io.github.tanzir71.harkara.settings.Module
+import io.github.tanzir71.harkara.sms.GreyAreaSms
+import io.github.tanzir71.harkara.sms.SmsComposer
+import io.github.tanzir71.harkara.ui.screens.EventQrSheetContent
+import io.github.tanzir71.harkara.ui.screens.GatewayCardSheetContent
+import io.github.tanzir71.harkara.ui.screens.GreyAreaSheetContent
+import io.github.tanzir71.harkara.ui.screens.PasteLinkSheetContent
+import io.github.tanzir71.harkara.ui.screens.RestrictedSettingsScreen
+import io.github.tanzir71.harkara.ui.screens.SendSmsSheetContent
+import io.github.tanzir71.harkara.ui.screens.SmsGatewayScreen
 import io.github.tanzir71.harkara.ui.theme.HarkaraTheme
 import io.github.tanzir71.harkara.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +92,12 @@ interface PlatformActions {
     fun openTextDocument(onResult: (text: String?) -> Unit)
     /** Opens the SMS app with [body] prefilled and no recipient; needs no permission and stores no number. */
     fun composeSms(body: String) {}
+    /** Opens the SMS app with [body] prefilled for [number] (a volunteer gateway the user scanned). */
+    fun composeSmsTo(number: String, body: String) = composeSms(body)
+    /** Asks for SEND_SMS + RECEIVE_SMS, only when a grey-area switch is being turned on. */
+    fun requestSmsPermissions(onResult: (granted: Boolean) -> Unit) = onResult(false)
+    /** Opens this app's App info screen (restricted settings, permissions). */
+    fun openAppInfo() {}
 
     object None : PlatformActions {
         override fun openUrl(url: String) = Unit
@@ -85,8 +110,11 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail }
-private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle }
+private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, SmsRestricted, SmsGateway }
+private enum class Sheet {
+    None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle,
+    SendSms, EventQr, PasteLink, GreyArea, GatewayQr,
+}
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -178,6 +206,84 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     val say: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
     val pill = PillActions(onClick = { sheet = Sheet.Connectivity })
 
+    // M10: send by SMS, share as QR, links in, grey-area switches.
+    var smsEvent by remember { mutableStateOf<Event?>(null) }
+    var smsResult by remember { mutableStateOf<String?>(null) }
+    var greyModule by remember { mutableStateOf<Module?>(null) }
+    var pasteMessage by remember { mutableStateOf<String?>(null) }
+    var handoffPrefill by remember { mutableStateOf("") }
+    var gatewayConfig by remember { mutableStateOf(GatewayConfig()) }
+    var savedGateway by remember { mutableStateOf<GatewayCard?>(null) }
+    val shareBySms: (Event) -> Unit = { e ->
+        smsEvent = e
+        smsResult = null
+        scope.launch { savedGateway = container.linkInbox.savedGateway() }
+        sheet = Sheet.SendSms
+    }
+    val shareAsQr: (Event) -> Unit = { e -> smsEvent = e; sheet = Sheet.EventQr }
+    val toggleModule: (Module, Boolean) -> Unit = { m, on ->
+        if (m.greyArea && on) {
+            greyModule = m
+            sheet = Sheet.GreyArea
+        } else {
+            container.settings.setModule(m, on)
+            if (m.greyArea) container.greyAreaSms.sync()
+        }
+    }
+    val handleLink: (HarkaraLink) -> Unit = { link ->
+        scope.launch {
+            when (val o = container.linkInbox.handle(link)) {
+                is LinkInbox.Outcome.Received -> {
+                    say(context.getString(if (o.isNew) R.string.link_received else R.string.link_received_known))
+                    page = Page.Tabs
+                    if (sheet == Sheet.PasteLink) sheet = Sheet.None
+                    when (o.event.kind) {
+                        Kinds.TASK_OFFER, Kinds.TASK_STEP -> tab = HarkaraTab.Tasks
+                        Kinds.IOU_SIGN, Kinds.SETTLE -> tab = HarkaraTab.Khata
+                    }
+                }
+                is LinkInbox.Outcome.Progress -> {
+                    pasteMessage = context.getString(R.string.link_progress, o.have, o.total)
+                    sheet = Sheet.PasteLink
+                }
+                LinkInbox.Outcome.Unverified -> {
+                    pasteMessage = context.getString(R.string.link_unverified)
+                    say(context.getString(R.string.link_unverified))
+                }
+                is LinkInbox.Outcome.OpenKhataImport -> {
+                    val st = container.khataRepository.importQr(o.text)
+                    if (st == null) say(context.getString(R.string.khata_qr_bad)) else { page = Page.Tabs; tab = HarkaraTab.Khata; openIouId = st.terms.id; sheet = Sheet.IouDetail }
+                }
+                is LinkInbox.Outcome.OpenIou ->
+                    if (o.iouId == null) say(context.getString(R.string.link_not_yours)) else { page = Page.Tabs; tab = HarkaraTab.Khata; openIouId = o.iouId; sheet = Sheet.IouDetail }
+                is LinkInbox.Outcome.OpenHandoff -> {
+                    val st = taskStates.firstOrNull { it.offer.address == o.offerAddress }
+                    if (st == null) say(context.getString(R.string.link_not_yours)) else {
+                        openTaskId = st.offer.event.id
+                        page = Page.TaskDetail
+                        handoffPrefill = o.text
+                        handoffWrong = false
+                        sheet = Sheet.HandoffEntry
+                    }
+                }
+                is LinkInbox.Outcome.FollowTask -> { page = Page.Tabs; tab = HarkaraTab.Tasks; say(context.getString(R.string.link_following)) }
+                is LinkInbox.Outcome.OpenArea -> platform.openUrl(HarkaraLinks.web(HarkaraLinks.areaRest(o.geohash)))
+                is LinkInbox.Outcome.SavedGateway -> say(context.getString(R.string.link_gateway_saved, o.card.name))
+            }
+        }
+    }
+    val pendingLink by container.pendingLinks.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingLink, settings.onboarded) {
+        val link = pendingLink ?: return@LaunchedEffect
+        if (!settings.onboarded) return@LaunchedEffect
+        container.pendingLinks.value = null
+        handleLink(link)
+    }
+    LaunchedEffect(settings.isOn(Module.SMS_GATEWAY), connectedRelays) { if (connectedRelays > 0) container.subscribeGateway() }
+    LaunchedEffect(settings.onboarded, connectedRelays, ious.size) {
+        if (settings.onboarded && profilePubkey != null && connectedRelays > 0) container.khataRepository.subscribeConfirmations()
+    }
+
     HarkaraTheme {
         val c = HarkaraTheme.colors
         Box(Modifier.fillMaxSize().background(c.bgCanvas)) {
@@ -200,9 +306,28 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                 )
             } else {
                 when (page) {
+                    Page.SmsRestricted -> RestrictedSettingsScreen(
+                        onOpenAppInfo = platform::openAppInfo,
+                        onBack = { page = Page.Modules },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.SmsGateway -> {
+                        LaunchedEffect(Unit) { gatewayConfig = container.gatewayStore.get() }
+                        SmsGatewayScreen(
+                            config = gatewayConfig,
+                            sentToday = container.greyAreaSms.sentToday(),
+                            onSave = { cfg ->
+                                gatewayConfig = cfg
+                                scope.launch { container.gatewayStore.set(cfg); container.subscribeGateway() }
+                            },
+                            onShowCard = { sheet = Sheet.GatewayQr },
+                            onBack = { page = Page.Settings },
+                            modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        )
+                    }
                     Page.Modules -> ModulesScreen(
                         settings,
-                        onToggle = container.settings::setModule,
+                        onToggle = toggleModule,
                         onBack = { page = Page.Tabs },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
@@ -223,6 +348,8 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         onOpenSource = { platform.openUrl(REPO_URL) },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                         onRelays = { page = Page.Relays },
+                        onPasteLink = { pasteMessage = null; sheet = Sheet.PasteLink },
+                        onSmsGateway = if (settings.isOn(Module.SMS_GATEWAY)) ({ page = Page.SmsGateway }) else null,
                     )
                     Page.Relays -> RelaysScreen(
                         relays = container.relays(),
@@ -253,7 +380,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                         io.github.tanzir71.harkara.tasks.TaskAction.ACCEPT -> withName { taskOp { container.taskRepository.accept(openTask.offer) } }
                                         io.github.tanzir71.harkara.tasks.TaskAction.CONFIRM_RUNNER -> taskOp { container.taskRepository.confirm(openTask.offer, openTask.pendingAccepts.first()) }
                                         io.github.tanzir71.harkara.tasks.TaskAction.PICKED_UP -> taskOp { container.taskRepository.pickedUp(openTask.offer) }
-                                        io.github.tanzir71.harkara.tasks.TaskAction.ENTER_CODE -> { handoffWrong = false; sheet = Sheet.HandoffEntry }
+                                        io.github.tanzir71.harkara.tasks.TaskAction.ENTER_CODE -> { handoffWrong = false; handoffPrefill = ""; sheet = Sheet.HandoffEntry }
                                         io.github.tanzir71.harkara.tasks.TaskAction.RECORD_PAYMENT -> sheet = Sheet.Payment
                                         io.github.tanzir71.harkara.tasks.TaskAction.CONFIRM_PAYMENT -> taskOp { container.taskRepository.confirmPayment(openTask) }
                                         io.github.tanzir71.harkara.tasks.TaskAction.RATE -> sheet = Sheet.Rate
@@ -264,6 +391,8 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onCancel = { taskOp { container.taskRepository.cancel(openTask) } },
                                 onDecline = { taskOp { container.taskRepository.decline(openTask) } },
                                 onMessage = { comingSoon() },
+                                onSendSms = container.taskRepository.lastOwnStep(openTask)?.let { step -> { shareBySms(step) } },
+                                onShareQr = { shareAsQr(openTask.offer.event) },
                             ),
                         )
                     }
@@ -325,7 +454,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
                                 onTool = { comingSoon() },
-                                onToggleModule = container.settings::setModule,
+                                onToggleModule = toggleModule,
                                 onAllModules = { page = Page.Modules },
                                 onSettings = { page = Page.Settings },
                                 onLogoTripleTap = { sheet = Sheet.PanicWipe },
@@ -438,6 +567,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                             },
                         )
                         Sheet.HandoffEntry -> io.github.tanzir71.harkara.ui.screens.HandoffEntrySheetContent(
+                            initial = handoffPrefill,
                             wrong = handoffWrong,
                             onCheck = { entered ->
                                 val state = openTask
@@ -489,10 +619,12 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onPasteQr = { iouPasteBad = false; sheet = Sheet.IouPaste },
                                 onRemind = {
                                     val what = s.terms.note.filter { it.code < 128 }.trim().ifBlank { "our IOU" }
-                                    platform.composeSms(context.getString(R.string.khata_reminder_sms, (settings.displayName ?: "Harkara").filter { it.code < 128 }.ifBlank { "Harkara" }, s.terms.amount.toInt(), what, io.github.tanzir71.harkara.khata.KhataRepository.HELP_URL))
+                                    platform.composeSms(context.getString(R.string.khata_reminder_sms, (settings.displayName ?: "Harkara").filter { it.code < 128 }.ifBlank { "Harkara" }, s.terms.amount.toInt(), what, container.khataRepository.reminderLink(s)))
                                 },
                                 onSettle = { sheet = Sheet.IouSettle },
                                 onConfirmSettle = { taskOp { container.khataRepository.confirmSettlement(s) } },
+                                onSendSms = (container.khataRepository.mySettlement(s) ?: container.khataRepository.mySignature(s))
+                                    ?.takeIf { s.terms.creditor.pubkey != null && s.terms.debtor.pubkey != null }?.let { e -> { shareBySms(e) } },
                             )
                         }
                         Sheet.IouQr -> openIou?.let { s -> io.github.tanzir71.harkara.ui.screens.IouQrSheetContent(container.khataRepository.qrFor(s)) }
@@ -514,6 +646,49 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 },
                             )
                         }
+                        Sheet.SendSms -> smsEvent?.let { e ->
+                            SendSmsSheetContent(
+                                draft = remember(e) { SmsComposer.draft(e) },
+                                onOpenSmsApp = { text -> platform.composeSms(text); sheet = Sheet.None },
+                                onShowQr = { sheet = Sheet.EventQr },
+                                directOn = settings.isOn(Module.SMS_DIRECT),
+                                onSendDirect = { number ->
+                                    smsResult = when (val r = container.greyAreaSms.sendDirect(e, number)) {
+                                        is GreyAreaSms.Sent.Ok -> context.getString(R.string.sms_direct_sent, r.frames)
+                                        else -> context.getString(R.string.sms_direct_failed)
+                                    }
+                                },
+                                gateway = savedGateway,
+                                onSendToGateway = { text -> savedGateway?.let { platform.composeSmsTo(it.number, text) }; sheet = Sheet.None },
+                                result = smsResult,
+                            )
+                        }
+                        Sheet.EventQr -> smsEvent?.let { e ->
+                            EventQrSheetContent(remember(e) { QrTransport.encode(e) }, onCopy = { platform.copyToClipboard("Harkara", it); notify(R.string.qr_copied) })
+                        }
+                        Sheet.PasteLink -> PasteLinkSheetContent(
+                            onRead = { text -> DeepLinkRouter.parse(text)?.let(handleLink) ?: run { pasteMessage = context.getString(R.string.link_unverified) } },
+                            message = pasteMessage,
+                        )
+                        Sheet.GreyArea -> greyModule?.let { m ->
+                            GreyAreaSheetContent(
+                                m,
+                                onTurnOn = {
+                                    platform.requestSmsPermissions { granted ->
+                                        sheet = Sheet.None
+                                        if (granted) {
+                                            container.settings.setModule(m, true)
+                                            container.greyAreaSms.sync()
+                                            if (m == Module.SMS_GATEWAY) page = Page.SmsGateway
+                                        } else {
+                                            page = Page.SmsRestricted
+                                        }
+                                    }
+                                },
+                                onCancel = { sheet = Sheet.None },
+                            )
+                        }
+                        Sheet.GatewayQr -> GatewayCardSheetContent(GatewayCard(settings.displayName ?: "Harkara", gatewayConfig.ownNumber, profilePubkey))
                         Sheet.None -> Unit
                     }
                 }

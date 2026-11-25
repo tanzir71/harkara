@@ -12,13 +12,16 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import io.github.tanzir71.harkara.links.DeepLinkRouter
 import io.github.tanzir71.harkara.settings.AppSettings
+import io.github.tanzir71.harkara.sms.SmsIntents
 import io.github.tanzir71.harkara.ui.HarkaraApp
 import io.github.tanzir71.harkara.ui.PlatformActions
 import kotlinx.coroutines.launch
@@ -32,6 +35,15 @@ class MainActivity : ComponentActivity(), PlatformActions {
         val callback = pendingLocation ?: return@registerForActivityResult
         pendingLocation = null
         if (granted) deliverLastKnownLocation(callback) else callback(null, null)
+    }
+
+    private var pendingSms: ((Boolean) -> Unit)? = null
+
+    /** SMS permissions are requested only when the user turns a grey-area switch on (M10). */
+    private val smsPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        val callback = pendingSms ?: return@registerForActivityResult
+        pendingSms = null
+        callback(result.isNotEmpty() && result.values.all { it })
     }
 
     private var pendingSave: Pair<String, (Boolean) -> Unit>? = null
@@ -70,6 +82,19 @@ class MainActivity : ComponentActivity(), PlatformActions {
         enableEdgeToEdge()
         val container = (application as HarkaraApplication).container
         setContent { HarkaraApp(container, this) }
+        if (savedInstanceState == null) handleLink(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleLink(intent)
+    }
+
+    /** harkara: and …/harkara/o/# links, and text shared to the app (a forwarded SMS, a QR text). */
+    private fun handleLink(intent: Intent?) {
+        val link = DeepLinkRouter.parse(intent) ?: return
+        (application as HarkaraApplication).container.pendingLinks.value = link
     }
 
     override fun onStart() {
@@ -142,8 +167,25 @@ class MainActivity : ComponentActivity(), PlatformActions {
     }
 
     override fun composeSms(body: String) {
-        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")).putExtra("sms_body", body)
-        runCatching { startActivity(intent) }
+        runCatching { startActivity(SmsIntents.compose(body)) }
+    }
+
+    override fun composeSmsTo(number: String, body: String) {
+        runCatching { startActivity(SmsIntents.compose(body, number)) }
+    }
+
+    override fun requestSmsPermissions(onResult: (granted: Boolean) -> Unit) {
+        val wanted = arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS)
+        if (wanted.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }) return onResult(true)
+        pendingSms = onResult
+        runCatching { smsPermissions.launch(wanted) }.onFailure {
+            pendingSms = null
+            onResult(false)
+        }
+    }
+
+    override fun openAppInfo() {
+        runCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))) }
     }
 
     override fun openTextDocument(onResult: (text: String?) -> Unit) {

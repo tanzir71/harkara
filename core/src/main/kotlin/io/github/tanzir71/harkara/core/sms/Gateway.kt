@@ -11,9 +11,12 @@ import java.util.Base64
 @Serializable
 data class GatewayMember(val name: String, val number: String, val pubkey: String? = null)
 
-/** The volunteer's setup: individual contacts, or one named group, never strangers. */
+/**
+ * The volunteer's setup: individual contacts, or one named group, never strangers. [ownNumber] is the
+ * volunteer's own number, which only ever goes into their gateway QR.
+ */
 @Serializable
-data class GatewayConfig(val groupName: String = "", val members: List<GatewayMember> = emptyList())
+data class GatewayConfig(val groupName: String = "", val ownNumber: String = "", val members: List<GatewayMember> = emptyList())
 
 /**
  * Rules for the volunteer SMS gateway (handover §5.6): at most [dailyCap] relayed SMS per Dhaka day (in and
