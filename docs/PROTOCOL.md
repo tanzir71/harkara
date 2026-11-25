@@ -20,7 +20,7 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | Kind | Name | Notes |
 |---:|---|---|
 | 0 | Metadata | Name/photo, only when the user chooses to add one |
-| 1 | Feed post | Signed by the **area key**. Tags: `g` geohash-6 (optionally coarser `g` too), `t` category (`traffic`, `food`, `crowd`, `stock`, `alert`, `chatter`), `expiration` (Traffic 3 h, Crowd 4 h, Alert 12 h, Stock 24 h, Chatter 48 h, Food none), NIP-13 `["nonce", n, target]` with 16–20 bits |
+| 1 | Feed post | Signed by the **area key**. Tags (`EventBuilder.feedPost`): `g` at geohash precisions 6, 5 and 4 (relays filter `#g` by exact value), `t` category (`traffic`, `food`, `crowd`, `stock`, `alert`, `chatter`), `expiration` (Traffic 3 h, Crowd 4 h, Alert 12 h, Stock 24 h, Chatter 48 h, Food none), NIP-13 `["nonce", n, target]` with 16–20 bits |
 | 5 | Deletion | NIP-09 |
 | 7 | Reaction | NIP-25: votes `+`/`-` on posts, `yes`/`no` "still there?" on pins (`e`, `p`, `k`) |
 | 13 | Seal | NIP-59, inside a gift wrap only |

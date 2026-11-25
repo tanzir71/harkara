@@ -95,7 +95,7 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
 
     // Keys are made silently once an area is chosen: no sign-up step.
     LaunchedEffect(settings.onboarded) {
-        if (settings.onboarded) withContext(Dispatchers.Default) { container.identity.keyRing() }
+        if (settings.onboarded) withContext(Dispatchers.Default) { runCatching { container.identity.keyRing() } }
     }
     val notify: (Int) -> Unit = { res -> scope.launch { snackbar.showSnackbar(context.getString(res)) } }
 
