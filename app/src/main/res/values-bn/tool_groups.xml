@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="handbook_group_start">শুরু</string>
+    <string name="handbook_group_numbers">নম্বর</string>
+    <string name="handbook_group_first_aid">প্রাথমিক চিকিৎসা</string>
+    <string name="handbook_group_flood">বন্যা</string>
+    <string name="handbook_group_cyclone">ঘূর্ণিঝড়</string>
+    <string name="handbook_group_fire">আগুন</string>
+    <string name="handbook_group_earthquake">ভূমিকম্প</string>
+    <string name="handbook_group_outage">বিদ্যুৎ বিভ্রাট</string>
+    <string name="handbook_group_crowd">ভিড়</string>
+    <string name="handbook_group_kit">জরুরি সরঞ্জাম</string>
+</resources>

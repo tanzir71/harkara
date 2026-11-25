@@ -64,6 +64,10 @@ Everything in `core` is tested on the JVM with JUnit 5, including the official N
 - **LAN tools**: `LanToolsScreen` owns explicit LocalSend listening/consent and paired-token push-to-talk.
   Its separate HTTP server, file sender, microphone and speaker stop on background/disposal. HTTP does not
   authenticate peers or encrypt files/audio; the screen warns users to select a trusted LAN.
+- **Local safety tools**: `TorchScreen` stops the light/sound controller both on lifecycle background and
+  disposal; returning never restarts a mode. `SosRepository` serializes sends, and core SOS policy binds
+  each recognized signed resolution to its exact sender, alert id and causal timestamp before changing
+  active state or cooldown. Incoming malformed location tags fall back to an unknown distance.
 - **SMS and QR**: `LinkInbox` handles pasted/deep-linked events through feature repositories. Ordinary SMS
   opens the user's SMS app with a cost-visible preview; permissioned direct/gateway paths remain off by
   default. The static `o/` page verifies events locally and uses no central account or application server.

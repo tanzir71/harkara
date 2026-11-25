@@ -3,6 +3,7 @@ package io.github.tanzir71.harkara.core.tools
 import io.github.tanzir71.harkara.core.SosPolicy
 import io.github.tanzir71.harkara.core.nostr.KeyPair
 import io.github.tanzir71.harkara.core.nostr.Kinds
+import io.github.tanzir71.harkara.core.nostr.signEvent
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -65,5 +66,27 @@ class ToolsTest {
         assertNull(SosEvents.active(listOf(first, resolved), keys.pubkeyHex))
         assertEquals(first.id, SosEvents.active(listOf(first), keys.pubkeyHex)?.id)
         assertThrows(IllegalArgumentException::class.java) { SosEvents.update(KeyPair.generate(), first, SosStatus.FALSE_ALARM, now) }
+    }
+
+    @Test
+    fun `unknown ambiguous forged and backdated resolutions leave SOS active`() {
+        val keys = KeyPair.generate()
+        val at = 1_764_000_000L
+        val sos = SosEvents.sos(keys, null, null, "Help", at)
+        val resolved = SosEvents.update(keys, sos, SosStatus.RESOLVED, at + 1)
+        val invalid = listOf(
+            resolved.copy(content = "forged"),
+            keys.signEvent(Kinds.SOS_UPDATE, listOf(listOf("e", sos.id), listOf("status", "seen")), "", at + 1),
+            keys.signEvent(Kinds.SOS_UPDATE, listOf(listOf("e", sos.id), listOf("status", "resolved")), "", at - 1),
+            keys.signEvent(Kinds.SOS_UPDATE, listOf(listOf("e", sos.id), listOf("e", "0".repeat(64)), listOf("status", "resolved")), "", at + 1),
+            KeyPair.generate().signEvent(Kinds.SOS_UPDATE, resolved.tags, "", at + 1),
+        )
+        invalid.forEach { update ->
+            assertFalse(SosEvents.closes(update, sos))
+            assertEquals(sos, SosEvents.active(listOf(sos, update), keys.pubkeyHex))
+        }
+        assertTrue(SosEvents.closes(resolved, sos))
+        assertNull(SosEvents.active(listOf(resolved, sos), keys.pubkeyHex), "arrival order does not matter")
+        assertThrows(IllegalArgumentException::class.java) { SosEvents.update(keys, sos, SosStatus.RESOLVED, at - 1) }
     }
 }

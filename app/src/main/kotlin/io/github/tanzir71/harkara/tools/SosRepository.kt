@@ -20,6 +20,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** An SOS from someone else, with how far away it is. */
 data class IncomingSos(val event: Event, val distanceMeters: Double?)
@@ -37,6 +39,7 @@ class SosRepository(
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) {
     private val now get() = nowMillis() / 1000
+    private val sendMutex = Mutex()
 
     /** All SOS-related events (ours and others'), newest first. */
     private fun events(): Flow<List<Event>> = db.eventDao().observeKinds(listOf(Kinds.SOS, Kinds.SOS_UPDATE)).map { rows -> rows.map { Event.fromJson(it.json) } }
@@ -46,12 +49,14 @@ class SosRepository(
     fun incoming(center: LatLng): Flow<List<IncomingSos>> = events().map { all ->
         val me = profile().pubkeyHex
         val policy = SosPolicy()
-        val closed = all.filter { it.kind == Kinds.SOS_UPDATE }.mapNotNull { u -> u.tagValue("e")?.let { it to u.pubkey } }.toSet()
+        val alerts = all.filter { it.kind == Kinds.SOS }.associateBy { it.id }
+        val closed = all.filter { u -> alerts[u.tagValue("e")]?.let { SosEvents.closes(u, it) } == true }
+            .mapNotNull { it.tagValue("e") }.toSet()
         all.sortedBy { it.createdAt }
             .filter { policy.accept(it) }
-            .filter { it.kind == Kinds.SOS && it.pubkey != me && (it.id to it.pubkey) !in closed && now - it.createdAt < 24 * 3600 }
+            .filter { it.kind == Kinds.SOS && it.pubkey != me && it.id !in closed && now - it.createdAt in 0 until 24 * 3600 }
             .map { e ->
-                val g = e.tagValues("g").maxByOrNull { it.length }
+                val g = e.tagValues("g").filter { it.length <= 12 && GeoHash.isValid(it) }.maxByOrNull { it.length }
                 IncomingSos(e, g?.let { GeoMath.distanceMeters(center, GeoMath.decode(it)) })
             }
             .filter { it.distanceMeters == null || it.distanceMeters < 10_000 }
@@ -62,17 +67,17 @@ class SosRepository(
     suspend fun waitMinutes(): Int {
         val mine = db.eventDao().byKinds(listOf(Kinds.SOS, Kinds.SOS_UPDATE)).map { Event.fromJson(it.json) }.filter { it.pubkey == profile().pubkeyHex }
         val last = mine.filter { it.kind == Kinds.SOS }.maxByOrNull { it.createdAt } ?: return 0
-        val resolved = mine.any { it.kind == Kinds.SOS_UPDATE && it.tagValue("e") == last.id }
+        val resolved = mine.any { SosEvents.closes(it, last) }
         return ((SosEvents.waitSeconds(last.createdAt, now, resolved) + 59) / 60).toInt()
     }
 
     /** Sends an SOS on every open route. Returns null when the 30-minute limit applies. */
-    suspend fun send(message: String, at: LatLng?, name: String?): Event? {
-        if (waitMinutes() > 0) return null
+    suspend fun send(message: String, at: LatLng?, name: String?): Event? = sendMutex.withLock {
+        if (waitMinutes() > 0) return@withLock null
         val event = SosEvents.sos(profile(), at?.lat, at?.lng, message, now, name)
         store.store(event, Carrier.SAVED, own = true)
         outbox.enqueue(event, Priority.SOS)
-        return event
+        event
     }
 
     suspend fun resolve(sos: Event, status: SosStatus) {

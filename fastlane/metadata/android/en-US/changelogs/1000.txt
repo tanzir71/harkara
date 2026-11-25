@@ -1,0 +1,1 @@
+Tools and safety milestone: English/Bangla handbook, Karachi/Hanafi prayer times, Qibla, flashlight and SOS, plus optional LAN file drop and push-to-talk. Light and sound modes stop in the background. SOS updates close only their matching signed alert; replayed resolutions cannot bypass cooldown and simultaneous taps send once. Hardware behavior remains unverified.

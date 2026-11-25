@@ -20,6 +20,10 @@ import io.github.tanzir71.harkara.core.nostr.Nip49
 import io.github.tanzir71.harkara.identity.FileSeedStore
 import io.github.tanzir71.harkara.identity.IdentityManager
 import io.github.tanzir71.harkara.settings.AppSettings
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -48,6 +52,12 @@ class BackupFlowTest {
         androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
         container = AppContainer(context, inMemoryDatabase = true)
         compose.setContent { HarkaraApp(container, platform) }
+    }
+
+    @After
+    fun stopContainerJobs() = runBlocking {
+        container.scope.coroutineContext[Job]?.cancelAndJoin()
+        Unit
     }
 
     private fun openMe() {
@@ -125,7 +135,9 @@ class BackupFlowTest {
         compose.onNodeWithContentDescription("Password").performTextReplacement("purono phone")
         compose.onNodeWithText("Restore").performClick()
         compose.waitUntil(30_000) { container.identity.profilePubkey.value == expected }
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Key restored")).fetchSemanticsNodes().isNotEmpty() }
+        // Verify the durable result and resumed onboarding; a snackbar can disappear while the
+        // Compose test clock advances and is not evidence that the seed was restored.
+        compose.waitForIdle()
         // Still onboarding: the restored key is used once an area is picked.
         compose.onNodeWithText("Restore from backup").assertIsDisplayed()
         compose.onNodeWithText("Dhanmondi").performScrollTo().performClick()

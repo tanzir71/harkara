@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.tanzir71.harkara.R
 import io.github.tanzir71.harkara.core.tools.DayPrayers
 import io.github.tanzir71.harkara.tools.EmergencyNumber
@@ -121,7 +125,15 @@ fun QiblaDial(bearing: Double, modifier: Modifier = Modifier) {
 @Composable
 fun TorchScreen(mode: LightMode, lit: Boolean, torchAvailable: Boolean, onMode: (LightMode) -> Unit, onLeave: () -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val c = HarkaraTheme.colors
-    DisposableEffect(Unit) { onDispose(onLeave) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val leave by rememberUpdatedState(onLeave)
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) leave()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer); leave() }
+    }
     Column(modifier.fillMaxSize().background(if (!torchAvailable && lit) c.textInverse else c.bgCanvas)) {
         BackBar(stringResource(R.string.torch_title), onBack)
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -154,7 +166,19 @@ fun HandbookScreen(sections: List<HandbookSection>, numbers: List<EmergencyNumbe
                 }
             }
             sections.groupBy { it.group }.forEach { (group, list) ->
-                item { SectionHeader(group.replace('-', ' ').replaceFirstChar { it.uppercase() }) }
+                item { SectionHeader(stringResource(when (group) {
+                    "start" -> R.string.handbook_group_start
+                    "numbers" -> R.string.handbook_group_numbers
+                    "first-aid" -> R.string.handbook_group_first_aid
+                    "flood" -> R.string.handbook_group_flood
+                    "cyclone" -> R.string.handbook_group_cyclone
+                    "fire" -> R.string.handbook_group_fire
+                    "earthquake" -> R.string.handbook_group_earthquake
+                    "outage" -> R.string.handbook_group_outage
+                    "crowd" -> R.string.handbook_group_crowd
+                    "kit" -> R.string.handbook_group_kit
+                    else -> R.string.handbook_title
+                })) }
                 items(list, key = { it.id }) { s ->
                     HCard(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpen(s) }, padding = PaddingValues(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

@@ -2,6 +2,7 @@ package io.github.tanzir71.harkara.core
 
 import io.github.tanzir71.harkara.core.nostr.Event
 import io.github.tanzir71.harkara.core.nostr.Kinds
+import io.github.tanzir71.harkara.core.tools.SosEvents
 import java.time.Duration
 import java.time.Instant
 
@@ -13,23 +14,25 @@ class SosPolicy(
     private val cooldown: Duration = Duration.ofMinutes(30),
     private val mutedPubkeys: Set<String> = emptySet(),
 ) {
-    private val active = mutableMapOf<String, Long>()
+    private val active = mutableMapOf<String, Event>()
 
     /** True when an SOS or SOS update may be shown and relayed. Other kinds pass untouched. */
     fun accept(event: Event): Boolean {
         if (event.kind != Kinds.SOS && event.kind != Kinds.SOS_UPDATE) return true
-        if (event.pubkey in mutedPubkeys) return false
+        if (event.pubkey in mutedPubkeys || !event.verify()) return false
         return when (event.kind) {
             Kinds.SOS_UPDATE -> {
-                if (event.tagValue("status") in CLOSING_STATUSES) active.remove(event.pubkey)
+                if (!SosEvents.isClosingUpdate(event)) return false
+                // Replaying an old resolution must not reset a later emergency's cooldown.
+                if (active[event.pubkey]?.let { SosEvents.closes(event, it) } == true) active.remove(event.pubkey)
                 true
             }
             else -> {
                 val previous = active[event.pubkey]
-                if (previous != null && event.createdAt - previous < cooldown.seconds) {
+                if (previous != null && event.createdAt - previous.createdAt < cooldown.seconds) {
                     false
                 } else {
-                    active[event.pubkey] = event.createdAt
+                    active[event.pubkey] = event
                     true
                 }
             }
@@ -38,10 +41,6 @@ class SosPolicy(
 
     /** True while [pubkey] has an SOS that has not been resolved. */
     fun isActive(pubkey: String): Boolean = pubkey in active
-
-    private companion object {
-        val CLOSING_STATUSES = setOf("resolved", "false_alarm")
-    }
 }
 
 /** Mesh duty modes. */

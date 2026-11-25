@@ -82,6 +82,7 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 - [x] File drop (LocalSend v2) and push-to-talk over the LAN, with explicit consent, bounded streams and lifecycle teardown; compass/QR tools land with M9/M10.
 - [x] Battery audit: with default modules no service, GPS or relay runs in the background (Robolectric).
 - [x] Gate: module-off tests show no services/sensors; SOS rate-limit + resolve tests.
+- [x] Final safety regression: light/sound modes stop on lifecycle background without restarting; signed SOS resolutions bind to one alert, reject unknown/ambiguous/backdated status, resist old-resolution replay, and serialize concurrent send taps.
 
 ## M12 - Hardening and distribution (v0.11.0)
 

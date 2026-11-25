@@ -73,27 +73,44 @@ class LightController(private val torch: Torch, private val siren: Siren, privat
     val lit: StateFlow<Boolean> = mutableLit.asStateFlow()
 
     private var job: Job? = null
+    private var generation = 0L
 
+    @Synchronized
     fun start(mode: LightMode) {
         stop()
+        val run = generation
         mutableMode.value = mode
         job = when (mode) {
             LightMode.OFF -> null
             LightMode.TORCH -> { light(true); null }
-            LightMode.STROBE -> scope.launch { while (isActive) { light(true); delay(80); light(false); delay(120) } }
+            LightMode.STROBE -> scope.launch { while (isActive) { lightFor(run, true); delay(80); lightFor(run, false); delay(120) } }
             LightMode.MORSE_SOS -> scope.launch {
-                while (isActive) Morse.sos().forEachIndexed { i, ms -> light(i % 2 == 0); delay(ms) }
+                while (isActive) Morse.sos().forEachIndexed { i, ms -> lightFor(run, i % 2 == 0); delay(ms) }
             }
-            LightMode.SIREN -> scope.launch { while (isActive) { siren.beep(900); delay(1000) } }
+            LightMode.SIREN -> scope.launch { while (isActive) { beepFor(run); delay(1000) } }
         }
     }
 
+    @Synchronized
     fun stop() {
+        generation++
         job?.cancel()
         job = null
         light(false)
         siren.stop()
         mutableMode.value = LightMode.OFF
+    }
+
+    // Cancellation can race a Default-dispatcher callback. Serialize hardware access and ignore
+    // callbacks from a previous mode so none can turn the torch/siren back on after stop returns.
+    @Synchronized
+    private fun lightFor(run: Long, on: Boolean) {
+        if (run == generation) light(on)
+    }
+
+    @Synchronized
+    private fun beepFor(run: Long) {
+        if (run == generation) siren.beep(900)
     }
 
     private fun light(on: Boolean) {

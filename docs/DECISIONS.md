@@ -1,5 +1,6 @@
 # Decisions
 
+- 2026-11-25: Safety-tool lifecycle owns torch/siren shutdown on background as well as navigation. SOS resolution has one recognized status and one exact alert reference, signed by its sender and dated no earlier than the alert; stale resolution replay never resets a newer cooldown. Concurrent local sends share a mutex before checking the persisted cooldown.
 - 2026-11-25: Panic wipe is a terminal container boundary. Feature compositions stop before the non-cancellable wipe; network/jobs/media stop, the database closes/deletes before its key, and Activity recreation installs a fresh graph. A retired graph cannot reopen its old database or identity. Filesystem failure leaves the UI locked rather than claiming erasure succeeded.
 - 2026-11-25: A generic outbox envelope route carries encrypted pins, check-ins and trip/live control through ordinary rooms; live points also use current LAN/mesh links, never persistent outbox/event storage. Local safety features do not require internet or an enabled public node.
 - 2026-11-25: Search uses a rebuildable FTS4 cache inside the encrypted database, covering the latest 5,000 cached Nearby posts and 5,000 non-deleted/unexpired pins, with bounded literal token queries and 50 results. It sends no query to a server and does not pretend to search uncached OSM places.

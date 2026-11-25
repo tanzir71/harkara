@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0
+
+- Tools and safety milestone: the English/Bangla emergency handbook, Karachi/Hanafi prayer times, Qibla, compass, QR, flashlight, strobe, Morse SOS and siren are available from Me. Optional LAN file drop and push-to-talk require explicit setup and stop when their screen leaves the foreground.
+- Flashlight and sound modes now stop when the app goes into the background and require an explicit restart on return. Fake hardware and lifecycle tests cover every mode and navigation away.
+- Handbook section headings now follow the app language, including Bangla group titles instead of English dataset identifiers.
+- SOS resolutions must be signed by the alert's sender, name that exact alert, use a recognized status and not precede it. Replaying a previous resolution cannot clear a newer alert's cooldown; concurrent send taps create only one alert. Malformed remote area tags no longer break incoming SOS cards.
+- SOS still starts with Call 999, requires a three-second hold and confirmation, and stays silent unless emergency-alert sound is enabled. Mesh, live location, direct SMS, gateway, LAN file drop and push-to-talk remain optional; hardware behavior is documented in `docs/HARDWARE.md`.
+
 ## 0.9.0
 
 - SMS milestone release of the integrated signed-event SMS, QR, deep-link and non-user web flows. Eligible messages fit two GSM-7 parts; Bangla stays inside the encoded payload, and the normal path opens the user's SMS app with a cost-visible preview.

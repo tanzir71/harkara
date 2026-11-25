@@ -135,7 +135,7 @@ For every incoming event frame, in order:
 3. `Event.check()` (id, signature, < 16 KB); only valid events are marked seen, so a forged copy cannot block the real one.
 4. Expired (NIP-40)? Drop. More than 15 min in the future? Drop.
 5. **Rate limits** (`PeerRateLimiter`, before relaying): per pubkey, feed posts (kind 1) at most **1 per minute, 10 per hour, 30 per day**, counted over sliding windows of `created_at` (a backlog written over hours passes when it arrives at once; a burst written at once does not).
-6. **SOS policy**: one SOS per key per 30 min; a `resolved`/`false_alarm` update re-opens it; muted keys dropped.
+6. **SOS policy**: one SOS per key per 30 min; only a signed `resolved`/`false_alarm` update by the same sender, with exactly one `e` reference to that active alert and one status, dated at or after it, clears its cooldown. A replayed resolution for an older alert cannot clear a newer one. Muted keys and invalid updates are dropped. Local send taps are serialized before storing/enqueuing, so simultaneous taps do not create multiple alerts.
 7. Store-and-forward (below), then relay to every neighbour except the sender with `hops + 1`, while within ttl.
 
 Outbound queue priority: **SOS / check-in > gift wraps (DMs) > area chat & presence > posts and everything else > sync (digest/pull)**; when full, the lowest priority is dropped first. Per-peer token buckets cap link rates.

@@ -15,7 +15,7 @@ class PoliciesTest {
     private val person = TestData.keys(4)
 
     private fun sos(at: Long) = person.signEvent(Kinds.SOS, content = "help", createdAt = NOW + at)
-    private fun update(at: Long, status: String) = person.signEvent(Kinds.SOS_UPDATE, listOf(listOf("status", status)), "ok", NOW + at)
+    private fun update(at: Long, status: String, target: String) = person.signEvent(Kinds.SOS_UPDATE, listOf(listOf("e", target), listOf("status", status)), "ok", NOW + at)
 
     @Test
     fun `sos policy rate limits active alerts and allows the resolve flow`() {
@@ -24,10 +24,10 @@ class PoliciesTest {
         assertTrue(policy.accept(sos(0)))
         assertTrue(policy.isActive(person.pubkeyHex))
         assertFalse(policy.accept(sos(60)))
-        assertTrue(policy.accept(update(120, "resolved")))
+        assertTrue(policy.accept(update(120, "resolved", sos(0).id)))
         assertFalse(policy.isActive(person.pubkeyHex))
         assertTrue(policy.accept(sos(180)))
-        assertTrue(policy.accept(update(200, "false_alarm")))
+        assertTrue(policy.accept(update(200, "false_alarm", sos(180).id)))
         assertTrue(policy.accept(sos(240)))
         assertFalse(policy.accept(sos(300)))
         assertTrue(policy.accept(sos(240 + 1800)), "after 30 minutes a new SOS is accepted")
@@ -38,6 +38,26 @@ class PoliciesTest {
     fun `muted sos senders are dropped`() {
         val policy = SosPolicy(mutedPubkeys = setOf(person.pubkeyHex))
         assertFalse(policy.accept(sos(0)))
+    }
+
+    @Test
+    fun `only the matching signed resolution resets an active alert`() {
+        val policy = SosPolicy()
+        val first = sos(0)
+        val resolved = update(120, "resolved", first.id)
+        assertTrue(policy.accept(first))
+        assertFalse(policy.accept(update(60, "unknown", first.id)))
+        assertTrue(policy.isActive(person.pubkeyHex))
+        assertFalse(policy.accept(resolved.copy(content = "forged")))
+        assertTrue(policy.accept(resolved))
+        assertTrue(policy.accept(sos(180)))
+        assertTrue(policy.accept(resolved), "old resolutions may be carried again")
+        assertTrue(policy.isActive(person.pubkeyHex), "an old resolution cannot close the new SOS")
+        assertFalse(policy.accept(sos(240)), "replaying a resolution cannot bypass cooldown")
+        assertTrue(policy.accept(update(150, "resolved", sos(180).id)))
+        assertTrue(policy.isActive(person.pubkeyHex), "backdated updates cannot close the SOS")
+        assertTrue(policy.accept(TestData.keys(9).signEvent(Kinds.SOS_UPDATE, listOf(listOf("e", sos(180).id), listOf("status", "resolved")), "", NOW + 250)))
+        assertTrue(policy.isActive(person.pubkeyHex), "another sender cannot close the SOS")
     }
 
     @Test

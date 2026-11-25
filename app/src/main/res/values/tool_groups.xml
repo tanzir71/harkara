@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="handbook_group_start">Start</string>
+    <string name="handbook_group_numbers">Numbers</string>
+    <string name="handbook_group_first_aid">First aid</string>
+    <string name="handbook_group_flood">Flood</string>
+    <string name="handbook_group_cyclone">Cyclone</string>
+    <string name="handbook_group_fire">Fire</string>
+    <string name="handbook_group_earthquake">Earthquake</string>
+    <string name="handbook_group_outage">Outage</string>
+    <string name="handbook_group_crowd">Crowd</string>
+    <string name="handbook_group_kit">Kit</string>
+</resources>
