@@ -33,7 +33,13 @@ import io.github.tanzir71.harkara.ui.components.HarkaraTab
 import io.github.tanzir71.harkara.ui.components.TabBar
 import io.github.tanzir71.harkara.ui.screens.BackupSheet
 import io.github.tanzir71.harkara.ui.screens.RestoreSheet
+import io.github.tanzir71.harkara.core.feed.ComposeVerdict
+import io.github.tanzir71.harkara.feed.rememberFeedPresenter
+import io.github.tanzir71.harkara.relay.RelaySyncWorker
+import io.github.tanzir71.harkara.ui.screens.CardActionsSheetContent
 import io.github.tanzir71.harkara.ui.screens.ChatsScreen
+import io.github.tanzir71.harkara.ui.screens.ComposeSheetContent
+import io.github.tanzir71.harkara.ui.screens.RelaysScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
 import io.github.tanzir71.harkara.ui.screens.KhataScreen
 import io.github.tanzir71.harkara.ui.screens.MeScreen
@@ -47,6 +53,7 @@ import io.github.tanzir71.harkara.ui.screens.TasksScreen
 import io.github.tanzir71.harkara.ui.theme.HarkaraTheme
 import io.github.tanzir71.harkara.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -75,8 +82,8 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings }
-private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore }
+private enum class Page { Tabs, Modules, Settings, Relays }
+private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -103,7 +110,22 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     var page by rememberSaveable { mutableStateOf(Page.Tabs) }
     var sheet by remember { mutableStateOf(Sheet.None) }
 
+    var sheetPostId by remember { mutableStateOf<String?>(null) }
+    var posting by remember { mutableStateOf(false) }
+    var composeVerdict by remember { mutableStateOf<ComposeVerdict?>(null) }
+    val center = remember(settings.areaLat, settings.areaLng, settings.areaName) { container.areaCenter(settings) }
+    val feedItems by remember(center, settings.onboarded) {
+        if (settings.onboarded) container.feedRepository.feed(center) else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    val relayStatus by container.relayPool.status.collectAsStateWithLifecycle()
+    val presenter = rememberFeedPresenter(container.areas)
+    val connectedRelays = relayStatus.values.count { it == io.github.tanzir71.harkara.relay.RelayStatus.CONNECTED }
+    LaunchedEffect(center, settings.onboarded, relayStatus.size) { if (settings.onboarded) container.feedRepository.subscribeArea(center) }
+    LaunchedEffect(center, settings.onboarded, connectedRelays) { if (settings.onboarded && connectedRelays > 0) container.feedRepository.catchUp(center) }
+    LaunchedEffect(feedItems.map { it.post.id }) { container.feedRepository.subscribeReactions(feedItems.map { it.post.id }) }
+
     val comingSoon: () -> Unit = { scope.launch { snackbar.showSnackbar(context.getString(R.string.coming_soon)) } }
+    val say: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
     val pill = PillActions(onClick = { sheet = Sheet.Connectivity })
 
     HarkaraTheme {
@@ -115,10 +137,14 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                     onUseLocation = {
                         platform.requestLocation { lat, lng ->
                             val area = if (lat != null && lng != null) container.areas.nearest(lat, lng).name else null
-                            container.settings.completeOnboarding(area, auto = true)
+                            container.settings.completeOnboarding(area, auto = true, lat = lat, lng = lng)
+                            RelaySyncWorker.schedule(context)
                         }
                     },
-                    onPickArea = { container.settings.completeOnboarding(it, auto = false) },
+                    onPickArea = {
+                        container.settings.completeOnboarding(it, auto = false)
+                        RelaySyncWorker.schedule(context)
+                    },
                     modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     onRestore = { sheet = Sheet.Restore },
                 )
@@ -146,6 +172,16 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                         onPanicWipe = { sheet = Sheet.PanicWipe },
                         onOpenSource = { platform.openUrl(REPO_URL) },
                         modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                        onRelays = { page = Page.Relays },
+                    )
+                    Page.Relays -> RelaysScreen(
+                        relays = container.relays(),
+                        status = relayStatus,
+                        onAdd = { url -> container.settings.setRelays((container.relays() + url).distinct()); container.startRelays() },
+                        onRemove = { url -> container.settings.setRelays(container.relays() - url); container.startRelays() },
+                        onReset = { container.settings.setRelays(null); container.startRelays() },
+                        onBack = { page = Page.Settings },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                     )
                     Page.Tabs -> Column(Modifier.fillMaxSize()) {
                         val content = Modifier.weight(1f).statusBarsPadding()
@@ -154,14 +190,16 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 areaName = settings.areaName,
                                 areaAuto = settings.areaAuto,
                                 connectivity = connectivity,
-                                posts = emptyList(),
+                                posts = feedItems.map { presenter.toUi(it, System.currentTimeMillis() / 1000) },
                                 modifier = content,
                                 pill = pill,
                                 update = visibleUpdate,
                                 onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
-                                onCompose = comingSoon,
+                                onCompose = { composeVerdict = null; sheet = Sheet.Compose },
                                 onSearch = comingSoon,
+                                onVote = { id, up -> feedItems.firstOrNull { it.post.id == id }?.let { scope.launch { container.feedRepository.vote(it.post, up) } } },
+                                onMore = { id -> sheetPostId = id; sheet = Sheet.CardActions },
                             )
                             HarkaraTab.Chats -> ChatsScreen(connectivity, content, pill)
                             HarkaraTab.Tasks -> TasksScreen(connectivity, content, pill)
@@ -228,6 +266,42 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 notify(R.string.restore_done)
                             },
                         )
+                        Sheet.Compose -> ComposeSheetContent(
+                            areaLabel = settings.areaName?.let { if (settings.areaAuto) context.getString(R.string.compose_area_auto, it) else it }
+                                ?: context.getString(R.string.nearby_near_you),
+                            connectivity = connectivity,
+                            posting = posting,
+                            verdict = composeVerdict,
+                            onPost = { text, category, details ->
+                                posting = true
+                                scope.launch {
+                                    val result = container.feedRepository.post(text, category, details, center)
+                                    posting = false
+                                    composeVerdict = result.verdict
+                                    if (result.verdict == ComposeVerdict.OK) sheet = Sheet.None
+                                }
+                            },
+                        )
+                        Sheet.CardActions -> {
+                            val item = feedItems.firstOrNull { it.post.id == sheetPostId }
+                            CardActionsSheetContent(
+                                onReport = { reason ->
+                                    sheet = Sheet.None
+                                    item?.let { scope.launch { container.feedRepository.report(it.post, reason) } }
+                                    say(context.getString(R.string.card_reported))
+                                },
+                                onBlock = {
+                                    sheet = Sheet.None
+                                    item?.let { scope.launch { container.feedRepository.blockAuthor(it.post.event.pubkey) } }
+                                    say(context.getString(R.string.card_blocked))
+                                },
+                                onMuteWord = { word ->
+                                    sheet = Sheet.None
+                                    scope.launch { container.feedRepository.muteWord(word) }
+                                    say(context.getString(R.string.card_muted, word))
+                                },
+                            )
+                        }
                         Sheet.None -> Unit
                     }
                 }

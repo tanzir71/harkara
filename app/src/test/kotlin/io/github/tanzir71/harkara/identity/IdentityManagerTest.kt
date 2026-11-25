@@ -109,7 +109,7 @@ class IdentityManagerTest {
 
     @Test
     fun `panic wipe also wipes the seed`() = runBlocking {
-        val container = AppContainer(context)
+        val container = AppContainer(context, inMemoryDatabase = true)
         val before = container.identity.profile().pubkeyHex
         assertTrue(seedFile.exists())
 

@@ -18,6 +18,11 @@ data class SettingsState(
     val onboarded: Boolean = false,
     val areaName: String? = null,
     val areaAuto: Boolean = false,
+    /** Centre of the chosen area (or the location fix); null until known. */
+    val areaLat: Double? = null,
+    val areaLng: Double? = null,
+    /** User-edited relay list; null means the bundled defaults. */
+    val relays: List<String>? = null,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val modules: Map<Module, Boolean> = Module.entries.associateWith { it.defaultOn },
     val meshMode: MeshMode = MeshMode.SAVER,
@@ -33,15 +38,28 @@ class AppSettings(private val prefs: SharedPreferences) {
     private val mutableState = MutableStateFlow(read())
     val state: StateFlow<SettingsState> = mutableState.asStateFlow()
 
-    fun completeOnboarding(areaName: String?, auto: Boolean) = update {
+    fun completeOnboarding(areaName: String?, auto: Boolean, lat: Double? = null, lng: Double? = null) = update {
         putBoolean(KEY_ONBOARDED, true)
-        putString(KEY_AREA, areaName)
-        putBoolean(KEY_AREA_AUTO, auto)
+        putArea(areaName, auto, lat, lng)
     }
 
-    fun setArea(areaName: String?, auto: Boolean) = update {
+    fun setArea(areaName: String?, auto: Boolean, lat: Double? = null, lng: Double? = null) = update { putArea(areaName, auto, lat, lng) }
+
+    private fun SharedPreferences.Editor.putArea(areaName: String?, auto: Boolean, lat: Double?, lng: Double?) {
         putString(KEY_AREA, areaName)
         putBoolean(KEY_AREA_AUTO, auto)
+        if (lat != null && lng != null) {
+            putString(KEY_AREA_LAT, lat.toString())
+            putString(KEY_AREA_LNG, lng.toString())
+        } else {
+            remove(KEY_AREA_LAT)
+            remove(KEY_AREA_LNG)
+        }
+    }
+
+    /** Saves the relay list; null restores the defaults. */
+    fun setRelays(relays: List<String>?) = update {
+        if (relays == null) remove(KEY_RELAYS) else putString(KEY_RELAYS, relays.joinToString("\n"))
     }
 
     fun setModule(module: Module, on: Boolean) = update { putBoolean(MODULE_PREFIX + module.key, on) }
@@ -73,6 +91,9 @@ class AppSettings(private val prefs: SharedPreferences) {
         onboarded = prefs.getBoolean(KEY_ONBOARDED, false),
         areaName = prefs.getString(KEY_AREA, null),
         areaAuto = prefs.getBoolean(KEY_AREA_AUTO, false),
+        areaLat = prefs.getString(KEY_AREA_LAT, null)?.toDoubleOrNull(),
+        areaLng = prefs.getString(KEY_AREA_LNG, null)?.toDoubleOrNull(),
+        relays = prefs.getString(KEY_RELAYS, null)?.split('\n')?.filter { it.isNotBlank() },
         language = prefs.getString(KEY_LANGUAGE, null)?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.SYSTEM,
         modules = Module.entries.associateWith { prefs.getBoolean(MODULE_PREFIX + it.key, it.defaultOn) },
         meshMode = prefs.getString(KEY_MESH_MODE, null)?.let { runCatching { MeshMode.valueOf(it) }.getOrNull() } ?: MeshMode.SAVER,
@@ -84,6 +105,9 @@ class AppSettings(private val prefs: SharedPreferences) {
         private const val KEY_ONBOARDED = "onboarded"
         private const val KEY_AREA = "area"
         private const val KEY_AREA_AUTO = "area_auto"
+        private const val KEY_AREA_LAT = "area_lat"
+        private const val KEY_AREA_LNG = "area_lng"
+        private const val KEY_RELAYS = "relays"
         const val KEY_LANGUAGE = "language"
         private const val KEY_MESH_MODE = "mesh_mode"
         private const val KEY_DISMISSED_UPDATE = "dismissed_update"

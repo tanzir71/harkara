@@ -207,4 +207,94 @@
     <string name="module_sms_direct_sub">সিমের টাকা খরচ হয় · ডিফল্ট বন্ধ</string>
     <string name="module_sms_gateway">স্বেচ্ছাসেবী এসএমএস গেটওয়ে</string>
     <string name="module_sms_gateway_sub">তোমার পরিচিতদের জন্য দিনে ১০০টি পর্যন্ত এসএমএস রিলে করে; সিমের টাকা খরচ হয় · ডিফল্ট বন্ধ</string>
+    <!-- Feed (M4) -->
+    <string name="age_now">এখন</string>
+    <string name="age_minutes">%1$d মিনিট</string>
+    <string name="age_hours">%1$d ঘণ্টা</string>
+    <string name="age_days">%1$d দিন</string>
+    <string name="expiry_left_hm">আর %1$d ঘ %2$d মি</string>
+    <string name="expiry_left_h">আর %1$d ঘণ্টা</string>
+    <string name="expiry_left_m">আর %1$d মিনিট</string>
+    <string name="via_relays">রিলে দিয়ে</string>
+    <string name="via_saved">জমা, পরে যাবে</string>
+    <string name="via_bridge">পাশের ফোন দিয়ে</string>
+    <string name="via_node">লোকাল ওয়াই-ফাই দিয়ে</string>
+    <string name="via_mesh">মেশ দিয়ে</string>
+    <string name="via_sms">এসএমএসে</string>
+    <string name="via_qr">হাতে হাতে</string>
+    <string name="detail_fuel">তেল</string>
+    <string name="detail_gas">গ্যাস</string>
+    <string name="detail_power">বিদ্যুৎ</string>
+    <string name="detail_water">পানি</string>
+    <string name="detail_cash">এটিএম</string>
+    <string name="detail_medicine">ওষুধ</string>
+    <string name="detail_available">পাওয়া যাচ্ছে</string>
+    <string name="detail_low">কমে আসছে</string>
+    <string name="detail_out">শেষ</string>
+    <string name="detail_traffic_1">চলছে</string>
+    <string name="detail_traffic_2">ধীর</string>
+    <string name="detail_traffic_3">জ্যাম</string>
+    <string name="detail_crowd_1">ফাঁকা</string>
+    <string name="detail_crowd_2">ভরছে</string>
+    <string name="detail_crowd_3">ঠাসা</string>
+    <string name="detail_accident">দুর্ঘটনা</string>
+    <string name="detail_protest">মিছিল</string>
+    <string name="detail_flood">জলাবদ্ধতা</string>
+    <string name="detail_closure">রাস্তা বন্ধ</string>
+    <string name="detail_safety">নিরাপত্তা</string>
+    <string name="category_traffic">জ্যাম</string>
+    <string name="category_food">খাবার</string>
+    <string name="category_crowd">ভিড়</string>
+    <string name="category_stock">স্টক</string>
+    <string name="category_alert">সতর্কতা</string>
+    <string name="category_chatter">আড্ডা</string>
+
+    <!-- Composer (screen 03) -->
+    <string name="compose_title">আশেপাশে পোস্ট</string>
+    <string name="compose_area_auto">%1$s · নিজে থেকে</string>
+    <string name="compose_hint">আশেপাশে কী হচ্ছে?</string>
+    <string name="compose_counter">%1$d / %2$d</string>
+    <string name="compose_category">ক্যাটাগরি · ঐচ্ছিক</string>
+    <string name="compose_details">%1$s-এর খুঁটিনাটি · ঐচ্ছিক</string>
+    <string name="compose_lasts">%1$s পোস্ট থাকে %2$d ঘণ্টা</string>
+    <string name="compose_never_expires">%1$s পোস্টের মেয়াদ নেই</string>
+    <string name="compose_anonymous">নাম ছাড়া পোস্ট হয়</string>
+    <string name="compose_post">পোস্ট</string>
+    <string name="compose_posting">সিল দিয়ে পোস্ট হচ্ছে…</string>
+    <string name="compose_route_online">এখনই রিলেতে যাবে</string>
+    <string name="compose_route_saved">এই ফোনে জমা থাকবে; রাস্তা খুললে যাবে</string>
+    <string name="compose_err_empty">আগে কিছু লেখো।</string>
+    <string name="compose_err_long">৪০০ অক্ষরের মধ্যে রাখো।</string>
+    <string name="compose_err_words">এই শব্দ এখানে ফিল্টার হয়। অন্যভাবে বলো।</string>
+    <string name="compose_err_spam">এটা স্প্যামের মতো, তাই পোস্ট হবে না।</string>
+    <string name="compose_err_links">এক পোস্টে সর্বোচ্চ একটি লিংক।</string>
+    <string name="compose_err_phone">আড্ডা বা সতর্কতা পোস্টে ফোন নম্বর দেওয়া যায় না।</string>
+    <string name="compose_err_rate">মিনিটে একটি পোস্ট (ঘণ্টায় ১০, দিনে ৩০)। একটু পরে চেষ্টা করো।</string>
+
+    <!-- Card actions -->
+    <string name="card_actions_title">এই পোস্ট</string>
+    <string name="card_report">রিপোর্ট</string>
+    <string name="card_report_body">তিনজন আলাদা মানুষের রিপোর্টে পোস্ট লুকিয়ে যায়।</string>
+    <string name="report_spam">স্প্যাম</string>
+    <string name="report_abuse">গালাগালি</string>
+    <string name="report_illegal">বেআইনি</string>
+    <string name="report_false">ভুল বা বিভ্রান্তিকর</string>
+    <string name="card_block">এই পোস্টদাতাকে ব্লক করো</string>
+    <string name="card_block_body">তার পোস্ট আর দেখবে না। তাকে জানানো হয় না।</string>
+    <string name="card_mute">একটি শব্দ মিউট করো</string>
+    <string name="card_mute_hint">যে শব্দ লুকাবে</string>
+    <string name="card_reported">রিপোর্ট হয়েছে। ধন্যবাদ।</string>
+    <string name="card_blocked">ব্লক হয়েছে</string>
+    <string name="card_muted">“%1$s” মিউট হয়েছে</string>
+
+    <!-- Relays -->
+    <string name="relays_title">রিলে</string>
+    <string name="relays_body">নেট থাকলে পাবলিক রিলে তোমার মেসেজ নেয়। আমাদের নিজস্ব কোনো সার্ভার নেই।</string>
+    <string name="relays_add_hint">wss://relay.example</string>
+    <string name="relays_add">রিলে যোগ করো</string>
+    <string name="relays_remove">%1$s সরাও</string>
+    <string name="relays_connected">যুক্ত</string>
+    <string name="relays_connecting">যুক্ত হচ্ছে</string>
+    <string name="relays_offline">যুক্ত নয়</string>
+    <string name="relays_reset">আগের তালিকায় ফেরো</string>
 </resources>

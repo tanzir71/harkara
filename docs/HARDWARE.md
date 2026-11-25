@@ -21,3 +21,14 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 - NIP-49 backup and restore use scrypt with log_n 16 (64 MiB, about 0.5 s on a laptop JVM); time and memory on a 2 GB budget phone are untested.
 - "Save to a file…" and "Open a file…" go through the Storage Access Framework; OEM file pickers (Xiaomi, vivo, OPPO, Realme) are untested.
 - The backup QR (240 dp, error correction M) has not been scanned by a real camera yet (the in-app scanner arrives in M10).
+## Storage and relays
+
+- SQLCipher's native library loads and opens the encrypted database on API 26 phones and on 32-bit armeabi-v7a.
+- WorkManager's 30-minute relay check actually runs on budget phones with aggressive battery managers.
+- Live WebSocket connections to the public relays survive switching between mobile data and Wi-Fi.
+
+## Maps
+
+- MapLibre renders Bangla (
+ame:bn) labels with correct conjuncts; if it can't shape Bengali script, labels fall back to 
+ame.

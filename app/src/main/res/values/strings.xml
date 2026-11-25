@@ -211,4 +211,94 @@
     <string name="module_sms_direct_sub">Uses SIM credit · default off</string>
     <string name="module_sms_gateway">Volunteer SMS gateway</string>
     <string name="module_sms_gateway_sub">Relays up to 100 SMS a day for your contacts; uses your SIM credit · default off</string>
+    <!-- Feed (M4) -->
+    <string name="age_now">now</string>
+    <string name="age_minutes">%1$d min</string>
+    <string name="age_hours">%1$d h</string>
+    <string name="age_days">%1$d d</string>
+    <string name="expiry_left_hm">%1$d h %2$d m left</string>
+    <string name="expiry_left_h">%1$d h left</string>
+    <string name="expiry_left_m">%1$d m left</string>
+    <string name="via_relays">via relays</string>
+    <string name="via_saved">saved, sends later</string>
+    <string name="via_bridge">via a nearby phone</string>
+    <string name="via_node">via local Wi-Fi</string>
+    <string name="via_mesh">via mesh</string>
+    <string name="via_sms">by SMS</string>
+    <string name="via_qr">hand to hand</string>
+    <string name="detail_fuel">Fuel</string>
+    <string name="detail_gas">Gas</string>
+    <string name="detail_power">Power</string>
+    <string name="detail_water">Water</string>
+    <string name="detail_cash">ATM</string>
+    <string name="detail_medicine">Medicine</string>
+    <string name="detail_available">Available</string>
+    <string name="detail_low">Running low</string>
+    <string name="detail_out">Out</string>
+    <string name="detail_traffic_1">Moving</string>
+    <string name="detail_traffic_2">Slow</string>
+    <string name="detail_traffic_3">Gridlock</string>
+    <string name="detail_crowd_1">Chill</string>
+    <string name="detail_crowd_2">Filling up</string>
+    <string name="detail_crowd_3">Packed</string>
+    <string name="detail_accident">Accident</string>
+    <string name="detail_protest">Protest</string>
+    <string name="detail_flood">Waterlogging</string>
+    <string name="detail_closure">Road closed</string>
+    <string name="detail_safety">Safety</string>
+    <string name="category_traffic">Traffic</string>
+    <string name="category_food">Food</string>
+    <string name="category_crowd">Crowd</string>
+    <string name="category_stock">Stock</string>
+    <string name="category_alert">Alert</string>
+    <string name="category_chatter">Chatter</string>
+
+    <!-- Composer (screen 03) -->
+    <string name="compose_title">Post nearby</string>
+    <string name="compose_area_auto">%1$s · auto</string>
+    <string name="compose_hint">What\'s happening nearby?</string>
+    <string name="compose_counter">%1$d / %2$d</string>
+    <string name="compose_category">Category · optional</string>
+    <string name="compose_details">%1$s details · optional</string>
+    <string name="compose_lasts">%1$s posts last %2$d h</string>
+    <string name="compose_never_expires">%1$s posts don\'t expire</string>
+    <string name="compose_anonymous">Posts anonymously</string>
+    <string name="compose_post">Post</string>
+    <string name="compose_posting">Stamping and posting…</string>
+    <string name="compose_route_online">Sends to relays now</string>
+    <string name="compose_route_saved">Saved on this phone; goes when a route opens</string>
+    <string name="compose_err_empty">Write something first.</string>
+    <string name="compose_err_long">Keep it under 400 characters.</string>
+    <string name="compose_err_words">That wording is filtered here. Try saying it another way.</string>
+    <string name="compose_err_spam">That looks like spam, so it can\'t be posted.</string>
+    <string name="compose_err_links">One link per post at most.</string>
+    <string name="compose_err_phone">Phone numbers aren\'t allowed in Chatter or Alert posts.</string>
+    <string name="compose_err_rate">One post a minute (10 an hour, 30 a day). Try again shortly.</string>
+
+    <!-- Card actions -->
+    <string name="card_actions_title">This post</string>
+    <string name="card_report">Report</string>
+    <string name="card_report_body">Three reports from different people hide a post for everyone who sees them.</string>
+    <string name="report_spam">Spam</string>
+    <string name="report_abuse">Abusive</string>
+    <string name="report_illegal">Illegal</string>
+    <string name="report_false">False or misleading</string>
+    <string name="card_block">Block this poster</string>
+    <string name="card_block_body">You won\'t see their posts. They aren\'t told.</string>
+    <string name="card_mute">Mute a word</string>
+    <string name="card_mute_hint">Word to hide</string>
+    <string name="card_reported">Reported. Thanks.</string>
+    <string name="card_blocked">Blocked</string>
+    <string name="card_muted">Muted “%1$s”</string>
+
+    <!-- Relays -->
+    <string name="relays_title">Relays</string>
+    <string name="relays_body">Public relays carry your messages when there is internet. No server of our own.</string>
+    <string name="relays_add_hint">wss://relay.example</string>
+    <string name="relays_add">Add relay</string>
+    <string name="relays_remove">Remove %1$s</string>
+    <string name="relays_connected">Connected</string>
+    <string name="relays_connecting">Connecting</string>
+    <string name="relays_offline">Not connected</string>
+    <string name="relays_reset">Reset to defaults</string>
 </resources>

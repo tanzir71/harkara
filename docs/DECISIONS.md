@@ -34,3 +34,12 @@ One line per decision: date, decision, why. Defaults from the handover (§11) ar
 - 2026-11-25: The binary codec deflates content only when that is smaller and has an "id omitted" flag for SMS (the decoder recomputes the id); created_at is u32, so events after 2106 cannot be carried in binary.
 - 2026-11-25: Nearcast leftovers without an event equivalent yet were removed rather than half-ported: CryptoBox/NearId/AES-GCM DMs, PacketCodec, ReactionCounter, AckStateMachine, ChannelMessage/ChannelFilter, FeedOrdering/PostKind. Votes return as kind 7 (M4), delivery states and channels as events (M5). SosPolicy and RetentionPolicy now work on events.
 - 2026-11-25: The backup QR is always drawn with Day ink on Day surface, also in the Night theme, because many scanners cannot read inverted codes.
+- 2026-11-25: SQLCipher is pinned to 
+et.zetetic:sqlcipher-android 4.10.0: 4.20.0 requires compileSdk 36 and the handover fixes compileSdk 35. The 32-byte database key is random, kept in no-backup storage and erased by panic wipe; JVM tests use a plain in-memory Room database (HarkaraDatabase.inMemory).
+- 2026-11-25: The app's relay pool lives in pp/relay (OkHttp), while the NIP-01 message codec, NIP-11 parsing, backoff, NIP-77 negentropy and the I/O-free LocalRelay live in core/relay so the LAN room and node can reuse them.
+- 2026-11-25: Negentropy (NIP-77) is our own Kotlin implementation of protocol v1, written from the published description; it is used for the area-feed catch-up only on relays whose NIP-11 lists 77.
+- 2026-11-25: Feed posts carry g tags at precisions 7, 6 and 5; the app subscribes to the area's geohash-5 cell and its eight neighbours and keeps posts within 3 km of the area centre. Peers require NIP-13 ≥ 16 bits; the composer tunes 16–20 bits to about 2 s of mining on the phone.
+- 2026-11-25: Relays connect only while an activity is visible or during the 30-minute WorkManager sync (network + battery-not-low constraints), per the battery rule.
+- 2026-11-25: The map style builder (core/map/MapStyle) labels with 
+ame:bn first, falling back to 
+ame; MapLibre's support for Bangla glyph shaping is listed in HARDWARE.md as unverified.

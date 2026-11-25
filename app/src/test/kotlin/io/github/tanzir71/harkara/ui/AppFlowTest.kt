@@ -35,7 +35,8 @@ class AppFlowTest {
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit()
-        container = AppContainer(context)
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        container = AppContainer(context, inMemoryDatabase = true)
         compose.setContent { HarkaraApp(container, platform) }
     }
 

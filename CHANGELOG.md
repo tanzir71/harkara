@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+
+The Nearby feed is live over public relays, and keeps working offline from what the phone already holds.
+
+- **Nearby** shows anonymous posts from within 3 km of your area, newest first, each with its place, distance, age, time left and how it travelled. The feed is read from the phone's encrypted database, so it still shows when there's no network.
+- **Post nearby** (the + button): text plus an optional category (Traffic, Food, Crowd, Stock, Alert, Chatter) and optional details (e.g. Fuel · Available). Posts expire on loka's schedule (Traffic 3 h, Crowd 4 h, Alert 12 h, Stock 24 h, Chatter 48 h, Food never), carry proof of work tuned to the phone, and are signed with the weekly area key, so they're anonymous.
+- Votes, and **block, report, mute** on every card. A post hides on your phone after reports from three different people or a score of −5. Bangla and English word filters and your own mute words apply locally.
+- Composer rules from loka: up to 400 characters, one link, no phone numbers in Chatter or Alert, one post a minute (10 an hour, 30 a day). Peers drop posts that break the limits or lack proof of work.
+- Relay pool: the default relays (rewritten weekly by an automatic check), NIP-11 limits, reconnects with backoff, an outbox that retries until a relay says OK, and NIP-77 negentropy catch-up on relays that offer it. Edit the list in Settings → Relays.
+- The connectivity pill now shows **Online** when a relay is connected. Relays run only while the app is open; a background check every 30 minutes (only with network and battery not low) sends what's waiting and tidies storage (20 MB of other people's posts at most; your own data is never cleared).
 ## 0.2.0
 
 The protocol core: everything Harkara sends is now a signed Nostr event.

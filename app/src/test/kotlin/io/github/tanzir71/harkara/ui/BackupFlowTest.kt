@@ -45,7 +45,8 @@ class BackupFlowTest {
     fun setUp() {
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit()
         AppContainer.seedFile(context).delete()
-        container = AppContainer(context)
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        container = AppContainer(context, inMemoryDatabase = true)
         compose.setContent { HarkaraApp(container, platform) }
     }
 

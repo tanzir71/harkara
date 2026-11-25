@@ -6,77 +6,99 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-@Dao
-interface IdentityDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(identity: IdentityEntity)
+/** (created_at, id) pairs for NIP-77 reconciliation. */
+data class IdTime(val id: String, val createdAt: Long)
 
-    @Query("SELECT * FROM identities ORDER BY lastSeenAt DESC")
-    fun observeAll(): Flow<List<IdentityEntity>>
-}
+/** Size/age view used by the storage budget. */
+data class StoredRow(val id: String, val bytes: Int, val receivedAt: Long, val own: Boolean)
 
 @Dao
-interface MessageDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(message: MessageEntity)
+interface EventDao {
+    /** Returns the row id, or -1 when the event was already stored (dedupe by id). */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(event: EventEntity): Long
 
-    @Query("SELECT * FROM messages ORDER BY createdAt DESC")
-    fun observeAll(): Flow<List<MessageEntity>>
-}
+    @Query("SELECT * FROM events WHERE id = :id")
+    suspend fun get(id: String): EventEntity?
 
-@Dao
-interface PostDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(post: PostEntity)
+    @Query("SELECT EXISTS(SELECT 1 FROM events WHERE id = :id)")
+    suspend fun exists(id: String): Boolean
 
-    @Query("SELECT * FROM posts WHERE expiresAt > :now ORDER BY createdAt DESC")
-    fun observeFresh(now: Long): Flow<List<PostEntity>>
+    @Query(
+        """SELECT * FROM events WHERE kind = 1 AND geohash5 IN (:cells)
+           AND (expiresAt IS NULL OR expiresAt > :nowSeconds) ORDER BY createdAt DESC LIMIT :limit""",
+    )
+    fun observeFeed(cells: List<String>, nowSeconds: Long, limit: Int = 300): Flow<List<EventEntity>>
 
-    @Query("DELETE FROM posts WHERE expiresAt <= :now")
-    suspend fun purgeExpired(now: Long): Int
-}
+    @Query("SELECT id, createdAt FROM events WHERE kind = 1 AND geohash5 IN (:cells) AND createdAt >= :sinceSeconds")
+    suspend fun feedIdTimes(cells: List<String>, sinceSeconds: Long): List<IdTime>
 
-@Dao
-interface ReactionDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(reaction: ReactionEntity)
+    @Query("SELECT * FROM events WHERE kind IN (7, 1984) AND target IN (:postIds)")
+    fun observeReactions(postIds: List<String>): Flow<List<EventEntity>>
 
-    @Query("SELECT * FROM reactions WHERE postId = :postId")
-    fun observeForPost(postId: String): Flow<List<ReactionEntity>>
-}
+    @Query("SELECT * FROM events WHERE kind IN (7, 1984) AND target IN (:postIds)")
+    suspend fun reactionsFor(postIds: List<String>): List<EventEntity>
 
-@Dao
-interface ChannelDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(channel: ChannelEntity)
+    @Query("SELECT * FROM events WHERE kind = :kind ORDER BY createdAt DESC")
+    suspend fun byKind(kind: Int): List<EventEntity>
 
-    @Query("SELECT * FROM channels ORDER BY name")
-    fun observeAll(): Flow<List<ChannelEntity>>
+    @Query("SELECT COUNT(*) FROM events WHERE pubkey = :pubkey AND kind = :kind AND createdAt >= :sinceSeconds")
+    suspend fun countSince(pubkey: String, kind: Int, sinceSeconds: Long): Int
+
+    @Query("SELECT COUNT(*) FROM events WHERE own = 1 AND kind = :kind AND createdAt >= :sinceSeconds")
+    suspend fun countOwnSince(kind: Int, sinceSeconds: Long): Int
+
+    @Query("DELETE FROM events WHERE own = 0 AND expiresAt IS NOT NULL AND expiresAt <= :nowSeconds")
+    suspend fun purgeExpired(nowSeconds: Long): Int
+
+    @Query("SELECT id, bytes, receivedAt, own FROM events")
+    suspend fun storedRows(): List<StoredRow>
+
+    @Query("DELETE FROM events WHERE id IN (:ids) AND own = 0")
+    suspend fun deleteOthers(ids: List<String>): Int
+
+    @Query("SELECT COALESCE(SUM(bytes), 0) FROM events WHERE own = 0")
+    suspend fun othersBytes(): Long
 }
 
 @Dao
 interface OutboxDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun enqueue(item: OutboxEntity)
+    suspend fun upsert(item: OutboxEntity)
 
-    @Query("SELECT * FROM outbox WHERE deliveredAt IS NULL ORDER BY priority DESC, nextAttemptAt ASC")
-    fun observePending(): Flow<List<OutboxEntity>>
+    @Query("SELECT * FROM outbox WHERE eventId = :id")
+    suspend fun get(id: String): OutboxEntity?
+
+    @Query("SELECT * FROM outbox WHERE state IN ('Saved', 'LeftPhone') AND nextAttemptAt <= :now ORDER BY priority DESC, createdAt ASC")
+    suspend fun due(now: Long): List<OutboxEntity>
+
+    @Query("SELECT COUNT(*) FROM outbox WHERE state IN ('Saved', 'LeftPhone')")
+    fun observeWaiting(): Flow<Int>
+
+    @Query("SELECT * FROM outbox")
+    fun observeAll(): Flow<List<OutboxEntity>>
+
+    @Query("UPDATE outbox SET state = :state, carrier = :carrier WHERE eventId = :id")
+    suspend fun setState(id: String, state: String, carrier: String?)
 }
 
 @Dao
-interface DedupeSeenDao {
+interface RelayAckDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun markSeen(item: DedupeSeenEntity)
+    suspend fun upsert(ack: RelayAckEntity)
 
-    @Query("DELETE FROM dedupe_seen WHERE seenAt < :cutoff")
-    suspend fun purgeOlderThan(cutoff: Long): Int
+    @Query("SELECT * FROM relay_acks WHERE eventId = :id")
+    suspend fun forEvent(id: String): List<RelayAckEntity>
 }
 
 @Dao
-interface SettingsDao {
+interface MuteDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun put(setting: SettingsEntity)
+    suspend fun add(mute: MuteEntity)
 
-    @Query("SELECT * FROM settings WHERE `key` = :key")
-    fun observe(key: String): Flow<SettingsEntity?>
+    @Query("DELETE FROM mutes WHERE type = :type AND value = :value")
+    suspend fun remove(type: String, value: String)
+
+    @Query("SELECT * FROM mutes")
+    fun observeAll(): Flow<List<MuteEntity>>
 }

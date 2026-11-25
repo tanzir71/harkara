@@ -60,6 +60,8 @@ fun NearbyScreen(
     onCompose: () -> Unit = {},
     onChangeArea: () -> Unit = {},
     onSearch: () -> Unit = {},
+    onVote: (postId: String, up: Boolean) -> Unit = { _, _ -> },
+    onMore: (postId: String) -> Unit = {},
 ) {
     val c = HarkaraTheme.colors
     var mode by rememberSaveable { mutableIntStateOf(0) }
@@ -128,7 +130,9 @@ fun NearbyScreen(
             if (shown.isEmpty()) {
                 item { CalmState(R.drawable.ic_nearby, stringResource(R.string.nearby_empty_title), stringResource(R.string.nearby_empty_body)) }
             } else {
-                items(shown, key = { it.id }) { post -> PostCard(post, Modifier.padding(horizontal = 16.dp)) }
+                items(shown, key = { it.id }) { post ->
+                    PostCard(post, Modifier.padding(horizontal = 16.dp), onVoteUp = { onVote(post.id, true) }, onVoteDown = { onVote(post.id, false) }, onMore = { onMore(post.id) })
+                }
             }
         }
         HFab(

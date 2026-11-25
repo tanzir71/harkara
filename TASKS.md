@@ -33,11 +33,11 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M4 - Store, relays, Nearby feed online (v0.3.0)
 
-- [ ] Room + SQLCipher schema (events, outbox, delivery states, storage budget eviction).
-- [ ] Relay pool (defaults, NIP-11, backoff, outbox retries, NIP-77 when offered).
-- [ ] Nearby feed + composer: categories, Stock chips, expiry, PoW, area key, votes, reports, moderation ladder, word filter, offline cache.
-- [ ] Bundled `loka` data: categories, Dhaka areas, word lists.
-- [ ] Gate: MockWebServer relay tests prove publish → receive → expiry → hide-after-3-reports; feed renders from Room offline.
+- [x] Room + SQLCipher schema (events, outbox, delivery states, storage budget eviction).
+- [x] Relay pool (defaults, NIP-11, backoff, outbox retries, NIP-77 when offered).
+- [x] Nearby feed + composer: categories, Stock chips, expiry, PoW, area key, votes, reports, moderation ladder, word filter, offline cache.
+- [x] Bundled `loka` data: categories, Dhaka areas, word lists.
+- [x] Gate: MockWebServer relay tests prove publish → receive → expiry → hide-after-3-reports; feed renders from Room offline.
 
 ## M5 - Chats (v0.4.0)
 

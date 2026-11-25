@@ -18,7 +18,10 @@ import io.github.tanzir71.harkara.ui.components.TabBar
 import io.github.tanzir71.harkara.ui.screens.BackupSheetContent
 import io.github.tanzir71.harkara.ui.screens.BackupStep
 import io.github.tanzir71.harkara.ui.screens.RestoreSheetContent
+import io.github.tanzir71.harkara.ui.screens.CardActionsSheetContent
 import io.github.tanzir71.harkara.ui.screens.ChatsScreen
+import io.github.tanzir71.harkara.ui.screens.ComposeSheetContent
+import io.github.tanzir71.harkara.ui.screens.RelaysScreen
 import io.github.tanzir71.harkara.ui.screens.ConnectivitySheetContent
 import io.github.tanzir71.harkara.ui.screens.MeScreen
 import io.github.tanzir71.harkara.ui.screens.ModulesScreen
@@ -104,6 +107,39 @@ class ScreenScreenshotTest {
                 ConnectivitySheetContent(SampleData.online, MeshMode.SAVER, {})
             }
         }
+    }
+
+    @Test
+    fun composeSheet() = captureDayNight("screen-03-compose", padded = false) {
+        Box(Modifier.fillMaxSize()) {
+            NearbyScreen("Dhanmondi 27", true, SampleData.online, SampleData.posts)
+            Box(Modifier.fillMaxSize().background(HarkaraTheme.colors.bgInverse.copy(alpha = 0.32f)))
+            SheetSurface(Modifier.align(Alignment.BottomCenter)) {
+                ComposeSheetContent(
+                    "Dhanmondi 27 · auto",
+                    SampleData.online,
+                    { _, _, _ -> },
+                    initialText = "Octane is back at the Satmasjid Road pump, short queue now",
+                    initialCategory = io.github.tanzir71.harkara.core.Category.STOCK,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun cardActionsSheet() = captureDayNight("screen-card-actions", padded = false) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            SheetSurface { CardActionsSheetContent({}, {}, {}) }
+        }
+    }
+
+    @Test
+    fun relays() = captureDayNight("screen-relays", padded = false) {
+        RelaysScreen(
+            listOf("wss://relay.damus.io", "wss://relay.primal.net", "wss://relay.nostr.net", "wss://nos.lol"),
+            mapOf("wss://relay.primal.net" to io.github.tanzir71.harkara.relay.RelayStatus.CONNECTED),
+            {}, {}, {}, {},
+        )
     }
 
     @Test

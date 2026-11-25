@@ -1,11 +1,9 @@
 package io.github.tanzir71.harkara.settings
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import io.github.tanzir71.harkara.data.HarkaraDatabase
-import io.github.tanzir71.harkara.data.PostEntity
-import kotlinx.coroutines.flow.first
+import io.github.tanzir71.harkara.data.EventEntity
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,21 +18,23 @@ import java.io.File
 class PanicWipeControllerTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private fun db() = Room.inMemoryDatabaseBuilder(context, HarkaraDatabase::class.java).allowMainThreadQueries().build()
+    private fun db() = HarkaraDatabase.inMemory(context)
 
-    private suspend fun HarkaraDatabase.seed() = postDao().upsert(
-        PostEntity("p1", "author", "Aster", "wipe me", "wh0k8b", "post", null, 1, 10_000, ByteArray(64)),
+    private suspend fun HarkaraDatabase.seed() = eventDao().insert(
+        EventEntity("p1", "author", 1, 1, "{}", "wh0k8b", "wh0k8", "chatter", null, null, 1, 2, own = true, carrier = "SAVED"),
     )
+
+    private suspend fun HarkaraDatabase.count() = eventDao().storedRows().size
 
     @Test
     fun `panic wipe clears room database`() = runBlocking {
         val db = db()
         db.seed()
-        assertEquals(1, db.postDao().observeFresh(now = 2).first().size)
+        assertEquals(1, db.count())
 
         PanicWipeController.panicWipe(db)
 
-        assertEquals(0, db.postDao().observeFresh(now = 2).first().size)
+        assertEquals(0, db.count())
         db.close()
     }
 
@@ -49,7 +49,7 @@ class PanicWipeControllerTest {
 
         PanicWipeController.wipeEverything(context, db, settings)
 
-        assertEquals(0, db.postDao().observeFresh(now = 2).first().size)
+        assertEquals(0, db.count())
         assertFalse(settings.state.value.onboarded)
         assertFalse(secret.exists())
         assertFalse(cached.exists())

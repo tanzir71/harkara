@@ -169,3 +169,27 @@ Panic wipe deletes the seed file and the AndroidKeyStore key (`IdentityManager.w
 | NIP-19 npub/nsec/nprofile | NIP-19 | `Bech32Test` |
 | HChaCha20 | draft-irtf-cfrg-xchacha | `Nip49Test` |
 | Key ring HKDF outputs | computed independently (Python `hmac`/`hashlib`) | `KeyRingTest` |
+## 11. Nearby feed
+
+A feed post is kind 1, signed by the weekly area key (KeyRing.area(geohash5, isoWeek)), with:
+
+| Tag | Value |
+|---|---|
+| g | geohash at precision 7, 6 and 5 (three tags, so relays can match any of them) |
+| 	 | category: 	raffic, ood, crowd, stock, lert, chatter (untagged posts are chatter) |
+| xpiration | NIP-40: created_at + 3 h / never / 4 h / 24 h / 12 h / 48 h |
+| 
+once | NIP-13, ≥ 16 bits (the composer tunes 16–20 bits to ~2 s on the phone) |
+| stock, status, 	raffic, crowd, lert, price | optional details from loka's composer chips |
+
+Votes are NIP-25 kind 7 (+/-, , p, k), reports NIP-56 kind 1984 (["e", id, reason], p), both signed by the voter's area key. Locally a post hides when 3 distinct keys report it, when the score (latest vote per key) reaches −5, when a moderator the user opted into (NIP-51 follow set) reports it, when the author is blocked, or when it matches the word filter or the user's mute words. Nothing here is enforced on anyone else's phone.
+
+Composer rules (from loka): ≤ 400 characters, ≤ 1 link, no phone numbers in Chatter or Alert, Bangla and English word filters. Rate limits, enforced by peers before storing or relaying and by the composer for our own posts: 1 post per minute, 10 per hour, 30 per day per key.
+
+## 12. Relays
+
+The pool connects to data/default-relays.json (three required relays + four chosen weekly by 	ools/relay-check.mjs) or the user's list. Per relay: NIP-11 is fetched first (Accept: application/nostr+json) and its max_message_length / max_filters respected; reconnects use jittered exponential backoff (1 s … 5 min); subscriptions are re-sent on reconnect with since = last EOSE. Our events go through an outbox: Saved → Left this phone (written to a relay socket) → Reached the network (first OK true); unacknowledged events are retried with backoff whenever a relay connects.
+
+The area feed subscribes to kind 1 with #g = the area's geohash-5 cell and its 8 neighbours, since = 2 days. On relays that list NIP-77, the app first runs a negentropy reconciliation (NEG-OPEN with the same filter and the (created_at, id) pairs it already holds) and then REQs only the missing ids. core/relay/LocalRelay is the same NIP-01 logic without I/O, used by the LAN room and node.
+
+Storage budget: other people's events are capped at 20 MB (oldest received first are dropped) and media at 100 MB; expired posts are purged; the user's own events are never auto-cleared.

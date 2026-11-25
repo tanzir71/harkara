@@ -74,10 +74,21 @@ class MainActivity : ComponentActivity(), PlatformActions {
 
     override fun onStart() {
         super.onStart()
+        val container = (application as HarkaraApplication).container
+        container.foreground = true
+        // Relays run only while the app is visible (or during a WorkManager sync): battery rule, §4.
+        if (container.settings.state.value.onboarded) container.startRelays()
         // At most once a day, and only while the app is open and online (§5.5).
         if (isOnline()) {
             lifecycleScope.launch { (application as HarkaraApplication).container.updateChecker.checkIfDue() }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        val container = (application as HarkaraApplication).container
+        container.foreground = false
+        container.stopRelays()
     }
 
     private fun isOnline(): Boolean {
