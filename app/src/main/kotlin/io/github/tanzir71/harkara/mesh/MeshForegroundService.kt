@@ -33,10 +33,12 @@ class MeshForegroundService : Service() {
         val container = (application as HarkaraApplication).container
         scope.launch {
             container.settings.state.collect { state ->
-                val mesh = state.onboarded && state.isOn(Module.MESH) && !state.isOn(Module.LITE_MODE)
+                val wantsMesh = state.onboarded && state.isOn(Module.MESH) && !state.isOn(Module.LITE_MODE)
+                val mesh = wantsMesh && MeshPermissions.granted(this@MeshForegroundService)
+                if (wantsMesh && !mesh) container.settings.setModule(Module.MESH, false)
                 val node = state.onboarded && state.isOn(Module.NODE)
                 if (mesh || node) container.startRelays()
-                if (mesh && MeshPermissions.granted(this@MeshForegroundService)) {
+                if (mesh) {
                     container.mesh.start(if (state.meshMode == io.github.tanzir71.harkara.settings.MeshMode.EVENT) io.github.tanzir71.harkara.core.mesh.MeshProfile.EVENT else io.github.tanzir71.harkara.core.mesh.MeshProfile.SAVER)
                 } else container.mesh.stop()
                 if (node) { container.startLan(); container.node.startNode() } else container.node.stopNode(container.foreground)

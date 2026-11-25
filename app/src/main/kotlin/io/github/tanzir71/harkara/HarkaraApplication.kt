@@ -39,6 +39,22 @@ import io.github.tanzir71.harkara.tools.Handbook
 import io.github.tanzir71.harkara.tools.LightController
 import io.github.tanzir71.harkara.tools.SosRepository
 import io.github.tanzir71.harkara.tools.ToneSiren
+import io.github.tanzir71.harkara.core.links.HarkaraLink
+import io.github.tanzir71.harkara.core.nostr.Kinds
+import io.github.tanzir71.harkara.core.relay.Filter
+import io.github.tanzir71.harkara.core.sms.SmsEligibility
+import io.github.tanzir71.harkara.links.LinkInbox
+import io.github.tanzir71.harkara.relay.Priority
+import io.github.tanzir71.harkara.settings.Module
+import io.github.tanzir71.harkara.sms.AndroidSmsReceivers
+import io.github.tanzir71.harkara.sms.AndroidSmsSender
+import io.github.tanzir71.harkara.sms.GatewayStore
+import io.github.tanzir71.harkara.sms.GreyAreaSms
+import io.github.tanzir71.harkara.sms.PrefsGatewayCounter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,6 +71,8 @@ open class HarkaraApplication : Application() {
         super.onCreate()
         container.crashReporter.install()
         if (container.settings.state.value.onboarded) RelaySyncWorker.schedule(this)
+        // SMS receivers are disabled components unless a grey-area switch is on (M10).
+        container.greyAreaSms.sync()
     }
 }
 
@@ -130,6 +148,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
                 true
             }
             kinds.AREA_CHAT -> { chatRepository.ingest(event, carrier); true }
+            kinds.SMS_DM -> chatRepository.ingestSms(event, carrier)
             else -> eventStore.store(event, carrier, own = false)
         }
     }
@@ -168,6 +187,41 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     }
     val handbook: Handbook by lazy { Handbook.fromAssets(context) }
     val lights: LightController by lazy { LightController(CameraTorch(context), ToneSiren(), scope) }
+    /** Deep links, shared text and pasted QR/SMS (M10): set by MainActivity, consumed by the UI. */
+    val pendingLinks = MutableStateFlow<HarkaraLink?>(null)
+
+    val linkInbox: LinkInbox by lazy {
+        LinkInbox(database, eventStore, outbox, taskRepository, khataRepository, me = { identity.profilePubkey.value }, ingestSms = { event, via -> chatRepository.ingestSms(event, via) })
+    }
+
+    val gatewayStore: GatewayStore by lazy { GatewayStore(database) }
+
+    /** The grey-area SMS switches (both off by default; inert while off). */
+    val greyAreaSms: GreyAreaSms by lazy {
+        GreyAreaSms(
+            isOn = { settings.state.value.isOn(it) },
+            sender = AndroidSmsSender(context),
+            receivers = AndroidSmsReceivers(context),
+            counter = PrefsGatewayCounter(settings),
+            config = { gatewayStore.get() },
+            resolver = { linkInbox.resolver() },
+            deliver = { event, via -> linkInbox.ingest(event, via) },
+            publish = { event -> outbox.enqueue(event, if (event.kind in SOS_KINDS) Priority.SOS else Priority.TASK) },
+        )
+    }
+
+    private val gatewayRelayStarted = AtomicBoolean(false)
+
+    /** While the gateway switch is on and relays run: events for members are texted to them. */
+    suspend fun subscribeGateway() {
+        if (!settings.state.value.isOn(Module.SMS_GATEWAY)) return
+        if (gatewayRelayStarted.compareAndSet(false, true)) {
+            scope.launch { relayPool.incoming.filter { it.subscriptionId == SUB_GATEWAY }.collect { greyAreaSms.forwardToMember(it.event) } }
+        }
+        val keys = gatewayStore.get().members.mapNotNull { it.pubkey }
+        if (keys.isEmpty()) return
+        relayPool.subscribe(SUB_GATEWAY, listOf(Filter(kinds = SmsEligibility.KINDS.toList(), tags = mapOf("p" to keys), since = System.currentTimeMillis() / 1000)))
+    }
 
     /** NIP-13 difficulty tuned once to this phone's speed (~2 s of mining). */
     private val powBits: Int by lazy { PostComposer.tunePowBits(measureHashRate()) }
@@ -212,5 +266,8 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     companion object {
         /** App-private, excluded from backups, and inside a directory the panic wipe empties. */
         fun seedFile(context: Context): File = File(context.noBackupFilesDir, "identity/root-seed")
+
+        const val SUB_GATEWAY = "harkara-sms-gateway"
+        private val SOS_KINDS = setOf(Kinds.SOS, Kinds.SOS_UPDATE, Kinds.CHECK_IN)
     }
 }

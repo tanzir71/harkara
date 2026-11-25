@@ -15,6 +15,18 @@ val appVersionCode: Int = appVersion.split(".").map { it.toInt() }.let { (major,
 
 // Release signing is read from the environment so no secret ever lives in the repo.
 val keystorePath: String? = System.getenv("HARKARA_KEYSTORE_PATH")
+val robolectricSdk by configurations.creating { isTransitive = false }
+val robolectricSdkDirectory = layout.buildDirectory.dir("robolectric-sdk")
+val provisionRobolectricSdk by tasks.registering(Sync::class) {
+    from(robolectricSdk)
+    into(robolectricSdkDirectory)
+}
+
+tasks.withType<Test>().configureEach {
+    dependsOn(provisionRobolectricSdk)
+    systemProperty("robolectric.offline", "true")
+    systemProperty("robolectric.dependency.dir", robolectricSdkDirectory.get().asFile.absolutePath)
+}
 
 android {
     namespace = "io.github.tanzir71.harkara"
@@ -106,6 +118,8 @@ roborazzi {
 }
 
 dependencies {
+    // Resolve once through Gradle, never from public Maven during a test class's setup.
+    robolectricSdk("org.robolectric:android-all-instrumented:15-robolectric-12650502-i7")
     implementation(project(":core"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

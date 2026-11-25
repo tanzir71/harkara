@@ -116,8 +116,8 @@ object ChatProtocol {
 
     fun isAreaMessage(event: Event): Boolean = event.kind == Kinds.AREA_CHAT && !isWifiMessage(event) && event.tagValue("g") != null
 
-    /** What a Wi-Fi room server accepts: gift wraps (DMs, groups, receipts) and the room's own messages. */
-    fun carriedByLanRoom(event: Event): Boolean = event.kind == Kinds.GIFT_WRAP || isWifiMessage(event)
+    /** Room chat plus encrypted private envelopes, including the compact SMS alternative. */
+    fun carriedByLanRoom(event: Event): Boolean = event.kind in setOf(Kinds.GIFT_WRAP, Kinds.SMS_DM) || isWifiMessage(event)
 
     /** The sender's display name from an `n` tag, or null when absent or unsafe to show. */
     fun nameOf(tags: List<List<String>>): String? =

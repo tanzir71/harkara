@@ -62,6 +62,10 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onRelays: () -> Unit = {},
     onEmergencyAlerts: (Boolean) -> Unit = {},
+    /** Paste a link, QR text or SMS (M10). */
+    onPasteLink: (() -> Unit)? = null,
+    /** The volunteer SMS gateway page, shown while that switch is on (M10). */
+    onSmsGateway: (() -> Unit)? = null,
 ) {
     val c = HarkaraTheme.colors
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -90,6 +94,15 @@ fun SettingsScreen(
                         onClick = onPanicWipe,
                         titleColor = c.stateSos,
                     )
+                }
+            }
+            if (onPasteLink != null || onSmsGateway != null) {
+                HCard(Modifier.fillMaxWidth(), padding = PaddingValues(vertical = 4.dp)) {
+                    Column {
+                        onPasteLink?.let { SettingsRow(R.drawable.ic_qr, stringResource(R.string.settings_paste_link), subtitle = stringResource(R.string.settings_paste_link_sub), onClick = it) }
+                        if (onPasteLink != null && onSmsGateway != null) RowDivider()
+                        onSmsGateway?.let { SettingsRow(R.drawable.ic_relay, stringResource(R.string.gateway_title), subtitle = stringResource(R.string.grey_cost_gateway), onClick = it) }
+                    }
                 }
             }
             HCard(Modifier.fillMaxWidth(), padding = PaddingValues(vertical = 4.dp)) {

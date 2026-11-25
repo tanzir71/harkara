@@ -1,0 +1,4 @@
+<resources>
+    <string name="sms_chat_send">Send encrypted copy by SMS</string>
+    <string name="sms_chat_short_only">SMS supports only your own one-to-one text of up to 32 UTF-8 bytes that fits two SMS parts. Groups, cards and voice cannot be converted. The SMS app still requires you to send.</string>
+</resources>

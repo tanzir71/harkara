@@ -18,6 +18,8 @@
   },
   "devDependencies": {
     "@noble/curves": "^1.9.7",
-    "@playwright/test": "1.65.1"
+    "@noble/hashes": "^1.8.0",
+    "@playwright/test": "1.65.1",
+    "esbuild": "0.28.2"
   }
 }

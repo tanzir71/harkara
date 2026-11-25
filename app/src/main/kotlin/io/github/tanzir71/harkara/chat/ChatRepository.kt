@@ -19,6 +19,8 @@ import io.github.tanzir71.harkara.core.nostr.Kinds
 import io.github.tanzir71.harkara.core.nostr.Rumor
 import io.github.tanzir71.harkara.core.nostr.Schnorr
 import io.github.tanzir71.harkara.core.relay.Filter
+import io.github.tanzir71.harkara.core.sms.SmsDm
+import io.github.tanzir71.harkara.core.sms.SmsLimits
 import io.github.tanzir71.harkara.data.ChatMessageEntity
 import io.github.tanzir71.harkara.data.ChatReceiptEntity
 import io.github.tanzir71.harkara.data.ChatWrapEntity
@@ -131,7 +133,7 @@ class ChatRepository(
     fun subscribe(geohash5: String?) {
         val now = nowSeconds()
         val synced = prefs.dmSyncedAt.takeIf { it > 0 } ?: (now - FIRST_FETCH_SECONDS)
-        val dm = Filter(kinds = listOf(Kinds.GIFT_WRAP), tags = mapOf("p" to listOf(me)), since = synced - ChatProtocol.WRAP_LOOKBACK_SECONDS)
+        val dm = Filter(kinds = listOf(Kinds.GIFT_WRAP, Kinds.SMS_DM), tags = mapOf("p" to listOf(me)), since = synced - ChatProtocol.WRAP_LOOKBACK_SECONDS)
         pool.subscribe(SUB_DM, listOf(dm), ChatProtocol.WRAP_LOOKBACK_SECONDS)
         lan?.subscribe(SUB_DM, listOf(dm.copy(since = now - FIRST_FETCH_SECONDS - ChatProtocol.WRAP_LOOKBACK_SECONDS)), ChatProtocol.WRAP_LOOKBACK_SECONDS)
         lan?.subscribe(SUB_WIFI, listOf(Filter(kinds = listOf(Kinds.AREA_CHAT), tags = mapOf("t" to listOf(ChatProtocol.WIFI_TOPIC)), since = now - ChatProtocol.PUBLIC_TTL_SECONDS)))
@@ -163,13 +165,15 @@ class ChatRepository(
         val members = conversation?.memberList().orEmpty()
         val names = names(contacts)
         val blocked = mutes.filter { it.type == MuteEntity.AUTHOR }.map { it.value }.toSet()
-        val wrapsByMessage = wraps.groupBy { it.messageId }
+        val wrapsByMessage = wraps.filterNot { it.wrapId.startsWith(SMS_ALIAS_PREFIX) }.groupBy { it.messageId }
+        val smsConfirmed = wraps.filter { it.wrapId.startsWith(SMS_ALIAS_PREFIX) &&
+            runCatching { Delivery.valueOf(it.lanState) >= Delivery.Delivered }.getOrDefault(false) }.mapNotNull { it.messageId }.toSet()
         val receiptsByMessage = receipts.groupBy { it.messageId }
         messages.filter { it.own || it.author !in blocked }.map { m ->
             val card = m.card?.let(::decodeTag)?.let(ChatCard::parse)
             if (m.own && m.type != MessageType.SYSTEM.name) {
                 val r = DeliveryRules.compute(myKey, members, wrapsByMessage[m.id].orEmpty(), receiptsByMessage[m.id].orEmpty())
-                ThreadMessage(m, card, r.delivery, r.carrier, null)
+                ThreadMessage(m, card, r.delivery, if (m.id in smsConfirmed) Carrier.SMS else r.carrier, null)
             } else {
                 ThreadMessage(m, card, null, runCatching { Carrier.valueOf(m.carrier) }.getOrDefault(Carrier.ONLINE), names[m.author] ?: m.authorName)
             }
@@ -182,6 +186,33 @@ class ChatRepository(
 
     /** The joined audio of a complete voice note, or null. */
     suspend fun voiceClip(messageId: String): VoiceClip? = VoiceNotes.assemble(dao.voiceParts(messageId).map { it.toPart() })
+
+    /**
+     * Compact encrypted representation for an explicit SMS action. Never queues or claims transmission;
+     * SmsComposer must still check the final two-part budget. Keep the original timestamp and text.
+     */
+    suspend fun smsEventFor(messageId: String): Event? = withContext(Dispatchers.Default) {
+        lock.withLock {
+            val sender = profile()
+            val message = dao.message(messageId) ?: return@withLock null
+            val conversation = dao.conversation(message.conversationId) ?: return@withLock null
+            val members = conversation.memberList().toSet()
+            if (!message.own || message.author != sender.pubkeyHex || message.type != MessageType.TEXT.name ||
+                message.card != null || message.voiceMime != null || message.replyTo != null ||
+                conversation.type != ConversationType.DM.name || members.size != 2 || sender.pubkeyHex !in members ||
+                message.text.isBlank() || message.text.encodeToByteArray().size > SmsLimits.DM_BYTES) return@withLock null
+            val recipient = members.single { it != sender.pubkeyHex }
+            if (isBlocked(recipient) || !Schnorr.isValidPubkey(recipient)) return@withLock null
+            dao.wrapsFor(messageId).filter { it.wrapId.startsWith(SMS_ALIAS_PREFIX) }.forEach { alias ->
+                val cached = runCatching { Event.fromJson(alias.json) }.getOrNull()
+                if (cached != null && cached.pubkey == sender.pubkeyHex && cached.tagValues("p") == listOf(recipient) &&
+                    cached.createdAt == message.createdAt && SmsDm.open(cached, sender) == message.text) return@withLock cached
+            }
+            val event = runCatching { SmsDm.build(sender, recipient, message.text, message.createdAt) }.getOrNull() ?: return@withLock null
+            rememberSmsAlias(event, message.id, conversation.id, recipient)
+            event
+        }
+    }
 
     // ---- Starting chats ----
 
@@ -318,6 +349,7 @@ class ChatRepository(
         if (!room.running.value) return
         val since = nowMillis() - LAN_RESEND_MILLIS
         for (w in dao.lanPending(since)) {
+            if (w.wrapId.startsWith(SMS_ALIAS_PREFIX)) continue
             val event = runCatching { Event.fromJson(w.json) }.getOrNull() ?: continue
             if (room.publish(event) > 0) raiseLan(w.wrapId, Delivery.LeftPhone)
         }
@@ -328,6 +360,7 @@ class ChatRepository(
     /** Every event from every carrier comes through here; anything that fails a check is dropped. */
     suspend fun ingest(event: Event, carrier: Carrier) {
         when {
+            event.kind == Kinds.SMS_DM -> ingestSms(event, carrier)
             event.kind == Kinds.GIFT_WRAP -> {
                 val myKey = profile()
                 if (event.tagValue("p") != myKey.pubkeyHex) return
@@ -354,6 +387,35 @@ class ChatRepository(
         }
     }
 
+    /**
+     * Accepts only an authenticated, bounded kind-3480 DM addressed to us (or authored by us).
+     * Plaintext stays in the private chat database; any receipts are NIP-59 encrypted gift wraps.
+     * Returns true only for a newly stored bubble, false for invalid, blocked or duplicate input.
+     */
+    suspend fun ingestSms(event: Event, carrier: Carrier): Boolean = withContext(Dispatchers.Default) {
+        val keys = profile()
+        if (event.kind != Kinds.SMS_DM || event.tags.count { it.firstOrNull() == "p" } != 1 ||
+            event.tags.singleOrNull { it.firstOrNull() == "p" }?.size != 2 ||
+            event.isExpired(nowSeconds()) || !event.validate()) return@withContext false
+        val recipient = event.tagValue("p") ?: return@withContext false
+        if (!Schnorr.isValidPubkey(recipient) || (recipient != keys.pubkeyHex && event.pubkey != keys.pubkeyHex)) return@withContext false
+        val other = if (event.pubkey == keys.pubkeyHex) recipient else event.pubkey
+        if (other == keys.pubkeyHex) return@withContext false
+        val text = SmsDm.open(event, keys) ?: return@withContext false
+        if (text.isBlank() || text.encodeToByteArray().size > SmsLimits.DM_BYTES) return@withContext false
+        lock.withLock {
+            if (isBlocked(other) || dao.messageExists(event.id) || dao.wrap(SMS_ALIAS_PREFIX + event.id) != null) return@withLock false
+            val conversation = ensureRoom(setOf(keys.pubkeyHex, other), event.createdAt)
+            val own = event.pubkey == keys.pubkeyHex
+            val existing = matchingPlainText(conversation.id, event.pubkey, event.createdAt, text)
+            val stored = existing == null && storeMessage(conversation, event.id, event.pubkey, null, event.createdAt,
+                MessageType.TEXT, text, null, null, own, carrier)
+            if (existing != null) rememberSmsAlias(event, existing, conversation.id, recipient)
+            if (!own) sendReceipt(event.pubkey, listOf(event.id), ReceiptStatus.DELIVERED)
+            stored
+        }
+    }
+
     private suspend fun onPublic(event: Event, id: String, type: ConversationType, geohash: String?, carrier: Carrier) {
         if (!withContext(Dispatchers.Default) { event.validate() }) return
         if (event.isExpired(nowSeconds())) return
@@ -376,8 +438,10 @@ class ChatRepository(
                 val own = rumor.pubkey == myKey
                 val type = if (parsed.card != null) MessageType.CARD else MessageType.TEXT
                 if (ChatProtocol.checkText(parsed.text) == ChatVerdict.TOO_LONG) return
-                val stored = storeMessage(c, rumor.id, rumor.pubkey, parsed.name, rumor.createdAt, type, parsed.text, parsed.card, null, own, carrier)
-                if (stored && !own) {
+                val duplicate = if (parsed.card == null && parsed.members.size == 2 && parsed.text.encodeToByteArray().size <= SmsLimits.DM_BYTES)
+                    matchingPlainText(c.id, rumor.pubkey, rumor.createdAt, parsed.text) else null
+                val stored = duplicate == null && storeMessage(c, rumor.id, rumor.pubkey, parsed.name, rumor.createdAt, type, parsed.text, parsed.card, null, own, carrier)
+                if ((stored || duplicate != null) && !own) {
                     noteName(rumor.pubkey, parsed.name)
                     sendReceipt(rumor.pubkey, listOf(rumor.id), ReceiptStatus.DELIVERED)
                 }
@@ -406,14 +470,16 @@ class ChatRepository(
     private suspend fun onReceipt(member: String, receipt: ChatRumor.Receipt) = db.withTransaction {
         val status = if (receipt.status == ReceiptStatus.READ) Delivery.Read else Delivery.Delivered
         for (id in receipt.messageIds) {
-            val m = dao.message(id) ?: continue
+            val smsAlias = dao.wrap(SMS_ALIAS_PREFIX + id)
+            val m = dao.message(id) ?: smsAlias?.messageId?.let { dao.message(it) } ?: continue
             if (!m.own) continue
             val c = dao.conversation(m.conversationId) ?: continue
             if (member !in c.memberList() || member == me) continue
-            val before = dao.receipt(id, member)?.status?.let { runCatching { Delivery.valueOf(it) }.getOrNull() }
-            if (before == null || status > before) dao.upsertReceipt(ChatReceiptEntity(id, c.id, member, status.name, nowMillis()))
+            val before = dao.receipt(m.id, member)?.status?.let { runCatching { Delivery.valueOf(it) }.getOrNull() }
+            if (before == null || status > before) dao.upsertReceipt(ChatReceiptEntity(m.id, c.id, member, status.name, nowMillis()))
+            if (smsAlias != null) raiseLan(smsAlias.wrapId, status)
             // Delivered: stop retrying that member's copies on every carrier.
-            for (w in dao.wrapsFor(id).filter { it.recipient == member }) {
+            for (w in dao.wrapsFor(m.id).filter { it.recipient == member && !it.wrapId.startsWith(SMS_ALIAS_PREFIX) }) {
                 val row = db.outboxDao().get(w.wrapId)
                 if (row != null && (row.state == Delivery.Saved.name || row.state == Delivery.LeftPhone.name)) {
                     db.outboxDao().setState(w.wrapId, Delivery.Delivered.name, row.carrier)
@@ -424,6 +490,20 @@ class ChatRepository(
     }
 
     // ---- Internals ----
+
+    /** SMS aliases are local metadata, not pending transport copies and never advance delivery ticks. */
+    private suspend fun rememberSmsAlias(event: Event, messageId: String, conversationId: String, recipient: String) {
+        dao.insertWrap(ChatWrapEntity(SMS_ALIAS_PREFIX + event.id, messageId, conversationId, recipient,
+            event.toJson(), lanOnly = true, nowMillis(), Delivery.Saved.name))
+    }
+
+    /** Match the same text arriving as SMS and NIP-17 without loading an unbounded thread into memory. */
+    private suspend fun matchingPlainText(conversationId: String, author: String, at: Long, text: String): String? = withContext(Dispatchers.IO) {
+        db.query("SELECT id FROM chat_messages WHERE conversationId = ? AND author = ? AND createdAt = ? " +
+            "AND type = 'TEXT' AND card IS NULL AND text = ? LIMIT 1", arrayOf(conversationId, author, at, text)).use {
+            if (it.moveToFirst()) it.getString(0) else null
+        }
+    }
 
     private fun verdict(v: ChatVerdict): SendResult? = when (v) {
         ChatVerdict.OK -> null
@@ -547,6 +627,7 @@ class ChatRepository(
         const val AREA_PREFIX = "area:"
         const val PUBLIC = "*"
         const val PREVIEW_VOICE = "\uD83C\uDFA4"
+        private const val SMS_ALIAS_PREFIX = "sms-alias:"
 
         /** With no sync yet, fetch a week of wraps. */
         private const val FIRST_FETCH_SECONDS = 7L * 24 * 3600

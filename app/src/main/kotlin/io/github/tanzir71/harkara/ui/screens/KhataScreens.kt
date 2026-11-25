@@ -273,6 +273,8 @@ fun IouDetailSheetContent(
     onSettle: () -> Unit,
     onConfirmSettle: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Send our signature or settlement by SMS (M10); hidden when null. */
+    onSendSms: (() -> Unit)? = null,
 ) {
     val c = HarkaraTheme.colors
     val t = state.terms
@@ -304,6 +306,7 @@ fun IouDetailSheetContent(
         if (incoming && state.status != IouStatus.SETTLED) HButton(stringResource(R.string.khata_action_remind), onRemind, Modifier.fillMaxWidth(), variant = HButtonVariant.Secondary, icon = R.drawable.ic_sms)
         if (state.status == IouStatus.AGREED) HButton(stringResource(R.string.khata_action_settle), onSettle, Modifier.fillMaxWidth())
         if (state.status == IouStatus.SETTLING && state.settlement != null) HButton(stringResource(R.string.khata_action_confirm_settle), onConfirmSettle, Modifier.fillMaxWidth())
+        if (onSendSms != null) HButton(stringResource(R.string.khata_send_sms), onSendSms, Modifier.fillMaxWidth(), variant = HButtonVariant.Ghost, icon = R.drawable.ic_sms)
     }
 }
 

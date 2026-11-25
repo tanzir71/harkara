@@ -24,7 +24,7 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 - Keystore wrapping unverified on hardware: the root seed is sealed with an AndroidKeyStore AES-256-GCM key (`AndroidKeystoreSeedWrapper`). Robolectric has no AndroidKeyStore, so tests cover the plain-file fallback and a fake AES-GCM wrapper only. Also unverified: behaviour after a keystore reset (the app should start a new identity and offer restore).
 - NIP-49 backup and restore use scrypt with log_n 16 (64 MiB, about 0.5 s on a laptop JVM); time and memory on a 2 GB budget phone are untested.
 - "Save to a file…" and "Open a file…" go through the Storage Access Framework; OEM file pickers (Xiaomi, vivo, OPPO, Realme) are untested.
-- The backup QR (240 dp, error correction M) has not been scanned by a real camera yet (the in-app scanner arrives in M10).
+- The backup QR (240 dp, error correction M) has not been scanned by a real camera yet (M10 supports paste; an in-app camera scanner is not implemented).
 ## Storage and relays
 
 - SQLCipher's native library loads and opens the encrypted database on API 26 phones and on 32-bit armeabi-v7a.
@@ -57,3 +57,15 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 - Storage Access Framework pick/save behavior, document providers reporting a known file size and interruption of streamed transfers are unverified on hardware. Default limits are 25 MiB/file and 100 MiB/offer; received files persist in a bounded private inbox. Save copies a file elsewhere; Delete removes the private copy.
 - `AudioRecord`/`AudioTrack` microphone permission, 16 kHz mono PCM16 capture/playback, latency, feedback, audio focus and the 15-second held-to-talk cutoff are unverified on hardware. PTT requires explicit listening and a peer-IP-bound bearer token; HTTP exposes that token and audio to LAN observers.
 - Releasing/cancelling a hold or losing focus stops capture; `ON_STOP` and screen disposal close the listener, pending transfers and audio. OEM timing and resource release on real devices are unverified; returning to foreground requires an explicit listener restart, and these tools use no background service.
+
+## SMS, QR and links (M10)
+
+- The SMS app opens with the text prefilled from `ACTION_SENDTO smsto:` + `sms_body` on common OEM SMS apps (Google Messages, Samsung, Xiaomi, vivo, OPPO, Realme); some apps may drop the body or split it differently.
+- Two-part GSM-7 SMS (306 characters) are joined again on the receiving phone on Grameenphone, Robi, Banglalink and Teletalk, and survive forwarding; the receiver can paste or share the text into Harkara.
+- "Send SMS directly": `SmsManager.sendDataMessage` to port 7471 between Bangladeshi operators (some networks drop or charge data SMS differently), and `DATA_SMS_RECEIVED` delivery to the enabled receiver on API 26–35.
+- Volunteer gateway: `SMS_RECEIVED` with a two-part text SMS from a member, publishing to relays when the volunteer's phone is online, and `sendMultipartTextMessage` back to a member; the daily cap with real traffic.
+- Android 13+ restricted settings: on a sideloaded APK the SMS permission request is blocked until App info → ⋮ → Allow restricted settings; the guidance screen's steps and wording on Pixel, Samsung, Xiaomi and vivo settings apps.
+- Enabling/disabling the SMS receivers with `setComponentEnabledSetting` takes effect without restarting the app on budget phones.
+- QR: no in-app camera scanner yet (paste works); scanning `harkara:e:` and multi-QR codes from the screen with real phone cameras at 700 characters per code, and the phone camera app handing `harkara:` links to Harkara.
+- Deep links: Chrome and other browsers on Android handing `harkara:` links to the app from the web page's "Open in Harkara" button; `https://tanzir71.github.io/harkara/o/…` links open in the browser on Android 12+ (not verified) and in the app chooser on older versions.
+- The web page on budget-phone browsers: `DecompressionStream('deflate-raw')` support (old Chrome or WebView versions), WebSocket connections to the public relays over mobile data, and Bangla rendering with the bundled fonts.

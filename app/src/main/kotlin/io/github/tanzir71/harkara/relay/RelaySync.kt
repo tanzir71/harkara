@@ -94,7 +94,7 @@ class RelaySyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
             delay(15_000)
         }
         Maintenance.run(container.database, System.currentTimeMillis())
-        if (!container.foreground) container.stopRelays()
+        if (!container.foreground && !container.mesh.running && !container.node.node.value) container.stopRelays()
         return Result.success()
     }
 

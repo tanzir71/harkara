@@ -49,6 +49,7 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | 3477 | SOS | regular | Top relay priority; one per 30 min per key; active until an SOS update closes it |
 | 3478 | SOS update | regular | `e` → SOS, `status` = `resolved` · `false_alarm` |
 | 3479 | Chat receipt | rumor, gift-wrapped | To the message author only: `p` author, one `e` per message id (rumor id, or voice-note id), `status` = `delivered` · `read` (M5, §15) |
+| 3480 | SMS DM | regular, SMS rung only | NIP-44 v2 content to the single `p` recipient, signed by the sender, not gift-wrapped (§16.3) |
 | 23471 | Live location | ephemeral, gift-wrapped (21059) | Session key; `seq` (replay protection), `end` (unix s) |
 | 33471 | Pin | addressable | Shared/public pin: `d`, `g`, `expiration`, `title` |
 
@@ -60,7 +61,7 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 - **Unwrap** (`GiftWrap.unwrap`): verify the wrap → decrypt → verify the seal → decrypt → the rumor's `pubkey` must equal the seal's `pubkey` (else anyone could impersonate anyone) → the rumor id must match its fields.
 - **Groups**: one wrap per member plus one to the sender (`GiftWrap.wrapForGroup`).
 - **NIP-44 v2**: conversation key = HKDF-Extract(salt `nip44-v2`, unhashed ECDH x); per message HKDF-Expand(conv, nonce32, 76) → ChaCha20 key/nonce + HMAC key; padded plaintext (1..65 535 bytes); payload = base64(`0x02 ‖ nonce ‖ ciphertext ‖ HMAC(nonce ‖ ciphertext)`).
-- These are the only private messages on every carrier; mesh peers carry wraps they cannot read.
+- These are the private envelopes on normal carriers; SMS-rung DMs use the kind-3480 exception (§16.3). Mesh peers carry wraps they cannot read.
 
 ## 4. Keys
 
@@ -224,6 +225,8 @@ IouTerms = {id, creditor {name, pubkey?}, debtor {name, pubkey?}, amount (taka),
 
 Phones exchange the whole IouBundle {terms, signatures[], settlements[]} as the content of a kind 3473 rumor, gift-wrapped (NIP-59) to the other party and to self, and merge bundles by id (only verifying signatures are kept). Face to face, the same bundle goes as a QR: harkara:iou: + base64url(JSON). Split bills create one IOU per member with shares that sum exactly. Paid tasks are shown as settled receipts but are not IOUs.
 
+Someone without a key confirms an IOU on the web page with the one-time code from their reminder link (`confirmCodeHash`, §16.7); single signatures and settlements also travel by SMS and QR (§16.3, §16.5) and are merged by terms hash.
+
 ## 15. Chats (M5)
 
 Code: `core/chat` (`ChatProtocol`, `ChatCards`, `VoiceNotes`), `core/lan/LanRelayServer`, `core/geo/OpenLocationCode`; app `chat/ChatRepository`, `lan/LanRoom`.
@@ -293,6 +296,117 @@ Location cards come from "Share my location" (a one-off read of the last fix; "A
 ### Plus Codes
 
 `OpenLocationCode` implements encode (2–15 digits), decode, validity and shortening from the Open Location Code specification, checked against vectors from its test data.
+
+## 16. SMS, QR, links and the web page for non-users (M10)
+
+### 16.1 SMS text
+
+An SMS is a short readable **Latin** line, a space, the marker `HK1:` and a Base64url payload (`core/wire/SmsCodec.kt`), e.g. `Harkara SOS HK1:EJUbj…`. Everything is in the GSM-7 basic alphabet (Base64url's `-` and `_` included), so two joined parts carry 2 × 153 = **306 characters**; one Bangla letter anywhere would switch the SMS to UCS-2 (70 characters), so Bangla rides inside the payload only. Readable lines: `Harkara check-in` (3476), `Harkara SOS` (3477), `Harkara SOS update` (3478), `Harkara khata sign` (3474), `Harkara khata paid` (3475), `Harkara task` (3471), `Harkara msg` (3480), else `Harkara`. The receiver finds `HK1:` anywhere in the text (a forwarded SMS works). Part counting (`Gsm7.parts`): GSM-7 ≤ 160 septets = 1 part, else ⌈septets / 153⌉ (extension characters `^{}\[~]|€` and form feed cost two septets); UCS-2 ≤ 70 units = 1 part, else ⌈units / 67⌉.
+
+### 16.2 SMS payload (version 1)
+
+| Field | Size |
+|---|---|
+| header | u8: `0x10` (version 1 in the high nibble) \| flags; `0x01` = the text block is raw DEFLATE with the preset dictionary |
+| kind | varint |
+| author reference | 8: the first 8 bytes of the x-only pubkey; the receiver looks up keys it knows with that prefix |
+| created_at | u32 big-endian |
+| sig | 64 (BIP-340) |
+| tags | varint count; per tag varint item count, then items (below) |
+| content form | varint: `0` text (the rest of the text block), `1` base64 → varint length + raw bytes (NIP-44 payloads; used only when re-encoding gives the identical string) |
+| text block | the rest: Text8 of every text item in order, then the content; DEFLATEd when that is smaller |
+
+Item header = varint `(n << 3) | type`:
+
+| Type | Name | Carries |
+|---:|---|---|
+| 0 | TEXT | n Text8 bytes, taken in order from the text block |
+| 1 | HEX | n raw bytes of a lowercase-hex string (used for ≥ 16 hex characters) |
+| 2 | UUID | 16 bytes of a canonical lowercase UUID (task `d`, IOU ids) |
+| 3 | REF | 8-byte prefix of a 32-byte value the receiver already knows (a key, an event id, an IOU hash) |
+| 4 | AUTHOR | the event's own pubkey (no bytes) |
+| 5 | SAME | the n-th 32-byte value (HEX or REF) seen earlier in this payload |
+| 6 | JOIN | n parts (items, not nested) joined with `:`, e.g. `30402:<AUTHOR or REF>:<UUID>` |
+| 7 | DEC | n itself: a decimal string without leading zeros, ≤ 18 digits |
+
+**Text8**: ASCII except DEL as one byte; U+0980–U+09FF (the Bengali block, Bangla digits and ৳ included) as one byte `0x80 + (cp − 0x0980)`; anything else as `0x7F` followed by its UTF-8 (so `।`, emoji and DEL still round-trip).
+
+**Dictionary** (part of version 1, never changed; a new dictionary needs a new version): the UTF-8 of
+`expirationplacenamenotestatusfalse_alarmresolvedcashrocketreasoncodedeclinedeliveredpicked_upaccept30402stepiou{"method":"nagad","amount":{"method":"bkash","amount":,"trxId":"`.
+
+**References**: the sender first tries the full form; only if it doesn't fit two parts are the values the receiver is expected to know (`p` people, `e` events, `h` IOU hash, the key inside an `a` address — `SmsEligibility.refsFor`) sent as 8-byte REFs. **Decoding** resolves the author and every REF through the phone's known keys, ids and IOU hashes (`PrefixResolver`; at most 64 candidate combinations), rebuilds the tags and content, recomputes the NIP-01 id and keeps the combination whose BIP-340 signature verifies: the result is the exact original event, and a bridging phone re-encodes it to JSON without re-signing. Truncated input, unknown flags/types, trailing bytes after the DEFLATE stream and anything that does not verify are refused. An SMS from a key the phone has never seen cannot be verified and is dropped.
+
+### 16.3 SMS-eligible events and their worst cases
+
+`SmsEligibility.KINDS` = 3476 check-in, 3477 SOS, 3478 SOS update, 3474 IOU signature (also the web confirmation with `code`), 3475 settlement, 3471 task steps `accept` · `picked_up` · `decline` · `delivered` (with the 6-digit `code`; a signed token does not fit), 3480 SMS DM. Field limits builders should clamp to (`SmsLimits`): check-in place label 40 characters + note 40, SOS note 60 (+ place 40), task name 40, TrxID 20, DM plaintext 32 UTF-8 bytes, geohash 9. `SmsBudgetTest` signs each type with every field at its limit (Bangla where Bangla is allowed, amount 9 999 999, a 20-character TrxID) and asserts ≤ 2 parts, ≤ 306 characters and an identical round trip:
+
+| Event (worst case) | Characters | Parts | Payload bytes | Form |
+|---|---:|---:|---:|---|
+| Check-in, 40-char Bangla place + 40-char Bangla note + expiry | 288 | 2 | 200 | full |
+| SOS, 40-char Bangla place + 60-char Bangla note | 291 | 2 | 206 | full |
+| SOS update, `false_alarm` + 60-char Bangla note | 279 | 2 | 192 | full |
+| IOU signature | 210 | 2 | 140 | full |
+| IOU web confirmation (with `code`) | 229 | 2 | 154 | full |
+| Settlement, Nagad, ৳9 999 999, 20-char TrxID | 274 | 2 | 188 | full |
+| Task accept + 40-char Bangla name | 269 | 2 | 189 | 8-byte refs |
+| Task picked_up / decline | 269 | 2 | 189 | full |
+| Task delivered + code | 283 | 2 | 199 | full |
+| SMS DM, 32-byte plaintext | 274 | 2 | 193 | 8-byte refs |
+
+**Kind 3480 (SMS DM)**: `["p", recipient]`, content = NIP-44 v2 (conversation key of sender and recipient). A NIP-59 gift wrap (seal + wrap, two NIP-44 layers, a one-time key and two signatures) is well over 600 bytes and cannot fit two SMS; on the SMS rung the carrier sees both phone numbers anyway, so the wrap's metadata hiding buys nothing there. NIP-44 pads up to 32 bytes into one 99-byte payload; 33–64 bytes would need 131 and no longer fit, hence the 32-byte limit. The app shows 3480 only to its two parties and never publishes it except through a volunteer gateway the sender chose (§16.9).
+
+### 16.4 Data SMS ("Send SMS directly", grey area)
+
+The same payload goes as binary data SMS to port **7471** (`SmsManager.sendDataMessage`, no SMS app). A port-addressed data SMS carries 133 bytes, so the payload is split into frames `0x48 ‖ u8 set ‖ u8 (index << 4 | count) ‖ chunk` (index and count 1–15, chunks ≤ 130 bytes); frames reassemble per sender in any order and expire after 10 minutes (`DataSmsFraming`, `DataSmsAssembler`). Every eligible event fits two frames.
+
+### 16.5 QR transport
+
+Any event: `harkara:e:<base64url(binary event without id)>` (§5, the reader recomputes the id and checks the signature). When that is longer than **700 characters** (about QR version 20 at error correction M, easy for budget cameras), the same Base64url is cut into `harkara:q:<set>:<i>/<n>:<chunk>` codes, `set` = first 8 hex of SHA-256(binary event), n ≤ 99; `QrAssembler` accepts parts in any order and repeats, keeps sets 30 minutes, and refuses a set whose hash or signature fails. The app draws codes with ZXing (byte mode, EC M) and reads them by paste (Settings → *Open a link, QR text or SMS*); scanning with the camera is hardware (`docs/HARDWARE.md`).
+
+### 16.6 Links
+
+`harkara:<rest>` and `https://tanzir71.github.io/harkara/o/#<rest>` (or `/en/o/`) carry the same `<rest>` (`core/links/HarkaraLinks.kt`). The fragment is never sent to any server.
+
+| `<rest>` | Carries | In the app | On the web page |
+|---|---|---|---|
+| `e:<b64url>` | one signed event (binary, §5) | verify, store by kind, lift SOS/check-in and task steps to relays | verify, show (SOS: *Call 999*) |
+| `q:<set>:<i>/<n>:<chunk>` | one multi-QR part | collect until complete | — |
+| `iou:<b64url JSON>` | a whole IOU bundle (M8 QR) | Khata import | — |
+| `c:<b64url>` | IOU confirm link (§16.7) | open the IOU if it is ours | verify, confirm with a throwaway key |
+| `handoff:<token JSON>` | handoff token (M7) | open the task's code entry, prefilled | — |
+| `t:<b64url(32-byte requester key ‖ d)>` | follow a task | subscribe to the offer and its steps | offer + steps from relays |
+| `g:<geohash 4–9>` | an area's feed | opens the web page | kind 1 by `#g` from relays, last 2 days |
+| `gw:<b64url JSON {name, number, pubkey?}>` | a volunteer SMS gateway card | saved on the phone; suggested as SMS recipient | — |
+
+The app's intent filters: VIEW `harkara:*`; VIEW `https://tanzir71.github.io/harkara/o/…` and `/harkara/en/o/…` (not `autoVerify`: Digital Asset Links would have to live at the root of `tanzir71.github.io`, which this project does not control, so Android 12+ opens these in the browser and the page offers *Open in Harkara*); SEND `text/plain` (a forwarded SMS or a QR text shared to Harkara). Text with an `HK1:` payload anywhere in it is an SMS.
+
+### 16.7 IOU confirm code (someone without a key)
+
+When an IOU's other party has no key, its terms get `confirmCodeHash` = SHA-256(code) (hex), where code = the first 8 bytes, as hex, of HMAC-SHA256(creator's private key, `harkara/iou-confirm/<IOU id>`): the creator's phone can always rebuild it, even after a restore, and stores nothing. `confirmCodeHash` is omitted from the canonical JSON when null, so older IOU hashes do not change. The SMS reminder links to `…/o/#c:<payload>`:
+
+| Field | Size |
+|---|---|
+| version | u8 (1) |
+| flags | u8: `0x01` the creditor signed (else the debtor), `0x02` id is a UUID, `0x04` due, `0x08` task, `0x10` currency ≠ BDT |
+| code | 8 (16 hex characters) |
+| sig created_at | u32 BE |
+| sig | 64 |
+| signer | 32 (x-only key of the party who has one) |
+| id | 16, or a string |
+| amount | varint |
+| terms createdAt | u32 BE |
+| due / task / currency | varint / string / string, when flagged |
+| creditor name, debtor name, note | strings |
+
+Strings are varint length + Text8. The reader rebuilds the canonical terms JSON (IouTerms field order, `JSON.stringify` string escaping, which kotlinx matches for valid UTF-16, `confirmCodeHash` = SHA-256 of the code), hashes it, rebuilds the signer's kind-3474 event (`["h", hash]`, `["iou", id]`, empty content) and checks its signature; the web page does the same in the browser. A new IouTerms field needs a new link version. The page's **confirmation** is kind 3474 signed by a throwaway browser key with `["h", hash]`, `["iou", id]`, `["code", code]`, published to the default relays (the creditor's app subscribes to kind 3474 by `#h` for its waiting IOUs) and offered as an `e:` link to text back. `Iou.verifyCodeConfirmation` accepts it only when exactly one party has no key, SHA-256(code) matches, the signer is not the keyed party and the signature verifies; then the IOU is **agreed**. It proves that whoever held the link confirmed, which is weaker than a co-signature (the creditor could have made it), and the ledger says so. With a key-less party, the **creditor's** own settlement settles the IOU; a debtor's own record stays *settling*.
+
+### 16.8 The web page for non-users (`site/o/`, `site/en/o/`)
+
+Static pages built by `tools/build-site.mjs` (same tokens, fonts and footer as the landing site; `noindex`; `referrer: no-referrer`). `tools/site/o/main.js` is bundled with esbuild (MIT, build only) together with `@noble/curves` secp256k1 Schnorr and `@noble/hashes` SHA-256 (both MIT, licence comments kept) into `site/assets/o.js` (~50 KB minified). It verifies NIP-01 ids and BIP-340 signatures in the browser, inflates compressed `e:` content with `DecompressionStream('deflate-raw')`, and talks only to `data/default-relays.json` over WebSockets: a `Content-Security-Policy` meta (`default-src 'none'; script-src 'self'; connect-src <the relays>; …`) pins that list, with no inline scripts. `verify-site` gives the o/ pages their own budget (JS ≤ 60 KB, CSS ≤ 48 KB, page ≤ 160 KB without fonts), checks the CSP lists exactly the default relays, and fails any WebSocket URL outside the o/ pages (the landing pages stay limited to `api.country.is` and GitHub). The Playwright test opens payloads signed by core (`tools/fixtures/o-payloads.json`, written and re-checked by `WebPageFixturesTest`) with relays mocked by `routeWebSocket`: verified, tampered → *Not verified*, IOU confirmation published and its signature checked, task steps with a forged one dropped, the area feed without expired or forged posts.
+
+### 16.9 Volunteer SMS gateway (grey area)
+
+Off by default. When on, text SMS reaching the volunteer's phone are relayed only if the sender's number is one the volunteer added (individual contacts, or one named group; numbers compared as Bangladeshi numbers in any format) and fewer than **100** SMS were relayed that Dhaka day (in and out together, `GatewayPolicy`). A relayed SMS must decode and verify (members' keys and this phone's known keys); it is stored and published unchanged. Events from the relays with a member's key in `p` are texted to that member's number, once per event id. The volunteer's number appears only in their gateway QR (`gw:`), never on any relay. Both SMS receivers are disabled manifest components until their switch is on.
 
 ## 17. Off-grid carriers (M6)
 

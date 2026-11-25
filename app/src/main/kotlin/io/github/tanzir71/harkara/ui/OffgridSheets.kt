@@ -27,11 +27,18 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun ShareAppSheet(container: AppContainer, platform: PlatformActions) {
     var address by remember { mutableStateOf<String?>(null) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) { container.node.startSharing() }
         while (true) { address = withContext(Dispatchers.IO) { container.node.address() }; delay(2000) }
     }
-    DisposableEffect(Unit) { onDispose { container.node.stopSharing(); if (!container.foreground) container.stopLan() } }
+    DisposableEffect(lifecycle) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) { container.node.stopSharing(); container.stopLan() }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer); container.node.stopSharing(); if (!container.foreground) container.stopLan() }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.share_local_title), style = HarkaraTheme.type.title, color = HarkaraTheme.colors.textPrimary)
         Text(stringResource(R.string.share_local_body), style = HarkaraTheme.type.body, color = HarkaraTheme.colors.textSecondary)

@@ -13,6 +13,8 @@ import { parseArgs } from 'node:util';
 import { loadIcons, iconSet } from './site/icons.mjs';
 import { loadRelease, releaseView } from './site/release.mjs';
 import { landingPage, privacyPage, notFoundPage } from './site/render.mjs';
+import { oPage } from './site/o/page.mjs';
+import { build as esbuild } from 'esbuild';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const site = join(root, 'site');
@@ -21,12 +23,14 @@ const { values: args } = parseArgs({
 });
 
 /** Every file this script writes. Keep in sync with .gitignore. */
-const GENERATED = ['index.html', '404.html', 'latest.json', 'en', 'privacy', 'assets/favicon.svg', 'assets/site.css'];
+const GENERATED = ['index.html', '404.html', 'latest.json', 'en', 'privacy', 'o', 'assets/favicon.svg', 'assets/site.css', 'assets/o.js', 'assets/o.css'];
 
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const copy = readJson(join(root, 'design/copy/landing.json'));
 const tokens = readJson(join(root, 'design/tokens/tokens.json'));
 const cfg = readJson(join(site, 'config.json'));
+// The web page for non-users talks to the default relays (data/default-relays.json, rewritten weekly).
+const relays = readJson(join(root, 'data/default-relays.json')).relays;
 const repo = cfg.repo || 'tanzir71/harkara';
 const [owner, name] = repo.split('/');
 const siteUrl = `https://${owner.toLowerCase()}.github.io/${name}/`;
@@ -92,6 +96,8 @@ const pages = [
   ['privacy/index.html', privacyPage(context('bn', 'privacy/', 'privacy/', 'en/privacy/'))],
   ['en/privacy/index.html', privacyPage(context('en', 'en/privacy/', 'privacy/', 'en/privacy/'))],
   ['404.html', notFoundPage({ ...context('en', '', '', 'en/'), abs: null, home: './' }, basePath)],
+  ['o/index.html', oPage(context('bn', 'o/', 'o/', 'en/o/'), { relays, siteUrl })],
+  ['en/o/index.html', oPage(context('en', 'en/o/', 'o/', 'en/o/'), { relays, siteUrl })],
 ];
 
 for (const [file, html] of pages) {
@@ -101,6 +107,19 @@ for (const [file, html] of pages) {
 }
 copyFileSync(join(root, 'design/brand/logo-mark.svg'), join(site, 'assets/favicon.svg'));
 writeFileSync(join(site, 'assets/site.css'), minCss(readFileSync(join(root, 'tools/site/site.css'), 'utf8')));
+writeFileSync(join(site, 'assets/o.css'), minCss(readFileSync(join(root, 'tools/site/o/o.css'), 'utf8')));
+// o/ page script: our code + @noble/curves and @noble/hashes (MIT), bundled and minified; licence comments kept.
+await esbuild({
+  entryPoints: [join(root, 'tools/site/o/main.js')],
+  outfile: join(site, 'assets/o.js'),
+  bundle: true,
+  minify: true,
+  format: 'iife',
+  target: ['es2020'],
+  legalComments: 'eof',
+  logLevel: 'warning',
+  banner: { js: '/*! Harkara web page for non-users, AGPL-3.0-or-later (source: tools/site/o/main.js). Bundles @noble/curves and @noble/hashes, MIT, (c) Paul Miller; see NOTICE. */' },
+});
 if (latest) writeFileSync(join(site, 'latest.json'), JSON.stringify(latest, null, 2) + '\n');
 if (!existsSync(join(site, '.nojekyll'))) writeFileSync(join(site, '.nojekyll'), '');
 
@@ -111,5 +130,5 @@ console.log(
     : 'state: coming soon (no release)',
 );
 for (const [file] of pages) console.log(`wrote site/${file}`);
-console.log('wrote site/assets/site.css, site/assets/favicon.svg');
+console.log('wrote site/assets/site.css, site/assets/favicon.svg, site/assets/o.css, site/assets/o.js');
 if (latest) console.log('wrote site/latest.json');

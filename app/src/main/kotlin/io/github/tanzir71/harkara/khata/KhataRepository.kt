@@ -2,6 +2,9 @@ package io.github.tanzir71.harkara.khata
 
 import io.github.tanzir71.harkara.core.khata.Iou
 import io.github.tanzir71.harkara.core.khata.IouBundle
+import io.github.tanzir71.harkara.core.khata.IouConfirm
+import io.github.tanzir71.harkara.core.khata.IouStatus
+import io.github.tanzir71.harkara.core.links.HarkaraLinks
 import io.github.tanzir71.harkara.core.khata.IouState
 import io.github.tanzir71.harkara.core.khata.IouTerms
 import io.github.tanzir71.harkara.core.khata.Party
@@ -58,8 +61,39 @@ class KhataRepository(
     }
 
     fun startIngest(scope: CoroutineScope, pool: RelayPool) {
-        scope.launch { pool.incoming.collect { ingestWrap(it.event) } }
+        scope.launch {
+            pool.incoming.collect {
+                if (it.event.kind == Kinds.IOU_SIGN) ingestEvent(it.event) else ingestWrap(it.event)
+            }
+        }
         lan?.let { room -> scope.launch { room.incoming.collect { ingestWrap(it) } } }
+    }
+
+    /**
+     * Web confirmations (M10): someone without a key confirmed one of our IOUs on the o/ page, which publishes
+     * a kind-3474 event with the code to public relays. Follows the hashes of our IOUs still waiting for one.
+     */
+    suspend fun subscribeConfirmations() {
+        val hashes = db.iouDao().all().mapNotNull { row ->
+            runCatching { Iou.state(IouBundle.fromJson(row.bundleJson)) }.getOrNull()
+                ?.takeIf { it.status == IouStatus.CLAIMED && it.terms.confirmCodeHash != null }?.let { Iou.hash(it.terms) }
+        }
+        if (hashes.isEmpty()) return
+        pools().forEach { it.subscribe(SUB_CONFIRM, listOf(Filter(kinds = listOf(Kinds.IOU_SIGN), tags = mapOf("h" to hashes.take(200))))) }
+    }
+
+    /**
+     * A bare IOU signature or settlement (kind 3474/3475) that came by SMS, QR, link or relay: merged into the
+     * IOU with the same terms hash, if this phone has it. Returns true when it changed our view.
+     */
+    suspend fun ingestEvent(event: Event): Boolean {
+        if (event.kind != Kinds.IOU_SIGN && event.kind != Kinds.SETTLE) return false
+        val hash = event.tagValue("h") ?: return false
+        val bundle = db.iouDao().all().firstNotNullOfOrNull { row ->
+            runCatching { IouBundle.fromJson(row.bundleJson) }.getOrNull()?.takeIf { Iou.hash(it.terms) == hash }
+        } ?: return false
+        val incoming = if (event.kind == Kinds.IOU_SIGN) IouBundle(bundle.terms, signatures = listOf(event.toJson())) else IouBundle(bundle.terms, settlements = listOf(event.toJson()))
+        return merge(incoming)
     }
 
     /** Opens a gift wrap; returns true when it carried an IOU bundle that changed our view. */
@@ -107,13 +141,16 @@ class KhataRepository(
     /** Proposes an IOU and signs it ourselves (it's a claim until the other side signs). */
     suspend fun create(direction: IouDirection, other: Party, amount: Long, note: String): IouState {
         val me = Party(displayName() ?: "Me", profile().pubkeyHex)
+        val id = UUID.randomUUID().toString()
         val terms = IouTerms(
-            id = UUID.randomUUID().toString(),
+            id = id,
             creditor = if (direction == IouDirection.THEY_OWE_ME) me else other,
             debtor = if (direction == IouDirection.THEY_OWE_ME) other else me,
             amount = amount,
             note = note.trim(),
             createdAt = now,
+            // Someone without a key confirms on the web page with a one-time code from their link (M10).
+            confirmCodeHash = if (other.pubkey == null) Iou.codeHash(IouConfirm.code(profile(), id)) else null,
         )
         val bundle = IouBundle(terms, listOf(Iou.sign(profile(), terms, now).toJson()))
         save(bundle)
@@ -155,9 +192,28 @@ class KhataRepository(
         return get(bundle.terms.id)
     }
 
+    /** Our own signature on [state] (kind 3474), e.g. to send it by SMS. */
+    fun mySignature(state: IouState): Event? = state.bundle.signatureEvents().firstOrNull { it.pubkey == profile().pubkeyHex && Iou.verifySignature(it, state.terms) }
+
+    /** Our latest settlement record on [state] (kind 3475). */
+    fun mySettlement(state: IouState): Event? =
+        state.bundle.settlementEvents().filter { it.pubkey == profile().pubkeyHex && Iou.verifySettlement(it, state.terms) }.maxByOrNull { it.createdAt }
+
+    /**
+     * The link in an SMS reminder: for someone without a key, the o/ page confirm link
+     * (https://tanzir71.github.io/harkara/o/#c:…); otherwise (or for IOUs made before M10) the help page.
+     */
+    fun reminderLink(state: IouState): String {
+        val sig = mySignature(state) ?: return HELP_URL
+        val code = IouConfirm.code(profile(), state.terms.id)
+        if (state.terms.confirmCodeHash != Iou.codeHash(code)) return HELP_URL
+        return runCatching { HarkaraLinks.web(IouConfirm.PREFIX + IouConfirm.encode(state.terms, sig, code)) }.getOrDefault(HELP_URL)
+    }
+
     companion object {
         const val SUB_KHATA = "harkara-khata"
-        /** Until the web page for non-users exists (M10), reminders link here. */
+        const val SUB_CONFIRM = "harkara-khata-confirm"
+        /** Fallback reminder link: what an IOU is, for people with the app or older IOUs. */
         const val HELP_URL = "https://github.com/tanzir71/harkara/blob/main/docs/IOU.md"
     }
 }

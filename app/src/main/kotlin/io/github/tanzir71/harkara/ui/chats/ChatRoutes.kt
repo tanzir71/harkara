@@ -2,6 +2,8 @@ package io.github.tanzir71.harkara.ui.chats
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -33,7 +35,11 @@ import io.github.tanzir71.harkara.core.chat.VoiceClip
 import io.github.tanzir71.harkara.core.chat.VoiceNotes
 import io.github.tanzir71.harkara.core.geo.GeoHash
 import io.github.tanzir71.harkara.core.nostr.Bech32
+import io.github.tanzir71.harkara.core.nostr.Event
+import io.github.tanzir71.harkara.sms.SmsComposer
 import io.github.tanzir71.harkara.ui.PlatformActions
+import io.github.tanzir71.harkara.ui.components.HButton
+import io.github.tanzir71.harkara.ui.components.HButtonVariant
 import io.github.tanzir71.harkara.ui.screens.PillActions
 import io.github.tanzir71.harkara.ui.theme.HarkaraTheme
 import kotlinx.coroutines.delay
@@ -134,6 +140,7 @@ fun ChatThreadRoute(
     onMakeTask: (text: String) -> Unit,
     say: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onSendSms: ((Event) -> Unit)? = null,
 ) {
     val repo = container.chatRepository
     val context = LocalContext.current
@@ -264,23 +271,35 @@ fun ChatThreadRoute(
                 when (sheet) {
                     ThreadSheet.Actions -> {
                         val item = selected
-                        MessageActionsSheetContent(
-                            onCopy = {
-                                sheet = ThreadSheet.None
-                                item?.let { platform.copyToClipboard(context.getString(R.string.clipboard_message_label), it.copyText) }
-                                say(context.getString(R.string.message_copied))
-                            },
-                            onMakeTask = {
-                                sheet = ThreadSheet.None
-                                item?.let { onMakeTask(it.copyText) }
-                            },
-                            onBlock = item?.takeIf { !it.outgoing && it.author != null }?.let { target ->
-                                {
+                        Column {
+                            MessageActionsSheetContent(
+                                onCopy = {
                                     sheet = ThreadSheet.None
-                                    container.scope.launch { repo.blockAuthor(target.author!!) }
-                                }
-                            },
-                        )
+                                    item?.let { platform.copyToClipboard(context.getString(R.string.clipboard_message_label), it.copyText) }
+                                    say(context.getString(R.string.message_copied))
+                                },
+                                onMakeTask = {
+                                    sheet = ThreadSheet.None
+                                    item?.let { onMakeTask(it.copyText) }
+                                },
+                                onBlock = item?.takeIf { !it.outgoing && it.author != null }?.let { target ->
+                                    {
+                                        sheet = ThreadSheet.None
+                                        container.scope.launch { repo.blockAuthor(target.author!!) }
+                                    }
+                                },
+                            )
+                            if (onSendSms != null && kind == ChatKind.DM && item?.outgoing == true && item.body is ChatBody.Text) {
+                                HButton(context.getString(R.string.sms_chat_send), {
+                                    sheet = ThreadSheet.None
+                                    scope.launch {
+                                        val compact = repo.smsEventFor(item.id)
+                                        if (compact != null && SmsComposer.draft(compact) is SmsComposer.Draft.Ready) onSendSms(compact)
+                                        else say(context.getString(R.string.sms_chat_short_only))
+                                    }
+                                }, Modifier.fillMaxWidth().padding(top = 12.dp), variant = HButtonVariant.Secondary, icon = R.drawable.ic_sms)
+                            }
+                        }
                     }
                     ThreadSheet.Attach -> AttachSheetContent(
                         onLocation = { sheet = ThreadSheet.Location },

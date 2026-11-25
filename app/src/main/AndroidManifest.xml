@@ -18,6 +18,11 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" />
+    <!-- Grey-area SMS switches (M10): declared so they can be asked for, but requested only when the user
+         turns "Send SMS directly" or "Volunteer SMS gateway" on. The default SMS rung needs no permission. -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
         android:name=".HarkaraApplication"
@@ -31,12 +36,57 @@
             android:name=".mesh.MeshForegroundService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+        <!-- Off (disabled components) until their grey-area switch is turned on. -->
+        <receiver
+            android:name=".sms.DataSmsBroadcastReceiver"
+            android:enabled="false"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.intent.action.DATA_SMS_RECEIVED" />
+                <data android:scheme="sms" android:host="localhost" android:port="7471" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".sms.GatewaySmsBroadcastReceiver"
+            android:enabled="false"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- harkara:e:… / harkara:c:… / harkara:t:… links, QR codes and SMS (M10). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="harkara" />
+            </intent-filter>
+            <!-- The web page for non-users. Not autoVerify: assetlinks.json would have to live at the root of
+                 tanzir71.github.io, which this project does not control; the page also offers "Open in Harkara". -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="tanzir71.github.io" />
+                <data android:pathPrefix="/harkara/o/" />
+                <data android:pathPrefix="/harkara/en/o/" />
+            </intent-filter>
+            <!-- A forwarded SMS or a QR text shared to Harkara. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
     </application>

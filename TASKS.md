@@ -68,10 +68,11 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M10 - SMS, QR, web page for non-users (v0.9.0)
 
-- [ ] Prefilled SMS, SMS payload codec, deep links, `site/o/` verifier page.
-- [ ] Direct SMS + volunteer gateway behind default-off switches; restricted-settings guidance.
-- [ ] QR transport (multi-QR).
-- [ ] Gate: two-part SMS fit; `site/o/` verifies a core-signed payload in Playwright; grey switches default off.
+- [x] Prefilled SMS (`SmsComposer`, ACTION_SENDTO smsto:), SMS payload codec (`core/wire/SmsCodec`: GSM-7 line + HK1 payload, 8-byte key refs, Text8 Bangla), SMS-eligible kinds incl. SMS DM 3480, deep links (`harkara:`, `…/harkara/o/#`, shared text) with `DeepLinkRouter` + `LinkInbox`, `site/o/` verifier page (IOU confirm with a throwaway key, follow a task, area feed; CSP-pinned relays).
+- [x] Direct SMS (data SMS, port 7471) + volunteer gateway (100/day, members only) behind default-off switches, disabled receivers, permission asked only on switch-on; restricted-settings guidance screen.
+- [x] QR transport (`harkara:e:` single, `harkara:q:` multi-QR with reassembly), share-as-QR sheet and paste import (camera scanning is hardware).
+- [x] Gate: every SMS-eligible type fits two parts (`SmsBudgetTest`); `site/o/` verifies a core-signed payload in Playwright (`tests/site/o.spec.mjs`); grey switches default off (`GreyAreaSmsTest`).
+- [x] Integrated gate with M6/LAN tools: 246 core and 179 app tests, offline Robolectric runtime, screenshots/lint/debug APK; 40 browser checks in both fixture-release and missing-release states.
 
 ## M11 - Tools, modules, safety (v0.10.0)
 

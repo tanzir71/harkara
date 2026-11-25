@@ -12,7 +12,7 @@ const repoUrl = (ctx) => `https://github.com/${ctx.repo}`;
 const TOOL_ICONS = { Compass: 'compass', Qibla: 'qibla', Torch: 'flashlight', Handbook: 'handbook', File: 'drop' };
 const join = (a) => a.join('');
 
-function head(ctx, { title, description, script = '', base = '', robots = '' }) {
+export function head(ctx, { title, description, script = '', base = '', robots = '', meta = '', styles = [] }) {
   const r = base ? '' : ctx.root;
   const alternates = ctx.abs
     ? `<link rel="canonical" href="${ctx.abs[ctx.lang]}">
@@ -27,7 +27,7 @@ function head(ctx, { title, description, script = '', base = '', robots = '' }) 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-${base ? `<base href="${base}">\n` : ''}<title>${esc(title)}</title>
+${meta}${base ? `<base href="${base}">\n` : ''}<title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 ${robots ? `<meta name="robots" content="${robots}">\n` : ''}${alternates}
 <meta property="og:type" content="website">
@@ -40,7 +40,7 @@ ${robots ? `<meta name="robots" content="${robots}">\n` : ''}${alternates}
 <link rel="preload" href="${r}assets/fonts/geist-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="${r}assets/tokens.css">
 <link rel="stylesheet" href="${r}assets/site.css">
-${script ? `<script>${script}</script>\n` : ''}</head>`;
+${styles.map((s) => `<link rel="stylesheet" href="${r}${s}">\n`).join('')}${script ? `<script>${script}</script>\n` : ''}</head>`;
 }
 
 function brand(ctx) {
@@ -53,7 +53,7 @@ function toggle(ctx) {
   return `<div class="seg"><a href="${ctx.alt.bn}" data-lang="bn" hreflang="bn-Latn" lang="bn-Latn"${cur('bn')}>${esc(bn)}</a><a href="${ctx.alt.en}" data-lang="en" hreflang="en" lang="en"${cur('en')}>${esc(en)}</a></div>`;
 }
 
-function nav(ctx, { links = true } = {}) {
+export function nav(ctx, { links = true } = {}) {
   const t = tr(ctx);
   const { c, ic, view } = ctx;
   const targets = ['#offgrid', '#workflows', '#install', '#faq', repoUrl(ctx)];
@@ -287,7 +287,7 @@ function faq(ctx) {
 </div></section>`;
 }
 
-function footer(ctx) {
+export function footer(ctx) {
   const t = tr(ctx);
   const { c, cfg, view } = ctx;
   const L = t(c.footer.links);

@@ -26,6 +26,7 @@ abstract class HarkaraDatabase : RoomDatabase() {
     abstract fun localSecretDao(): LocalSecretDao
     abstract fun iouDao(): IouDao
     abstract fun chatDao(): ChatDao
+    abstract fun lookupDao(): LookupDao
 
     companion object {
         const val NAME = "harkara.db"

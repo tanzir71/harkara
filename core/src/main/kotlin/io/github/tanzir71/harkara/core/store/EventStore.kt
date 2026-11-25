@@ -94,6 +94,6 @@ class EventStore(
 
     private companion object {
         // Follow-ups have only parent-event/address tags, but must survive a partition too.
-        val REFERENCED_KINDS = setOf(Kinds.TASK_STEP, Kinds.REACTION, Kinds.REPORT, Kinds.SOS_UPDATE)
+        val REFERENCED_KINDS = setOf(Kinds.TASK_STEP, Kinds.REACTION, Kinds.REPORT, Kinds.SOS_UPDATE, Kinds.SMS_DM)
     }
 }

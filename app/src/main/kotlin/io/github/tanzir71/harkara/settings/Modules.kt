@@ -30,7 +30,7 @@ enum class Module(
     COMPASS("compass", true, R.string.module_compass, R.string.module_compass_sub, R.drawable.ic_compass),
     QIBLA_PRAYER("qibla_prayer", false, R.string.module_qibla, R.string.module_qibla_sub, R.drawable.ic_qibla, ready = true),
     TORCH_TOOLS("torch_tools", true, R.string.module_torch, R.string.module_torch_sub, R.drawable.ic_flashlight, ready = true),
-    QR("qr", true, R.string.module_qr, R.string.module_qr_sub, R.drawable.ic_qr),
+    QR("qr", true, R.string.module_qr, R.string.module_qr_sub, R.drawable.ic_qr, ready = true),
     HANDBOOK("handbook", true, R.string.module_handbook, R.string.module_handbook_sub, R.drawable.ic_handbook, ready = true),
     MESH("mesh", false, R.string.module_mesh, R.string.module_mesh_sub, R.drawable.ic_mesh, ready = true),
     NODE("node", false, R.string.module_node, R.string.module_node_sub, R.drawable.ic_node, ready = true),
@@ -38,6 +38,6 @@ enum class Module(
     RADAR("radar", false, R.string.module_radar, R.string.module_radar_sub, R.drawable.ic_radar, ready = true),
     FILE_DROP("file_drop", false, R.string.module_file_drop, R.string.module_file_drop_sub, R.drawable.ic_drop, ready = true),
     LITE_MODE("lite_mode", false, R.string.module_lite, R.string.module_lite_sub, R.drawable.ic_layers, ready = true),
-    SMS_DIRECT("sms_direct", false, R.string.module_sms_direct, R.string.module_sms_direct_sub, R.drawable.ic_sms, greyArea = true),
-    SMS_GATEWAY("sms_gateway", false, R.string.module_sms_gateway, R.string.module_sms_gateway_sub, R.drawable.ic_relay, greyArea = true),
+    SMS_DIRECT("sms_direct", false, R.string.module_sms_direct, R.string.module_sms_direct_sub, R.drawable.ic_sms, ready = true, greyArea = true),
+    SMS_GATEWAY("sms_gateway", false, R.string.module_sms_gateway, R.string.module_sms_gateway_sub, R.drawable.ic_relay, ready = true, greyArea = true),
 }

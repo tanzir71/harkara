@@ -27,7 +27,8 @@ harkara/
 | `lan` | The Wi-Fi room server: HTTP + WebSocket on plain sockets around `LocalRelay` |
 | `tasks` | NIP-99 offers, signed steps, the task state machine, offline handoff tokens/codes, reputation |
 | `khata` | IOU terms, co-signatures, settlements, QR handshake, split bills, CSV/JSON export |
-| `tools` | Prayer times and Qibla (Adhan), Morse code, SOS events |
+| `tools` | Prayer times and Qibla (Adhan), Morse code, SOS events, bounded LocalSend v2 and held-only LAN voice protocols |
+| `sms`, `links` | Compact encrypted DMs, readable two-part SMS, explicit gateway policy, deep links and multi-QR transport |
 | `geo`, `map`, `store` | Geohash math, Open Location Code (Plus Codes), the MapLibre style builder, the storage budget |
 
 Everything in `core` is tested on the JVM with JUnit 5, including the official NIP and BIP-340 vectors.
@@ -41,11 +42,22 @@ Everything in `core` is tested on the JVM with JUnit 5, including the official N
 - **Identity** — `IdentityManager` keeps the root seed in no-backup storage (wrapped by the Android Keystore
   where available), exposes the key ring, and exports/restores NIP-49 backups.
 - **Carriers** — `RelayPool` (OkHttp WebSockets, NIP-11 limits, backoff, NIP-77 catch-up) feeds a single
-  `RoomEventStore` door; the `Outbox` sends and retries. The connectivity pill reads a `ConnectivityMonitor`
-  that names the best rung that can reach people. Relays run only while the app is visible or during the
-  30-minute WorkManager check (network + battery-not-low constraints).
+  `RoomEventStore` after feature-specific validation/decryption; the `Outbox` sends and retries over relay,
+  mesh and node routes. Its atomic updates never downgrade receipts. The connectivity pill names the best
+  rung with actual peers. Relays run while visible, during the constrained WorkManager check, or while an
+  explicitly opted-in mesh/node foreground service provides a bridge.
 - **Wi-Fi room** — `LanRoom` (`lan/`): our room server, NSD discovery (`LanDiscovery`, faked in tests) and a
-  second `RelayPool` to the other phones' servers; foreground only. It adds "On local Wi-Fi" to the pill.
+  second `RelayPool` to the other phones' servers. The ordinary room is foreground-only; opt-in node mode
+  keeps it running with a notification and adds public sync plus fixed-path APK/map/handbook HTTP downloads.
+- **Mesh**: `MeshController` owns the pure `MeshEngine` and BLE GATT/optional Wi-Fi Aware adapters. Saver/Event
+  profiles bound duty cycle, links and TTL. `MeshForegroundService` is non-sticky, never starts at boot and
+  stops on module-off/panic wipe. Fake radios and a fake GATT layer exercise delivery without hardware.
+- **LAN tools**: `LanToolsScreen` owns explicit LocalSend listening/consent and paired-token push-to-talk.
+  Its separate HTTP server, file sender, microphone and speaker stop on background/disposal. HTTP does not
+  authenticate peers or encrypt files/audio; the screen warns users to select a trusted LAN.
+- **SMS and QR**: `LinkInbox` handles pasted/deep-linked events through feature repositories. Ordinary SMS
+  opens the user's SMS app with a cost-visible preview; permissioned direct/gateway paths remain off by
+  default. The static `o/` page verifies events locally and uses no central account or application server.
 - **Features** — `FeedRepository`, `ChatRepository`, `TaskRepository`, `KhataRepository`, `SosRepository` each
   read their events from Room (so everything works offline) and publish through the outbox; chats also go to
   the Wi-Fi room at the same time.
@@ -61,3 +73,4 @@ runs the JVM tests, Robolectric tests (ViewModels/repositories against an in-pro
 OkHttp `MockWebServer`, Compose UI tests, accessibility checks) and Roborazzi screenshot comparisons (Day and
 Night goldens in `app/src/test/screenshots`). The site has `tools/verify-site.mjs` and Playwright tests.
 Nothing needs a phone, a SIM, real relays or a person; hardware-only behaviour is listed in `HARDWARE.md`.
+The pinned Robolectric SDK is provisioned through Gradle before tests, then resolved offline at test runtime.

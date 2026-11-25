@@ -101,6 +101,24 @@ class TaskRepository(
         if (offerIds.isNotEmpty()) pool.subscribe(SUB_STEPS, listOf(Filter(kinds = listOf(Kinds.TASK_STEP), tags = mapOf("e" to offerIds.take(200)))))
     }
 
+    /** Follows one task from a shared link (M10): its offer and steps, wherever it was posted. */
+    fun follow(requester: String, d: String) {
+        val address = TaskOffers.address(requester, d)
+        pool.subscribe(
+            SUB_FOLLOW,
+            listOf(
+                Filter(kinds = listOf(Kinds.TASK_OFFER), authors = listOf(requester), tags = mapOf("d" to listOf(d))),
+                Filter(kinds = listOf(Kinds.TASK_STEP), tags = mapOf("a" to listOf(address))),
+            ),
+        )
+    }
+
+    /** Our latest step on [state], e.g. to send it by SMS or QR when no relay is reachable. */
+    fun lastOwnStep(state: TaskState): Event? {
+        val me = profile().pubkeyHex
+        return state.applied.lastOrNull { it.event.pubkey == me }?.event ?: state.pendingAccepts.lastOrNull { it.pubkey == me }
+    }
+
     fun startIngest(scope: CoroutineScope) {
         scope.launch {
             pool.incoming.collect { ingest(it.event, Carrier.ONLINE) }
@@ -234,6 +252,7 @@ class TaskRepository(
     companion object {
         const val SUB_TASKS = "harkara-tasks"
         const val SUB_STEPS = "harkara-task-steps"
+        const val SUB_FOLLOW = "harkara-task-follow"
     }
 }
 

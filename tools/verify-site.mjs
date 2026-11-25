@@ -2,6 +2,8 @@
 // Static checks for the built site (handover §7.4). Run after tools/build-site.mjs; exits 1 on any failure.
 // Checks: landing.json copy on each page, links/anchors, allowed hosts, lang/h1/heading order/alt/svg labels,
 // focus styles, hreflang, release/coming-soon state, and budgets (JS <= 5 KB, CSS <= 40 KB, page <= 120 KB without fonts).
+// The web page for non-users (o/, en/o/) has its own budget (JS <= 60 KB for the bundled Schnorr verifier, CSS <= 48 KB,
+// page <= 160 KB) and is the only page allowed to talk to WebSocket relays: exactly data/default-relays.json, pinned by its CSP.
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +14,11 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const site = join(root, 'site');
 const KB = 1024;
 const BUDGET = { js: 5 * KB, css: 40 * KB, page: 120 * KB, langScript: 2 * KB };
+const O_BUDGET = { js: 60 * KB, css: 48 * KB, page: 160 * KB };
+const RELAYS = JSON.parse(readFileSync(join(root, 'data/default-relays.json'), 'utf8')).relays;
+const RELAY_HOSTS = new Set(RELAYS.map((r) => new URL(r).host));
+// XML namespace identifiers in scripts are names, not requests.
+const NAMESPACES = new Set(['http://www.w3.org/2000/svg']);
 const ALLOWED_HOSTS = new Set(['github.com', 'api.github.com', 'objects.githubusercontent.com', 'api.country.is']);
 const SKIP_KEYS = new Set(['_note', 'icon', 'color', 'card', 'works', 'online']);
 
@@ -46,6 +53,8 @@ const PAGES = [
   { file: 'privacy/index.html', lang: 'bn', privacy: true, alt: ['privacy/', 'en/privacy/'] },
   { file: 'en/privacy/index.html', lang: 'en', privacy: true, alt: ['privacy/', 'en/privacy/'] },
   { file: '404.html', lang: 'en' },
+  { file: 'o/index.html', lang: 'bn', o: true, alt: ['o/', 'en/o/'] },
+  { file: 'en/o/index.html', lang: 'en', o: true, alt: ['o/', 'en/o/'] },
 ];
 const LANG_ATTR = { bn: 'bn-Latn', en: 'en' };
 
@@ -173,7 +182,7 @@ for (const page of PAGES) {
   if (dup.length) fail(where, `duplicate ids: ${[...new Set(dup)].join(', ')}`);
   if (/<iframe\b/i.test(html)) fail(where, 'contains an <iframe>');
   if (/document\.cookie/.test(html)) fail(where, 'touches document.cookie');
-  if (/\{\{|\}\}/.test(html)) fail(where, 'unfilled {{placeholder}} left in the HTML');
+  if (/\{\{|\}\}/.test(html.replace(/<script type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, ''))) fail(where, 'unfilled {{placeholder}} left in the HTML');
   if (/\b(undefined|NaN)\b|\bnull\b/.test(text)) fail(where, 'text contains undefined/NaN/null');
   if (/(^|\s)v\s*·|·\s*·|(?<!\d)\sMB\b/.test(text)) fail(where, 'text has a version/size fragment without its value');
 
@@ -228,10 +237,19 @@ for (const page of PAGES) {
     else if ((r.tag === 'link' && /rel="icon"/.test(r.a)) || r.tag === 'img') resources.other.push(file);
   }
 
-  // every absolute URL mentioned anywhere (scripts included) must be GitHub, api.country.is or the site itself
-  for (const m of html.matchAll(/https?:\/\/[^\s"'<>)\]]+/g)) {
-    const host = new URL(m[0]).host;
-    if (host !== siteHost && !ALLOWED_HOSTS.has(host)) fail(where, `URL to a host that is not allowed: ${m[0]}`);
+  // every absolute URL mentioned anywhere (scripts included) must be GitHub, api.country.is or the site itself;
+  // WebSocket URLs only on the o/ pages and only to the default relays
+  const scriptFiles = resources.js.map((f) => readFileSync(join(site, f), 'utf8'));
+  for (const src of [html, ...scriptFiles]) {
+    for (const m of src.matchAll(/https?:\/\/[^\s"'<>)\]`\\]+/g)) {
+      if (NAMESPACES.has(m[0])) continue;
+      const host = new URL(m[0]).host;
+      if (host !== siteHost && !ALLOWED_HOSTS.has(host)) fail(where, `URL to a host that is not allowed: ${m[0]}`);
+    }
+    for (const m of src.matchAll(/wss?:\/\/[^\s"'<>)\]`\\;]+/g)) {
+      if (!page.o) fail(where, `WebSocket URL outside the o/ pages: ${m[0]}`);
+      else if (!m[0].startsWith('wss://') || !RELAY_HOSTS.has(new URL(m[0]).host)) fail(where, `WebSocket URL that is not a default relay: ${m[0]}`);
+    }
   }
 
   // hreflang alternates
@@ -274,15 +292,30 @@ for (const page of PAGES) {
     if (!ids.includes('verify')) fail(where, 'verify section missing');
   }
 
+  // the web page for non-users: CSP pins the relays, no inline code, not indexed
+  if (page.o) {
+    const csp = attr(tags(html, 'meta').find((a) => /http-equiv="Content-Security-Policy"/i.test(a)) || '', 'content') || '';
+    const directive = (n) => (csp.split(';').map((d) => d.trim().split(/\s+/)).find((d) => d[0] === n) || []).slice(1);
+    if (!csp) fail(where, 'o/ page has no Content-Security-Policy meta');
+    if (directive('default-src').join(' ') !== "'none'") fail(where, "CSP default-src must be 'none'");
+    if (directive('script-src').join(' ') !== "'self'") fail(where, "CSP script-src must be 'self' (no inline scripts)");
+    if (JSON.stringify([...directive('connect-src')].sort()) !== JSON.stringify([...RELAYS].sort())) fail(where, 'CSP connect-src must list exactly data/default-relays.json');
+    if (scripts.some((s, i) => !/type="application\/json"/.test([...html.matchAll(/<script\b([^>]*)>/gi)].filter((m) => !/\ssrc=/.test(m[1]))[i]?.[1] || ''))) fail(where, 'o/ page has an inline executable script');
+    if (!/<meta name="robots" content="noindex">/.test(html)) fail(where, 'o/ page must be noindex');
+    if (!resources.js.includes('assets/o.js')) fail(where, 'o/ page does not load assets/o.js');
+    for (const r of RELAYS) if (!text.includes(r)) fail(where, `relay ${r} is not listed on the page`);
+  }
+
   // budgets
   const css = resources.css.map(cssOf).join('') + inlineStyles(html).join('');
   const jsBytes = scripts.reduce((n, s) => n + bytes(s), 0) + resources.js.reduce((n, f) => n + statSync(join(site, f)).size, 0);
   const cssBytes = bytes(css);
   const other = resources.other.reduce((n, f) => n + statSync(join(site, f)).size, 0);
   const total = bytes(html) + cssBytes + jsBytes + other;
-  if (jsBytes > BUDGET.js) fail(where, `JS ${jsBytes} B > ${BUDGET.js} B`);
-  if (cssBytes > BUDGET.css) fail(where, `CSS ${cssBytes} B > ${BUDGET.css} B`);
-  if (total > BUDGET.page) fail(where, `page weight ${total} B > ${BUDGET.page} B (fonts excluded)`);
+  const budget = page.o ? O_BUDGET : BUDGET;
+  if (jsBytes > budget.js) fail(where, `JS ${jsBytes} B > ${budget.js} B`);
+  if (cssBytes > budget.css) fail(where, `CSS ${cssBytes} B > ${budget.css} B`);
+  if (total > budget.page) fail(where, `page weight ${total} B > ${budget.page} B (fonts excluded)`);
   if (!/:focus-visible[^{]*\{[^}]*outline\s*:\s*(?!none|0[\s;}])[^;}]+/.test(css)) fail(where, 'no visible :focus-visible outline style');
   report.push({ page: page.file, html: bytes(html), css: cssBytes, js: jsBytes, total });
 }
@@ -305,7 +338,7 @@ const kb = (n) => (n / KB).toFixed(1).padStart(6) + ' KB';
 console.log(`verify-site: state = ${state}; ${copyChecked} landing.json strings checked across both languages`);
 console.log('page                     html        css         js          total (no fonts)');
 for (const r of report) console.log(`${r.page.padEnd(24)} ${kb(r.html)}   ${kb(r.css)}   ${kb(r.js)}   ${kb(r.total)}`);
-console.log(`budgets: JS <= ${BUDGET.js / KB} KB, CSS <= ${BUDGET.css / KB} KB, page <= ${BUDGET.page / KB} KB, language script < ${BUDGET.langScript / KB} KB`);
+console.log(`budgets: JS <= ${BUDGET.js / KB} KB, CSS <= ${BUDGET.css / KB} KB, page <= ${BUDGET.page / KB} KB, language script < ${BUDGET.langScript / KB} KB; o/ pages: JS <= ${O_BUDGET.js / KB} KB, CSS <= ${O_BUDGET.css / KB} KB, page <= ${O_BUDGET.page / KB} KB`);
 if (skippedAll.size) console.log(`allowed to be absent in this state: ${[...skippedAll].join('; ')}`);
 if (errors.length) {
   console.error(`\nverify-site FAILED (${errors.length}):`);

@@ -182,6 +182,9 @@ data class TaskActions(
     val onCancel: () -> Unit = {},
     val onDecline: () -> Unit = {},
     val onMessage: (String) -> Unit = {},
+    /** Send our latest step by SMS / show it as QR when no relay is reachable (M10); hidden when null. */
+    val onSendSms: (() -> Unit)? = null,
+    val onShareQr: (() -> Unit)? = null,
 )
 
 /** Screen 05: one task with its signed timeline, the handoff card and the next action. */
@@ -250,6 +253,12 @@ fun TaskDetailScreen(
             }
 
             Timeline(state, isRequester, isRunner)
+            if (actions.onSendSms != null || actions.onShareQr != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    actions.onSendSms?.let { HButton(stringResource(R.string.task_send_sms), it, Modifier.weight(1f), variant = HButtonVariant.Ghost, icon = R.drawable.ic_sms) }
+                    actions.onShareQr?.let { HButton(stringResource(R.string.sms_show_qr), it, Modifier.weight(1f), variant = HButtonVariant.Ghost, icon = R.drawable.ic_qr) }
+                }
+            }
 
             if (handoff != null && isRequester && state.status in setOf(TaskStatus.ACCEPTED, TaskStatus.PICKED_UP)) {
                 HandoffCard(handoff, nameOf(state, state.runner))
@@ -425,9 +434,9 @@ fun TaskComposeSheetContent(
 
 /** Runner enters the 6 digits (or pastes the QR text); checked offline. */
 @Composable
-fun HandoffEntrySheetContent(onCheck: (String) -> Unit, wrong: Boolean, modifier: Modifier = Modifier) {
+fun HandoffEntrySheetContent(onCheck: (String) -> Unit, wrong: Boolean, modifier: Modifier = Modifier, initial: String = "") {
     val c = HarkaraTheme.colors
-    var code by remember { mutableStateOf("") }
+    var code by remember(initial) { mutableStateOf(initial) }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.task_code_title), style = HarkaraTheme.type.title, color = c.textPrimary, modifier = Modifier.semantics { heading() })
         Text(stringResource(R.string.task_code_body), style = HarkaraTheme.type.caption, color = c.textSecondary)

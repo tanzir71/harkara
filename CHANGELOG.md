@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### SMS, QR and links (M10)
+
+SMS, QR and a web page for people who don't have Harkara.
+
+- **Send by SMS**: check-ins, SOS and SOS updates, task steps (offer to help, picked up, stepped back, delivered with the code), Khata signatures and payments, and short private messages fit in **two ordinary SMS**. Your SMS app opens with the message ready; you choose who gets it and press send. Harkara needs no SMS permission for this and stores no number. The message is a short Latin line plus a code; Bangla text travels inside the code, so it stays two SMS. The other phone checks the signature and gets exactly what you signed.
+- **Share as QR** for anything, as one code or a numbered set for longer things, and **Settings → Open a link, QR text or SMS** to paste what someone sent you. Harkara also opens harkara: links and text shared to it.
+- **The web page for non-users** (tanzir71.github.io/harkara/o/, Banglish and English): opens a Harkara link in any browser and checks the signature right there. Someone without the app can **confirm an IOU** from your SMS reminder (Khata reminders now carry that link), **follow a task**, or **read an area's Nearby posts**. The page has no server and talks only to the public relays it lists.
+- Two optional switches, **off unless you turn them on**, each saying what it costs: **Send SMS directly** (data SMS from your SIM, 1–2 SMS per message) and **Volunteer SMS gateway** (relays up to 100 SMS a day for the contacts or one group you add; your number goes only into your gateway QR). Android asks for SMS permission only when you turn one on; if it refuses, Harkara shows the steps for "Allow restricted settings".
+
 ## 0.5.0
 
 - Nearby mesh (Beta): explicit Saver/Event Bluetooth and optional Wi-Fi Aware carriers, rotating presence, bridge reachability, bounded event sync and live Radar. Disaster mode explicitly enables Event mesh. Hardware radio interoperability remains unverified.
