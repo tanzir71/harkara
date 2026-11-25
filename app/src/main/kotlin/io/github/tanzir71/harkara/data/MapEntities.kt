@@ -63,6 +63,7 @@ data class CheckInEntity(
     val recipients: String,
     val own: Boolean,
     val receivedAt: Long,
+    val name: String? = null,
 )
 
 /** The user's own trip plans ([json] = core TripPlan). */

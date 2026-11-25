@@ -38,6 +38,8 @@ data class CheckIn(
     val note: String,
     val createdAt: Long,
     val recipients: List<String>,
+    /** The display name the sender chose, if any (never a phone number). */
+    val name: String? = null,
 )
 
 /**
@@ -62,11 +64,13 @@ object CheckIns {
         destination: String? = null,
         due: Long? = null,
         note: String = "",
+        name: String? = null,
     ): Rumor {
         require(recipients.isNotEmpty()) { "a check-in goes to at least one person" }
         val tags = buildList {
             add(listOf("status", status.wire))
             add(listOf("place", place.trim().take(MAX_PLACE)))
+            name?.takeIf { it.isNotBlank() }?.let { add(listOf("name", it.trim().take(40))) }
             geohash5?.takeIf { GeoHash.isValid(it) }?.let { add(listOf("g", it.take(5))) }
             tripId?.let { add(listOf("trip", it)) }
             destination?.let { add(listOf("dest", it.trim().take(MAX_PLACE))) }
@@ -97,6 +101,7 @@ object CheckIns {
             note = rumor.content.take(MAX_NOTE),
             createdAt = rumor.createdAt,
             recipients = rumor.tagValues("p"),
+            name = rumor.tagValue("name")?.take(40),
         )
     }
 }
@@ -128,9 +133,9 @@ object TripRules {
     }
 
     /** The automatic alert, from the traveller's own key. */
-    fun overdueRumor(profile: KeyPair, trip: TripPlan, lastPlace: String, now: Long, geohash5: String? = null): Rumor =
-        CheckIns.rumor(profile, CheckInStatus.OVERDUE, lastPlace, trip.watchers, now, geohash5, trip.id, trip.destination, trip.due)
+    fun overdueRumor(profile: KeyPair, trip: TripPlan, lastPlace: String, now: Long, geohash5: String? = null, name: String? = null): Rumor =
+        CheckIns.rumor(profile, CheckInStatus.OVERDUE, lastPlace, trip.watchers, now, geohash5, trip.id, trip.destination, trip.due, name = name)
 
-    fun startRumor(profile: KeyPair, trip: TripPlan, from: String): Rumor =
-        CheckIns.rumor(profile, CheckInStatus.TRIP, from, trip.watchers, trip.startedAt, null, trip.id, trip.destination, trip.due)
+    fun startRumor(profile: KeyPair, trip: TripPlan, from: String, name: String? = null): Rumor =
+        CheckIns.rumor(profile, CheckInStatus.TRIP, from, trip.watchers, trip.startedAt, null, trip.id, trip.destination, trip.due, name = name)
 }

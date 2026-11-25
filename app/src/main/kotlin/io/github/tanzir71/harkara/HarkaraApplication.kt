@@ -102,7 +102,11 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
             .also { it.startIngest(scope, giftInbox) }
     }
     val checkInRepository: CheckInRepository by lazy {
-        CheckInRepository(database, outbox, { identity.profile() }, WorkManagerOverdueScheduler(context)).also { it.startIngest(giftInbox) }
+        CheckInRepository(database, outbox, { identity.profile() }, WorkManagerOverdueScheduler(context), displayName = { settings.state.value.displayName })
+            .also {
+                it.startIngest(giftInbox)
+                it.onAlert = { alert -> io.github.tanzir71.harkara.places.CheckInAlerts.notify(context, alert) }
+            }
     }
     val liveShareRepository: LiveShareRepository by lazy {
         LiveShareRepository(outbox, relayPool, { identity.profile() }, { identity.keyRing() }, locationSource, scope, { settings.state.value.displayName }, host = ServiceLiveShareHost(context))

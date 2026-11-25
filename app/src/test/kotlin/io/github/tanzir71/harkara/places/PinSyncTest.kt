@@ -13,10 +13,12 @@ import io.github.tanzir71.harkara.relay.FakeNostrRelay
 import io.github.tanzir71.harkara.relay.Outbox
 import io.github.tanzir71.harkara.relay.RelayPool
 import io.github.tanzir71.harkara.relay.RelayStatus
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -37,7 +39,8 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class PinSyncTest {
     private val relay = FakeNostrRelay()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Room work still finishing after teardown must not leak into the next test as an uncaught exception.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, _ -> })
     private val phones = mutableListOf<Phone>()
     private val lake = LatLng(23.7465, 90.3760)
 
@@ -75,8 +78,9 @@ class PinSyncTest {
 
     @After
     fun tearDown() {
+        // Stop every coroutine before closing the databases they write to.
+        runBlocking { scope.coroutineContext.job.cancelAndJoin() }
         phones.forEach { it.pool.stop(); it.db.close() }
-        scope.cancel()
         relay.shutdown()
     }
 

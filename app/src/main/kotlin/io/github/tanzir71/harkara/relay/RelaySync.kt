@@ -74,6 +74,11 @@ class RelaySyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
         val app = applicationContext as? HarkaraApplication ?: return Result.failure()
         val container = app.container
         if (!container.settings.state.value.onboarded) return Result.success()
+        // Check-ins and overdue alerts addressed to us arrive during the background check too (M9).
+        runCatching {
+            container.startPlaces()
+            container.giftInbox.subscribe(container.relayPool)
+        }
         container.startRelays()
         withTimeoutOrNull(45_000) {
             container.relayPool.status.first { s -> s.values.any { it == RelayStatus.CONNECTED } }

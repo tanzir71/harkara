@@ -64,7 +64,8 @@ class CheckInsTest {
         assertTrue(TripRules.isOverdue(trip, listOf(safe(t0 + 60, tripId = "trip-0")), t0 + 3600), "nor one for another trip")
         assertFalse(TripRules.isOverdue(trip.copy(status = TripStatus.CANCELLED), emptyList(), t0 + 7200))
 
-        val alert = CheckIns.parse(TripRules.overdueRumor(nabila, trip, "Mohakhali", t0 + 3600))!!
+        val alert = CheckIns.parse(TripRules.overdueRumor(nabila, trip, "Mohakhali", t0 + 3600, name = "Nabila"))!!
+        assertEquals("Nabila", alert.name)
         assertEquals(CheckInStatus.OVERDUE, alert.status)
         assertEquals("Banani 11", alert.destination)
         assertEquals(t0 + 3600, alert.due)

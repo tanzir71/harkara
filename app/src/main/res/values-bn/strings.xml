@@ -562,4 +562,7 @@
     <string name="compass_sensor_note">এই ফোনে কম্পাস সেন্সর নেই, তাই তীর উত্তর থেকে দিক দেখায়।</string>
     <string name="compass_point_to">কোন দিকে দেখাবে</string>
     <string name="compass_battery">কম্পাস সেন্সর আর জিপিএস শুধু এই স্ক্রিন খোলা থাকলে চলে।</string>
+    <string name="trip_alert_channel">দেরি হওয়া যাত্রা</string>
+    <string name="trip_alert_title">%1$s এখনো চেক-ইন করেনি</string>
+    <string name="trip_alert_body">%1$s যাচ্ছিল। শেষ জায়গা: %2$s</string>
 </resources>

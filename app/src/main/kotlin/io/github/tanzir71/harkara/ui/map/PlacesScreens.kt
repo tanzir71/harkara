@@ -154,7 +154,7 @@ private fun PinRow(p: PinView, onClick: () -> Unit) {
 @Composable
 fun CheckInRow(v: CheckInView, nameOf: (String) -> String) {
     val ci = v.checkIn
-    val who = if (v.own) stringResource(R.string.checkin_you) else nameOf(ci.author)
+    val who = if (v.own) stringResource(R.string.checkin_you) else ci.name ?: nameOf(ci.author)
     val title = when (ci.status) {
         CheckInStatus.SAFE -> stringResource(R.string.checkin_safe_title)
         CheckInStatus.TRIP -> stringResource(R.string.checkin_trip_title, ci.destination.orEmpty(), hhmm(ci.due ?: ci.createdAt))

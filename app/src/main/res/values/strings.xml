@@ -566,4 +566,7 @@
     <string name="compass_sensor_note">This phone has no compass sensor, so the arrow shows the direction from north.</string>
     <string name="compass_point_to">Point to</string>
     <string name="compass_battery">The compass sensor and GPS run only while this screen is open.</string>
+    <string name="trip_alert_channel">Overdue trips</string>
+    <string name="trip_alert_title">%1$s hasn\'t checked in</string>
+    <string name="trip_alert_body">Was going to %1$s. Last place: %2$s</string>
 </resources>

@@ -53,9 +53,13 @@ class CheckInRepository(
     private val profile: () -> KeyPair,
     private val scheduler: OverdueScheduler,
     private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val displayName: () -> String? = { null },
 ) {
     private val now get() = nowMillis() / 1000
     private val json = Json { ignoreUnknownKeys = true }
+
+    /** Called once for each new overdue alert about someone else (the app shows a notification). */
+    @Volatile var onAlert: ((CheckIn) -> Unit)? = null
 
     fun startIngest(inbox: GiftInbox) {
         inbox.register(setOf(Kinds.CHECK_IN)) { rumor, _ -> receive(rumor) }
@@ -72,12 +76,14 @@ class CheckInRepository(
         val c = CheckIns.parse(rumor) ?: return false
         val me = profile().pubkeyHex
         if (c.author != me && me !in c.recipients) return false
-        return save(c, own = c.author == me)
+        val fresh = save(c, own = c.author == me)
+        if (fresh && c.author != me && c.status == CheckInStatus.OVERDUE) runCatching { onAlert?.invoke(c) }
+        return fresh
     }
 
     private suspend fun save(c: CheckIn, own: Boolean): Boolean =
         db.checkInDao().insert(
-            CheckInEntity(c.id, c.author, c.status.wire, c.place, c.geohash, c.tripId, c.destination, c.due, c.note, c.createdAt, c.recipients.joinToString("\n"), own, nowMillis()),
+            CheckInEntity(c.id, c.author, c.status.wire, c.place, c.geohash, c.tripId, c.destination, c.due, c.note, c.createdAt, c.recipients.joinToString("\n"), own, nowMillis(), c.name),
         ) != -1L
 
     private suspend fun send(rumor: Rumor) {
@@ -89,7 +95,7 @@ class CheckInRepository(
     suspend fun checkIn(place: String, recipients: List<String>, geohash5: String? = null, note: String = ""): CheckIn {
         val trip = currentTrip()
         val people = (recipients + (trip?.watchers ?: emptyList())).distinct()
-        val rumor = CheckIns.rumor(profile(), CheckInStatus.SAFE, place, people, now, geohash5, trip?.id, trip?.destination, null, note)
+        val rumor = CheckIns.rumor(profile(), CheckInStatus.SAFE, place, people, now, geohash5, trip?.id, trip?.destination, null, note, displayName())
         send(rumor)
         if (trip != null) {
             putTrip(trip.copy(status = TripStatus.ARRIVED))
@@ -103,7 +109,7 @@ class CheckInRepository(
         currentTrip()?.let { cancelTrip() }
         val trip = TripPlan(UUID.randomUUID().toString(), destination.trim(), due, watchers.distinct(), now)
         putTrip(trip)
-        send(TripRules.startRumor(profile(), trip, from))
+        send(TripRules.startRumor(profile(), trip, from, displayName()))
         scheduler.schedule(trip.id, due * 1000)
         return trip
     }
@@ -112,7 +118,7 @@ class CheckInRepository(
         val trip = currentTrip() ?: return
         putTrip(trip.copy(status = TripStatus.CANCELLED))
         scheduler.cancel(trip.id)
-        send(CheckIns.rumor(profile(), CheckInStatus.CANCELLED, trip.destination, trip.watchers, now, tripId = trip.id))
+        send(CheckIns.rumor(profile(), CheckInStatus.CANCELLED, trip.destination, trip.watchers, now, tripId = trip.id, name = displayName()))
     }
 
     /**
@@ -131,7 +137,7 @@ class CheckInRepository(
             return false
         }
         putTrip(trip.copy(status = TripStatus.OVERDUE))
-        send(TripRules.overdueRumor(profile(), trip, lastPlace ?: trip.destination, now))
+        send(TripRules.overdueRumor(profile(), trip, lastPlace ?: trip.destination, now, name = displayName()))
         return true
     }
 
@@ -148,7 +154,7 @@ class CheckInRepository(
 
 private fun CheckInEntity.toCheckIn(): CheckIn? {
     val s = CheckInStatus.of(status) ?: return null
-    return CheckIn(id, author, s, place, geohash, tripId, destination, due, note, createdAt, recipients.split('\n').filter { it.isNotBlank() })
+    return CheckIn(id, author, s, place, geohash, tripId, destination, due, note, createdAt, recipients.split('\n').filter { it.isNotBlank() }, name)
 }
 
 /** One-off WorkManager job per active trip (unique per app: one trip at a time). */

@@ -261,11 +261,12 @@ Receivers (`LiveShareTracker`) accept a point only if: a verified start bound it
 | `place` | label typed by the user (≤ 60 characters) |
 | `g` | optional geohash-5 (~5 km), never the exact spot |
 | `trip`, `dest`, `due` | trip id, destination label, expected arrival (unix s); required for `trip` and `overdue` |
+| `name` | optional display name of the sender (never a phone number) |
 | `p` | each person it goes to |
 
 Content: an optional note (≤ 140 characters).
 
-**Trip plan.** The traveller sets a destination, an expected arrival and the people who watch. The phone sends a `trip` check-in to them and schedules **one** WorkManager job at the expected arrival (nothing is scheduled while no trip is active). When it runs: if the traveller sent a `safe` check-in since the trip started (untagged, or tagged with this trip), the trip is marked arrived and nothing is sent; otherwise the phone sends an `overdue` check-in to the watchers (and tries the relays at once; the outbox keeps it until any rung opens). A run that wakes before the deadline queues itself again. A safe check-in during the trip closes it and cancels the job; Cancel sends `cancelled`.
+**Trip plan.** The traveller sets a destination, an expected arrival and the people who watch. The phone sends a `trip` check-in to them and schedules **one** WorkManager job at the expected arrival (nothing is scheduled while no trip is active). When it runs: if the traveller sent a `safe` check-in since the trip started (untagged, or tagged with this trip), the trip is marked arrived and nothing is sent; otherwise the phone sends an `overdue` check-in to the watchers (and tries the relays at once; the outbox keeps it until any rung opens). A run that wakes before the deadline queues itself again. A safe check-in during the trip closes it and cancels the job; Cancel sends `cancelled`. A watcher's phone that receives an `overdue` check-in (in the app or during the 30-minute background check) shows a notification.
 
 ## 18. Location cards
 

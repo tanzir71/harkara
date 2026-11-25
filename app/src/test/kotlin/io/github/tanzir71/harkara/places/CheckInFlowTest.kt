@@ -19,10 +19,12 @@ import io.github.tanzir71.harkara.relay.FakeNostrRelay
 import io.github.tanzir71.harkara.relay.Outbox
 import io.github.tanzir71.harkara.relay.RelayPool
 import io.github.tanzir71.harkara.relay.RelayStatus
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -43,22 +45,25 @@ import java.util.concurrent.atomic.AtomicLong
 @Config(sdk = [35])
 class CheckInFlowTest {
     private val relay = FakeNostrRelay()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Room work still finishing after teardown must not leak into the next test as an uncaught exception.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, _ -> })
     private val clock = AtomicLong(System.currentTimeMillis())
     private val context: Context get() = ApplicationProvider.getApplicationContext()
     private val phones = mutableListOf<Phone>()
     private lateinit var traveller: Phone
 
-    inner class Phone(val keys: KeyPair = KeyPair.generate()) {
+    inner class Phone(name: String, val keys: KeyPair = KeyPair.generate()) {
         val db = HarkaraDatabase.inMemory(context)
         val pool = RelayPool(scope)
         val outbox = Outbox(db, pool)
         val inbox = GiftInbox({ keys }, { clock.get() })
-        val checkIns = CheckInRepository(db, outbox, { keys }, WorkManagerOverdueScheduler(context) { clock.get() }, { clock.get() })
+        val checkIns = CheckInRepository(db, outbox, { keys }, WorkManagerOverdueScheduler(context) { clock.get() }, { clock.get() }, { name })
+        val alerts = java.util.concurrent.CopyOnWriteArrayList<io.github.tanzir71.harkara.core.location.CheckIn>()
 
         init {
             outbox.start(scope)
             checkIns.startIngest(inbox)
+            checkIns.onAlert = { alerts += it }
             inbox.start(scope, pool)
         }
 
@@ -72,7 +77,7 @@ class CheckInFlowTest {
             withTimeout(15_000) { checkIns.recent(days = 30000).first { list -> list.any { it.checkIn.status == status } } }.first { it.checkIn.status == status }
     }
 
-    private fun phone() = Phone().also { phones += it }
+    private fun phone(name: String = "Nabila") = Phone(name).also { phones += it }
 
     @Before
     fun setUp() {
@@ -93,8 +98,9 @@ class CheckInFlowTest {
 
     @After
     fun tearDown() {
+        // Stop every coroutine before closing the databases they write to.
+        runBlocking { scope.coroutineContext.job.cancelAndJoin() }
         phones.forEach { it.pool.stop(); it.db.close() }
-        scope.cancel()
         relay.shutdown()
     }
 
@@ -152,6 +158,11 @@ class CheckInFlowTest {
         assertEquals("Banani 11", alert.checkIn.destination)
         assertEquals(trip.due, alert.checkIn.due)
         assertEquals(traveller.keys.pubkeyHex, alert.checkIn.author)
+        assertEquals("Nabila", alert.checkIn.name)
+        // The watcher's phone raises exactly one alert; the traveller's own copy raises none.
+        withTimeout(5_000) { while (mum.alerts.isEmpty()) delay(20) }
+        assertEquals(listOf(alert.checkIn.id), mum.alerts.map { it.id })
+        assertTrue(traveller.alerts.isEmpty())
     }
 
     @Test
