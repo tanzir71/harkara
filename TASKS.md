@@ -88,6 +88,6 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 - [x] Reproducible settings, fastlane metadata, Obtainium naming, Bangla parity and docs; 40 extended accessibility cases cover 80 Day/Night states at 1.3× font scale; normal-text AA contrast passes 24 checks.
 - [x] Complete in-app QR scanning for general imports, encrypted key restore, handoff and Khata: explicit camera permission, QR-module gating, fake camera/lifecycle boundary, bounded reviewed text, generated-pixel multipart decode and Day/Night scanner/import goldens.
-- [x] Map-enabled unsigned ABI APKs: arm64 23,050,590 bytes; ARMv7 22,013,478 bytes, both below 30,000,000 bytes. Size is enforced before publication.
-- [x] Historical independent clean-build comparison: v0.5.0 MATCH for both ABI splits and universal. Final-tag comparison remains to be recorded.
-- [ ] Gate: two clean CI builds compared; size + accessibility checks pass.
+- [x] Final signed v0.11.0 APKs: arm64 23,156,938 bytes; ARMv7 22,119,830 bytes, both below 30,000,000 bytes. Signatures, uploaded hashes, release manifest and live Pages metadata verified.
+- [x] Final-tag independent clean-build comparison: v0.11.0 MATCH for both ABI splits and universal, including whole-file hashes and ZIP entry order. Full report: `docs/reproducibility-v0.11.0.md` and the release asset.
+- [x] Gate: CI `45595278311` passes 285 core + 285 app tests, screenshots, lint, size and accessibility checks; clean builds `45596337597` match; signed release and Pages are live. Evidence: `docs/RELEASING.md`. Version 1.0 remains for the owner to declare.

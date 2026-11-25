@@ -49,6 +49,24 @@ the two jobs still start from separate clean checkouts, and persistent failures 
 
 The v0.5.0 run `45566932709` compared independent clean builds and reported `MATCH` for arm64, ARMv7 and universal APKs: identical ZIP entry contents/metadata and whole-file hashes. Its report is retained as `reproducibility-report`. This is historical evidence, not a claim about a later tag; each final tag repeats the comparison.
 
+## Final handover release: v0.11.0 (2026-11-25)
+
+The release source is tag `v0.11.0`, commit `b992e43f5e54e0c7ba008583cd68a769e83a321b`.
+
+- [CI 45595278311](https://github.com/tanzir71/harkara/actions/runs/45595278311): 285 core and 285 app tests, Day/Night screenshot verification, lint and assembly; ABI size gate; 816 translated app resources, 24 normal-text contrast checks and 80 extended accessibility states at 1.3× font scale; 40 browser cases in each of the coming-soon and fixture-release states.
+- [Release 45596337546](https://github.com/tanzir71/harkara/actions/runs/45596337546): all three APKs signed and verified against the certificate above. Uploaded asset hashes and sizes match `latest.json` and [SHA256SUMS](https://github.com/tanzir71/harkara/releases/download/v0.11.0/SHA256SUMS).
+- [Clean builds 45596337597](https://github.com/tanzir71/harkara/actions/runs/45596337597): **MATCH** for arm64, ARMv7 and universal unsigned APKs. Whole-file hashes and ZIP entry order are identical; there are no remaining differences. The complete [comparison report](reproducibility-v0.11.0.md) is committed here and [attached to the release](https://github.com/tanzir71/harkara/releases/download/v0.11.0/reproducibility-v0.11.0.md), independent of Actions artifact retention. These unsigned hashes are for build comparison; use the release's `SHA256SUMS` to verify downloaded signed APKs.
+- [Pages 45596605541](https://github.com/tanzir71/harkara/actions/runs/45596605541): deployment succeeded. Live Banglish and English landing pages point to 0.11.0; the live `latest.json` version, ABI URLs, byte sizes and hashes match the signed release.
+
+| Signed APK | Bytes | Budget |
+|---|---:|---|
+| arm64-v8a | 23,156,938 | < 30,000,000 |
+| armeabi-v7a | 22,119,830 | < 30,000,000 |
+| universal | 46,880,986 | reported, not limited |
+
+All handover milestones through M12 are complete. The landing keeps its beta notice. Hardware-only
+behavior remains unverified as listed in `HARDWARE.md`; version 1.0 is left for the owner to declare.
+
 ## Map data
 
 Map refresh is separate and non-gating: `mappack.yml` runs monthly; its manual trigger is `gh workflow run mappack.yml --ref main`. It publishes a `maps-YYYYMM` release without marking it as the latest app release. Implementation/tests do not fetch map or live-relay datasets. The no-pack Lite fallback works until a pack is available or imported from a friend.
