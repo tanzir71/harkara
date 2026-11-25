@@ -20,6 +20,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Core, unit + screenshot verify, lint, assemble
         run: ./gradlew :core:test :app:testDebugUnitTest -Proborazzi.test.verify=true :app:lintDebug :app:assembleDebug --stacktrace
+      - name: APK size budget (unsigned release, 30 MB per ABI)
+        run: |
+          ./gradlew :app:assembleRelease -PharkaraAbiSplits=true
+          node tools/check-apk-size.mjs
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v4
