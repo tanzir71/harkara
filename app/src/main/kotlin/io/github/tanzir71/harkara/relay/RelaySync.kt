@@ -53,16 +53,17 @@ class LiveConnectivityMonitor(
     scope: CoroutineScope,
     configured: () -> Int,
     lanPeers: Flow<Int> = flowOf(0),
+    nodePeers: Flow<Int> = flowOf(0),
+    mesh: Flow<io.github.tanzir71.harkara.mesh.MeshController.Status> = flowOf(io.github.tanzir71.harkara.mesh.MeshController.Status()),
 ) : ConnectivityMonitor {
-    override val state: StateFlow<ConnectivityState> = combine(pool.status, outbox.waiting, lanPeers) { status, waiting, lan ->
+    private val local = combine(lanPeers, nodePeers, mesh) { lan, nodes, radio -> Triple(lan, nodes, radio) }
+    override val state: StateFlow<ConnectivityState> = combine(pool.status, outbox.waiting, local) { status, waiting, local ->
         val connected = status.values.count { it == RelayStatus.CONNECTED }
-        val available = buildSet {
-            if (connected > 0) add(Carrier.ONLINE)
-            if (lan > 0) add(Carrier.NODE)
-            add(Carrier.QR)
-            add(Carrier.SAVED)
-        }
-        ConnectivityState(available = available, relaysReachable = connected, relaysConfigured = configured(), waiting = waiting)
+        val (lan, nodes, radio) = local
+        val snapshot = ConnectivityState(relaysReachable = connected, relaysConfigured = configured(), waiting = waiting,
+            lanPeers = lan, nodePeers = nodes, meshOn = radio.running, meshPeers = radio.peers.size,
+            meshMaxHops = radio.profile.ttl, bridgeHops = radio.bridgeHops)
+        snapshot.copy(available = io.github.tanzir71.harkara.core.CarrierLadder.available(snapshot))
     }.stateIn(scope, SharingStarted.Eagerly, ConnectivityState.Saved)
 }
 

@@ -8,6 +8,10 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 - Foreground service keeps the mesh alive with the screen off on budget phones (Xiaomi, vivo, OPPO, Realme battery managers).
 - MTU negotiation at 512 bytes and fallback at the 23-byte floor.
 - Relay latency and battery drain in Saver and Event modes.
+- Dual-role GATT advertising/scanning, notification subscriptions, one-at-a-time writes and simultaneous links are unverified on hardware. Saver scans 10 s per minute (4 links, TTL 5); Event scans continuously (8 links, TTL 7).
+- Wi-Fi Aware discovery-message delivery and OEM payload limits, Bluetooth/Wi-Fi coexistence, rotating presence and RSSI range estimates are unverified on hardware. Aware is optional; unavailable radios leave events Saved.
+- The connected-device foreground notification and explicit stop, bridge reachability propagation and OEM screen-off restrictions are unverified on hardware. No boot receiver or sticky radio restart is installed.
+- Node/APK download reachability on real hotspots, multicast isolation and Android firewall/VPN rules are unverified on hardware. Sharing ends when its screen closes; node mode continues only after explicit opt-in.
 
 ## Crypto providers
 
@@ -29,14 +33,12 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 
 ## Maps
 
-- MapLibre renders Bangla (
-ame:bn) labels with correct conjuncts; if it can't shape Bengali script, labels fall back to 
-ame.
+- MapLibre renders Bangla (`name:bn`) labels with correct conjuncts. The style falls back to `name` when the Bangla property is absent; it does not detect shaping failures.
 ## Tools
 
 - Camera torch control (CameraManager.setTorchMode) on budget phones; strobe timing at 80/120 ms.
 - Siren volume through STREAM_ALARM and the emergency-alert tone on real speakers.
-- 	el:999 opens the dialer on phones without a SIM.
+- `tel:999` opens the dialer on phones without a SIM.
 
 ## Chats and the Wi-Fi room (M5)
 
@@ -48,3 +50,10 @@ ame.
 - `MediaRecorder` voice notes: Opus/OGG at 16 kbps on Android 10+ and AAC/MP4 at 24 kbps on Android 8–9, mono 16 kHz, stopped at 15 s; the recorded size (expected 30–45 KB, at most 128 KB) and playback of OGG/Opus notes on Android 8–9 receivers (which may not decode Opus) are untested.
 - The microphone permission prompt and recording while another app holds the microphone.
 - "Share my location" reads the last known fix only (no GPS is switched on); phones that have no recent fix will offer only "Area".
+
+## LAN file drop and push-to-talk (M11)
+
+- LocalSend v2 HTTP interoperability with other clients, manual numeric IPv4/port reachability, hotspot/client isolation and firewall/VPN behavior are unverified on hardware. There is no multicast LocalSend discovery or TLS; aliases/fingerprints are unauthenticated claims, so use only a user-selected trusted LAN and explicitly approve file offers.
+- Storage Access Framework pick/save behavior, document providers reporting a known file size and interruption of streamed transfers are unverified on hardware. Default limits are 25 MiB/file and 100 MiB/offer; received files persist in a bounded private inbox. Save copies a file elsewhere; Delete removes the private copy.
+- `AudioRecord`/`AudioTrack` microphone permission, 16 kHz mono PCM16 capture/playback, latency, feedback, audio focus and the 15-second held-to-talk cutoff are unverified on hardware. PTT requires explicit listening and a peer-IP-bound bearer token; HTTP exposes that token and audio to LAN observers.
+- Releasing/cancelling a hold or losing focus stops capture; `ON_STOP` and screen disposal close the listener, pending transfers and audio. OEM timing and resource release on real devices are unverified; returning to foreground requires an explicit listener restart, and these tools use no background service.

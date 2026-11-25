@@ -9,6 +9,7 @@ import io.github.tanzir71.harkara.data.RelayAckEntity
 import io.github.tanzir71.harkara.ui.components.Delivery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -51,14 +52,27 @@ class RoomEventStore(private val db: HarkaraDatabase, private val now: () -> Lon
     }
 }
 
+/** A carrier other than the internet relays that can take events off this phone (the mesh, a node). */
+interface OutboxRoute {
+    val carrier: Carrier
+
+    /** True while the route reaches at least one other phone. */
+    val ready: StateFlow<Boolean>
+
+    /** Hands [event] over; false when the route can't take it or already carried it. */
+    suspend fun carry(event: Event): Boolean
+}
+
 /**
- * Our events on their way out. Saved → Left this phone (handed to a relay socket) → Reached the network
- * (a relay said `OK`). Unacknowledged events are retried with backoff whenever a relay connects.
+ * Our events on their way out. Saved → Left this phone (handed to a relay socket, the mesh or a node) →
+ * Reached the network (a relay said `OK`). Unacknowledged events are retried with backoff whenever a relay
+ * connects, and handed once to every other open [OutboxRoute] (the routes keep and forward them).
  */
 class Outbox(
     private val db: HarkaraDatabase,
     private val pool: RelayPool,
     private val now: () -> Long = System::currentTimeMillis,
+    private val routes: List<OutboxRoute> = emptyList(),
 ) {
     val waiting: Flow<Int> = db.outboxDao().observeWaiting()
 
@@ -72,8 +86,26 @@ class Outbox(
         flush()
     }
 
-    /** Sends everything due to the connected relays. */
+    /** Sends everything due to the connected relays, and anything not yet carried to the other open routes. */
     suspend fun flush() {
+        flushRelays()
+        flushRoutes()
+    }
+
+    private suspend fun flushRoutes() {
+        val open = routes.filter { it.ready.value }
+        if (open.isEmpty()) return
+        for (row in db.outboxDao().pending()) {
+            val event = Event.fromJson(row.json)
+            for (route in open) {
+                if (!route.carry(event)) continue
+                val current = db.outboxDao().get(row.eventId) ?: break
+                if (Delivery.valueOf(current.state) == Delivery.Saved) db.outboxDao().setState(row.eventId, Delivery.LeftPhone.name, route.carrier.name)
+            }
+        }
+    }
+
+    private suspend fun flushRelays() {
         if (pool.connectedCount == 0) return
         for (row in db.outboxDao().due(now())) {
             val event = Event.fromJson(row.json)
@@ -81,9 +113,7 @@ class Outbox(
             if (left > 0) {
                 val attempts = row.attempts + 1
                 val retryIn = (30_000L shl attempts.coerceAtMost(8)).coerceAtMost(30 * 60_000L)
-                db.outboxDao().upsert(
-                    row.copy(attempts = attempts, nextAttemptAt = now() + retryIn, state = Delivery.LeftPhone.name, carrier = Carrier.ONLINE.name),
-                )
+                db.outboxDao().recordAttempt(row.eventId, now() + retryIn, Carrier.ONLINE.name)
             }
         }
     }
@@ -103,6 +133,9 @@ class Outbox(
             pool.status.map { s -> s.values.count { it == RelayStatus.CONNECTED } }.distinctUntilChanged().collect { connected ->
                 if (connected > 0) flush()
             }
+        }
+        routes.forEach { route ->
+            scope.launch { route.ready.collect { open -> if (open) flushRoutes() } }
         }
     }
 }

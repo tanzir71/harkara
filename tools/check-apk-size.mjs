@@ -3,24 +3,43 @@
 // but not limited (it carries every ABI on purpose).
 // Usage: node tools/check-apk-size.mjs [dir]
 import { readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-const dir = process.argv[2] ?? 'app/build/outputs/apk/release';
-const LIMIT = 30 * 1024 * 1024;
-const apks = readdirSync(dir).filter((f) => f.endsWith('.apk'));
-if (apks.length === 0) {
-  console.error(`no APKs in ${dir}`);
-  process.exit(1);
+export const APK_LIMIT = 30_000_000;
+export const REQUIRED_ABIS = ['arm64-v8a', 'armeabi-v7a'];
+
+export function checkApkSize(dir) {
+  const apks = readdirSync(dir).filter((f) => f.endsWith('.apk')).sort();
+  const seen = new Set();
+  const errors = [];
+  const lines = [];
+  for (const file of apks) {
+    const abi = [...REQUIRED_ABIS, 'universal'].find((a) =>
+      new RegExp(`^(?:app-${a}-release(?:-unsigned)?|harkara-\\d+\\.\\d+\\.\\d+-${a})\\.apk$`).test(file));
+    const stat = statSync(join(dir, file));
+    if (!abi || !stat.isFile() || stat.size === 0) {
+      errors.push(`unexpected or empty APK: ${file}`);
+      continue;
+    }
+    if (seen.has(abi)) errors.push(`duplicate APK for ${abi}`);
+    seen.add(abi);
+    const over = abi !== 'universal' && stat.size > APK_LIMIT;
+    lines.push(`${over ? 'OVER' : 'ok  '} ${file}  ${stat.size} bytes (${(stat.size / 1e6).toFixed(2)} MB)${abi === 'universal' ? ' (universal: not limited)' : ''}`);
+    if (over) errors.push(`${file} exceeds 30 MB (${APK_LIMIT} bytes) per ABI`);
+  }
+  for (const abi of REQUIRED_ABIS) if (!seen.has(abi)) errors.push(`missing APK for ${abi}`);
+  return { lines, errors };
 }
-let failed = false;
-for (const f of apks) {
-  const bytes = statSync(join(dir, f)).size;
-  const universal = f.includes('universal');
-  const over = !universal && bytes > LIMIT;
-  console.log(`${over ? 'OVER' : 'ok  '} ${f}  ${(bytes / 1024 / 1024).toFixed(1)} MB${universal ? '  (universal: not limited)' : ''}`);
-  failed ||= over;
-}
-if (failed) {
-  console.error('APK size budget is 30 MB per ABI');
-  process.exit(1);
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    const { lines, errors } = checkApkSize(process.argv[2] ?? 'app/build/outputs/apk/release');
+    lines.forEach((line) => console.log(line));
+    errors.forEach((error) => console.error(error));
+    if (errors.length) process.exitCode = 1;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+  }
 }

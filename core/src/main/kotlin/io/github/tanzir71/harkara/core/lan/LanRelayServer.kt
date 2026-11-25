@@ -35,6 +35,8 @@ class LanRelayServer(
     private val onEvent: (Event) -> Unit = {},
     private val maxClients: Int = 32,
     private val maxFrameBytes: Int = 128 * 1024,
+    /** Plain HTTP requests (a node's download page, APK, map packs, handbook); null keeps the one-line page. */
+    @Volatile var http: HttpHandler? = null,
 ) {
     private var server: ServerSocket? = null
     private val clients = ConcurrentHashMap<String, Client>()
@@ -124,6 +126,8 @@ class LanRelayServer(
 
         private fun serveHttp(request: Request) {
             val nostr = request.headers["accept"]?.contains("application/nostr+json") == true
+            val handled = if (nostr || request.method !in setOf("GET", "HEAD")) null else http?.handle(request.path)
+            if (handled != null) return serveResponse(request, handled)
             val body = if (nostr) INFO_JSON else "Harkara LAN room\n"
             val type = if (nostr) "application/nostr+json" else "text/plain; charset=utf-8"
             val bytes = body.encodeToByteArray()
@@ -131,6 +135,16 @@ class LanRelayServer(
                 "Access-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n"
             output.write(head.encodeToByteArray())
             if (request.method != "HEAD") output.write(bytes)
+            output.flush()
+        }
+
+        private fun serveResponse(request: Request, response: HttpResponse) {
+            socket.soTimeout = 0
+            val extra = response.headers.entries.joinToString("") { (k, v) -> "$k: $v\r\n" }
+            val head = "HTTP/1.1 ${response.status} ${response.reason}\r\nContent-Type: ${response.contentType}\r\n" +
+                "Content-Length: ${response.length}\r\n$extra" + "Cache-Control: no-store\r\nConnection: close\r\n\r\n"
+            output.write(head.encodeToByteArray())
+            if (request.method != "HEAD") response.open().use { it.copyTo(output, 64 * 1024) }
             output.flush()
         }
 
@@ -239,7 +253,7 @@ class LanRelayServer(
         }
     }
 
-    private class Request(val method: String, val headers: Map<String, String>)
+    private class Request(val method: String, val path: String, val headers: Map<String, String>)
 
     private fun readHeaders(input: InputStream): Request? {
         val buffer = ByteArrayOutputStream()
@@ -262,7 +276,7 @@ class LanRelayServer(
             val i = line.indexOf(':')
             if (i <= 0) null else line.substring(0, i).trim().lowercase() to line.substring(i + 1).trim()
         }.toMap()
-        return Request(requestLine[0], headers)
+        return Request(requestLine[0], requestLine[1], headers)
     }
 
     private fun readByte(input: InputStream): Int {

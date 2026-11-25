@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkApkSize } from './check-apk-size.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const arg = (name, fallback) => {
@@ -18,6 +19,10 @@ if (!/^\d+\.\d+\.\d+$/.test(version ?? '')) {
   console.error('need --version x.y.z');
   process.exit(1);
 }
+
+// This runs before publication in release.yml; refuse incomplete/oversized splits.
+const sizeCheck = checkApkSize(dist);
+if (sizeCheck.errors.length) throw new Error(sizeCheck.errors.join('\n'));
 
 export const versionCode = (v) => {
   const [major, minor, patch] = v.split('.').map(Number);

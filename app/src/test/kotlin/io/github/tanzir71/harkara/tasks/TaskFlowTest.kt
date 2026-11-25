@@ -45,7 +45,7 @@ class TaskFlowTest {
         val keys = KeyPair.generate()
         val db = HarkaraDatabase.inMemory(ApplicationProvider.getApplicationContext<Context>())
         val pool = RelayPool(scope, now = { clock })
-        val outbox = Outbox(db, pool) { clock }
+        val outbox = Outbox(db, pool, now = { clock })
         val tasks = TaskRepository(db, RoomEventStore(db) { clock }, outbox, pool, { keys }, { name }) { clock }
 
         init {

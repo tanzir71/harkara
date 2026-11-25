@@ -485,4 +485,14 @@
     <string name="handbook_title">Emergency handbook</string>
     <string name="handbook_numbers">Emergency numbers</string>
     <string name="handbook_call">Call %1$s</string>
+    <string name="offgrid_notification">Harkara nearby connections</string>
+    <string name="offgrid_notification_body">Mesh or neighbourhood node is on. Open Modules to stop.</string>
+    <string name="mesh_beta_note">Beta · Nearby phones only. Uses Bluetooth while enabled.</string>
+    <string name="disaster_mode">Disaster mode: enable Event mesh</string>
+    <string name="share_local_title">Share the APK nearby</string>
+    <string name="share_local_body">Join the same Wi-Fi or this phone\'s hotspot, then scan this QR. Keep this screen open.</string>
+    <string name="share_local_wait">Connect to Wi-Fi or turn on a hotspot to get a local address.</string>
+    <string name="share_online">Share the online install link</string>
+    <string name="radar_empty">No linked phones. Turn Mesh on and keep Bluetooth enabled.</string>
+    <string name="radar_peer">%1$s · %2$s · %3$d dBm</string>
 </resources>

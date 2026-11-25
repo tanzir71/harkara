@@ -1,1 +1,1 @@
-Off-grid Dhaka neighbourhood app: chats, errands, IOUs and maps without internet
+Dhaka neighbourhood app: offline chats, errands and signed IOUs

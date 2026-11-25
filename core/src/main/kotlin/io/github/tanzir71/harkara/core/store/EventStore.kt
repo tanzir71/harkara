@@ -23,8 +23,11 @@ class EventStore(
     private val subscribedPrefixes: Set<String>,
     private val carryGiftWraps: Boolean = true,
     private val capacity: Int = 5_000,
+    private val maxBytes: Long = 20_000_000,
 ) {
     private val events = LinkedHashMap<String, Event>()
+    private val sizes = HashMap<String, Int>()
+    private var bytes = 0L
 
     val size: Int
         get() = events.size
@@ -32,13 +35,15 @@ class EventStore(
     /** Offers a verified event. Expired events are neither kept nor relayed. */
     fun ingest(event: Event, nowSeconds: Long): StoreResult {
         if (event.isExpired(nowSeconds)) return StoreResult(shouldRelay = false, cached = false)
-        val keep = matchesArea(event) ||
+        val keep = matchesArea(event) || event.kind in REFERENCED_KINDS ||
             (carryGiftWraps && (event.kind == Kinds.GIFT_WRAP))
         if (keep) {
+            val size = event.toJson().encodeToByteArray().size
+            bytes += size - (sizes.put(event.id, size) ?: 0)
             events[event.id] = event
             evict()
         }
-        return StoreResult(shouldRelay = true, cached = keep)
+        return StoreResult(shouldRelay = true, cached = event.id in events)
     }
 
     fun ingestAll(events: List<Event>, nowSeconds: Long): List<StoreResult> = events.map { ingest(it, nowSeconds) }
@@ -65,7 +70,7 @@ class EventStore(
 
     fun purgeExpired(nowSeconds: Long): Int {
         val before = events.size
-        events.values.removeAll { it.isExpired(nowSeconds) }
+        events.values.filter { it.isExpired(nowSeconds) }.map { it.id }.forEach(::remove)
         return before - events.size
     }
 
@@ -75,8 +80,20 @@ class EventStore(
     }
 
     private fun evict() {
-        if (events.size <= capacity) return
-        val oldest = events.values.sortedBy { it.createdAt }.take(events.size - capacity).map { it.id }
-        oldest.forEach(events::remove)
+        if (events.size <= capacity && bytes <= maxBytes) return
+        for (event in events.values.sortedBy { it.createdAt }) {
+            if (events.size <= capacity && bytes <= maxBytes) break
+            remove(event.id)
+        }
+    }
+
+    private fun remove(id: String) {
+        events.remove(id)
+        bytes -= sizes.remove(id) ?: 0
+    }
+
+    private companion object {
+        // Follow-ups have only parent-event/address tags, but must survive a partition too.
+        val REFERENCED_KINDS = setOf(Kinds.TASK_STEP, Kinds.REACTION, Kinds.REPORT, Kinds.SOS_UPDATE)
     }
 }

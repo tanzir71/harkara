@@ -13,6 +13,9 @@ import java.util.concurrent.ConcurrentHashMap
 /** Another phone's Wi-Fi room server. */
 data class LanPeer(val name: String, val host: String, val port: Int) {
     val url: String get() = if (host.contains(':')) "ws://[$host]:$port" else "ws://$host:$port"
+
+    /** The phone runs a neighbourhood node (its service name says so). */
+    val node: Boolean get() = name.startsWith(LanRoom.NODE_PREFIX)
 }
 
 /** Finds other Harkara phones on the same Wi-Fi and advertises ours. Android NSD on phones, a fake in tests. */

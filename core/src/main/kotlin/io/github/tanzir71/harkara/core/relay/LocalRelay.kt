@@ -66,7 +66,7 @@ class LocalRelay(
 
     private fun publish(clientId: String?, event: Event): List<Outgoing> {
         val sender = clientId ?: SELF
-        val ok = event.validate() && !event.isExpired(nowSeconds()) && accept(event)
+        val ok = event.validate() && !event.isExpired(nowSeconds()) && (events.containsKey(event.id) || accept(event))
         val out = mutableListOf(Outgoing(sender, RelayMessage.Ok(event.id, ok, if (ok) "" else "invalid: rejected").toJson()))
         if (!ok || events.containsKey(event.id)) return out
         if (!Kinds.isEphemeral(event.kind)) {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clipboard_public_key_label">হরকরার পাবলিক কী</string>
+    <string name="clipboard_message_label">হরকরার মেসেজ</string>
+    <string name="clipboard_crash_report_label">হরকরার ক্র্যাশ রিপোর্ট</string>
+</resources>

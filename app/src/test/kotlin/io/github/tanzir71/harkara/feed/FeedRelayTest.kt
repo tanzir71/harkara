@@ -48,7 +48,7 @@ class FeedRelayTest {
     inner class Phone(connect: Boolean = true) {
         val db = HarkaraDatabase.inMemory(ApplicationProvider.getApplicationContext<Context>())
         val pool = RelayPool(scope, now = { clock })
-        val outbox = Outbox(db, pool) { clock }
+        val outbox = Outbox(db, pool, now = { clock })
         private val keys = mutableMapOf<String, KeyPair>()
         val feed = FeedRepository(db, RoomEventStore(db) { clock }, outbox, pool, filters, { g5 -> keys.getOrPut(g5) { KeyPair.generate() } }, nowMillis = { clock })
 

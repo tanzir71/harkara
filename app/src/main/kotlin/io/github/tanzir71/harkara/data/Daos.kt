@@ -91,14 +91,21 @@ interface OutboxDao {
     @Query("SELECT * FROM outbox WHERE state IN ('Saved', 'LeftPhone') AND nextAttemptAt <= :now ORDER BY priority DESC, createdAt ASC")
     suspend fun due(now: Long): List<OutboxEntity>
 
+    /** Everything not yet acknowledged by a relay, ignoring relay backoff (mesh and node routes). */
+    @Query("SELECT * FROM outbox WHERE state IN ('Saved', 'LeftPhone') ORDER BY priority DESC, createdAt ASC")
+    suspend fun pending(): List<OutboxEntity>
+
     @Query("SELECT COUNT(*) FROM outbox WHERE state IN ('Saved', 'LeftPhone')")
     fun observeWaiting(): Flow<Int>
 
     @Query("SELECT * FROM outbox")
     fun observeAll(): Flow<List<OutboxEntity>>
 
-    @Query("UPDATE outbox SET state = :state, carrier = :carrier WHERE eventId = :id")
+    @Query("UPDATE outbox SET state = :state, carrier = :carrier WHERE eventId = :id AND (CASE state WHEN 'Saved' THEN 0 WHEN 'LeftPhone' THEN 1 WHEN 'ReachedNetwork' THEN 2 WHEN 'Delivered' THEN 3 WHEN 'Read' THEN 4 END) < (CASE :state WHEN 'Saved' THEN 0 WHEN 'LeftPhone' THEN 1 WHEN 'ReachedNetwork' THEN 2 WHEN 'Delivered' THEN 3 WHEN 'Read' THEN 4 END)")
     suspend fun setState(id: String, state: String, carrier: String?)
+
+    @Query("UPDATE outbox SET attempts = attempts + 1, nextAttemptAt = :next, state = 'LeftPhone', carrier = :carrier WHERE eventId = :id AND state IN ('Saved', 'LeftPhone')")
+    suspend fun recordAttempt(id: String, next: Long, carrier: String)
 }
 
 @Dao

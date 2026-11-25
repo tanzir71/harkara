@@ -1,6 +1,6 @@
 name: Reproducible build check
 # Builds the unsigned release APKs twice from clean checkouts on separate runners and compares them entry
-# by entry. Informational only: it never gates a release (results are recorded in docs/RELEASING.md).
+# by entry. Differences are informational; full reports are retained for docs/RELEASING.md.
 on:
   workflow_dispatch:
   push:
@@ -18,19 +18,58 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '17' }
+      - uses: actions/setup-node@v5
+        with: { node-version: '22' }
+      - name: Fix build environment
+        run: |
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+          echo "TZ=UTC" >> "$GITHUB_ENV"
+          echo "LC_ALL=C.UTF-8" >> "$GITHUB_ENV"
       - name: Build unsigned release APKs (no Gradle cache, so each build is from scratch)
-        run: ./gradlew --no-build-cache :app:assembleRelease -PharkaraAbiSplits=true
+        run: |
+          version_args=()
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            version_args+=("-PharkaraVersion=${GITHUB_REF_NAME#v}")
+          fi
+          ./gradlew --no-build-cache --no-configuration-cache :app:assembleRelease -PharkaraAbiSplits=true "${version_args[@]}"
+      - name: Enforce per-ABI size budget
+        run: node tools/check-apk-size.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: apks-${{ matrix.run }}
           path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
   compare:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: '22' }
+      - name: Offline verification regression tests and audits
+        run: |
+          python3 -B -m unittest discover -s tools -p 'test_hardening.py' -v
+          node --test tools/hardening.test.mjs
+          node tools/verify-metadata.mjs
+          python3 tools/audit-app-strings.py
+      - name: Audit normal-text token contrast (report outstanding token findings)
+        continue-on-error: true
+        run: node tools/audit-token-contrast.mjs | tee token-contrast-report.json
       - uses: actions/download-artifact@v4
         with: { name: apks-a, path: a }
       - uses: actions/download-artifact@v4
         with: { name: apks-b, path: b }
-      - run: python3 tools/compare_apks.py a b --summary "$GITHUB_STEP_SUMMARY"
+      - name: Compare unsigned APKs (differences informational, invalid inputs fail)
+        run: |
+          status=0
+          python3 tools/compare_apks.py a b --summary reproducibility-report.txt || status=$?
+          cat reproducibility-report.txt >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reproducibility-report
+          path: |
+            reproducibility-report.txt
+            token-contrast-report.json
+          if-no-files-found: error

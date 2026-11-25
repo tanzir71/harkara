@@ -109,11 +109,12 @@ class RelayPool(
     val negentropyFetched = MutableStateFlow(0)
 
     /** Sends [event] to every connected relay that accepts its size. Returns how many it left on. */
-    fun publish(event: Event): Int {
+    fun publish(event: Event, only: Collection<String>? = null): Int {
         val json = event.toJson()
         val bytes = json.encodeToByteArray().size
+        val targets = only?.map(::normalize)?.toSet()
         return connections.values.count { c ->
-            c.isConnected && (mutableInfo.value[c.url] ?: RelayInfo.Unknown).accepts(bytes) && c.send(ClientMessage.Publish(event).toJson())
+            (targets == null || c.url in targets) && c.isConnected && (mutableInfo.value[c.url] ?: RelayInfo.Unknown).accepts(bytes) && c.send(ClientMessage.Publish(event).toJson())
         }
     }
 

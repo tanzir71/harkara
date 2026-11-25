@@ -47,9 +47,9 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M6 - Off-grid carriers and the ladder (v0.5.0)
 
-- [ ] BLE transport, Wi-Fi Aware, bridge, node mode, carrier ladder, pill + sheet (screen 08), Mesh Saver/Event, disaster mode, radar.
-- [ ] Phone-to-phone APK sharing page + QR.
-- [ ] Gate: 3-hop mesh delivery, bridge to mock relay, Saved → send when a rung opens.
+- [x] BLE transport, Wi-Fi Aware, bridge, node mode, carrier ladder, pill + sheet (screen 08), Mesh Saver/Event, disaster mode, radar.
+- [x] Phone-to-phone APK sharing page + QR.
+- [x] Gate: three-hop fake-radio bridge to mock relay, persisted Saved event sends when a fake radio connects, fake-GATT queue/link tests; core 213/app 147 tests and screenshot verification pass.
 
 ## M7 - Tasks (v0.6.0)
 
@@ -76,7 +76,7 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 ## M11 - Tools, modules, safety (v0.10.0)
 
 - [x] Handbook (bn + en, 42 sections), Qibla + prayer times (Karachi/Hanafi), torch/strobe/Morse SOS/siren, SOS flow (3-s hold, Call 999 first, 30-min limit, resolve), emergency-alert sound switch, Lite mode 60-min checks.
-- [ ] File drop (LocalSend v2) and push-to-talk over the LAN (need the M5 LAN room); compass/QR tools land with M9/M10.
+- [x] File drop (LocalSend v2) and push-to-talk over the LAN, with explicit consent, bounded streams and lifecycle teardown; compass/QR tools land with M9/M10.
 - [x] Battery audit: with default modules no service, GPS or relay runs in the background (Robolectric).
 - [x] Gate: module-off tests show no services/sensors; SOS rate-limit + resolve tests.
 

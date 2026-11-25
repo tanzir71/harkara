@@ -35,6 +35,11 @@ class MainActivity : ComponentActivity(), PlatformActions {
     }
 
     private var pendingMicrophone: ((Boolean) -> Unit)? = null
+    private var pendingMesh: ((Boolean) -> Unit)? = null
+    private val meshPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        pendingMesh?.invoke(io.github.tanzir71.harkara.mesh.MeshPermissions.granted(this))
+        pendingMesh = null
+    }
 
     private val microphonePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         pendingMicrophone?.invoke(granted)
@@ -98,7 +103,7 @@ class MainActivity : ComponentActivity(), PlatformActions {
         super.onStop()
         val container = (application as HarkaraApplication).container
         container.foreground = false
-        container.stopRelays()
+        if (!container.mesh.running && !container.node.node.value) container.stopRelays()
         container.stopLan()
     }
 
@@ -137,6 +142,11 @@ class MainActivity : ComponentActivity(), PlatformActions {
             pendingMicrophone = onResult
             microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
         }
+    }
+
+    override fun requestMesh(onResult: (Boolean) -> Unit) {
+        if (io.github.tanzir71.harkara.mesh.MeshPermissions.granted(this)) onResult(true)
+        else { pendingMesh = onResult; meshPermissions.launch(io.github.tanzir71.harkara.mesh.MeshPermissions.required()) }
     }
 
     /** One-off, user-started read of the last fix the phone already has. No GPS is switched on. */

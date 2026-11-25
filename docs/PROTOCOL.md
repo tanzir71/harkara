@@ -178,45 +178,42 @@ A feed post is kind 1, signed by the weekly area key (KeyRing.area(geohash5, iso
 | Tag | Value |
 |---|---|
 | g | geohash at precision 7, 6 and 5 (three tags, so relays can match any of them) |
-| 	 | category: 	raffic, ood, crowd, stock, lert, chatter (untagged posts are chatter) |
-| xpiration | NIP-40: created_at + 3 h / never / 4 h / 24 h / 12 h / 48 h |
-| 
-once | NIP-13, ≥ 16 bits (the composer tunes 16–20 bits to ~2 s on the phone) |
-| stock, status, 	raffic, crowd, lert, price | optional details from loka's composer chips |
+| `t` | category: `traffic`, `food`, `crowd`, `stock`, `alert`, `chatter` (untagged posts are chatter) |
+| `expiration` | NIP-40: created_at + 3 h / never / 4 h / 24 h / 12 h / 48 h |
+| `nonce` | NIP-13, ≥ 16 bits (the composer tunes 16–20 bits to ~2 s on the phone) |
+| `stock`, `status`, `traffic`, `crowd`, `alert`, `price` | optional details from loka's composer chips |
 
-Votes are NIP-25 kind 7 (+/-, , p, k), reports NIP-56 kind 1984 (["e", id, reason], p), both signed by the voter's area key. Locally a post hides when 3 distinct keys report it, when the score (latest vote per key) reaches −5, when a moderator the user opted into (NIP-51 follow set) reports it, when the author is blocked, or when it matches the word filter or the user's mute words. Nothing here is enforced on anyone else's phone.
+Votes are NIP-25 kind 7 (+/-, `e`, `p`, `k`), reports NIP-56 kind 1984 (["e", id, reason], p), both signed by the voter's area key. Locally a post hides when 3 distinct keys report it, when the score (latest vote per key) reaches −5, when a moderator the user opted into (NIP-51 follow set) reports it, when the author is blocked, or when it matches the word filter or the user's mute words. Nothing here is enforced on anyone else's phone.
 
 Composer rules (from loka): ≤ 400 characters, ≤ 1 link, no phone numbers in Chatter or Alert, Bangla and English word filters. Rate limits, enforced by peers before storing or relaying and by the composer for our own posts: 1 post per minute, 10 per hour, 30 per day per key.
 
 ## 12. Relays
 
-The pool connects to data/default-relays.json (three required relays + four chosen weekly by 	ools/relay-check.mjs) or the user's list. Per relay: NIP-11 is fetched first (Accept: application/nostr+json) and its max_message_length / max_filters respected; reconnects use jittered exponential backoff (1 s … 5 min); subscriptions are re-sent on reconnect with since = last EOSE. Our events go through an outbox: Saved → Left this phone (written to a relay socket) → Reached the network (first OK true); unacknowledged events are retried with backoff whenever a relay connects.
+The pool connects to data/default-relays.json (three required relays + four chosen weekly by `tools/relay-check.mjs`) or the user's list. Per relay: NIP-11 is fetched first (Accept: application/nostr+json) and its max_message_length / max_filters respected; reconnects use jittered exponential backoff (1 s … 5 min); subscriptions are re-sent on reconnect with since = last EOSE. Our events go through an outbox: Saved → Left this phone (written to a relay socket) → Reached the network (first OK true); unacknowledged events are retried with backoff whenever a relay connects.
 
 The area feed subscribes to kind 1 with #g = the area's geohash-5 cell and its 8 neighbours, since = 2 days. On relays that list NIP-77, the app first runs a negentropy reconciliation (NEG-OPEN with the same filter and the (created_at, id) pairs it already holds) and then REQs only the missing ids. core/relay/LocalRelay is the same NIP-01 logic without I/O, used by the LAN room and node.
 
 Storage budget: other people's events are capped at 20 MB (oldest received first are dropped) and media at 100 MB; expired posts are purged; the user's own events are never auto-cleared.
 ## 13. Tasks
 
-A task offer is NIP-99 kind 30402 signed by the requester's profile key: d, 	itle, summary, published_at, price (["price", "120", "BDT"]), status, 	 = harkara-task and the type (pickup, uy, print, rrand — schemas in data/task-types.json), g at precision 7/6/5, ["field", key, value] for the type's fields, xpiration (24 h by default) and an optional 
-ame.
+A task offer is NIP-99 kind 30402 signed by the requester's profile key: d, `title`, summary, published_at, price (["price", "120", "BDT"]), status, `t` = harkara-task and the type (`pickup`, `buy`, `print`, `errand` — schemas in data/task-types.json), g at precision 7/6/5, ["field", key, value] for the type's fields, `expiration` (24 h by default) and an optional `name`.
 
 Steps are kind 3471 with ["a", "30402:<requester>:<d>"], ["e", <offer id>], ["step", …] and p = the other side:
 
 | Step | Who | From | To / effect |
 |---|---|---|---|
-| ccept | anyone but the requester | open | adds a pending offer to help (optional 
-ame) |
+| `accept` | anyone but the requester | open | adds a pending offer to help (optional `name`) |
 | confirm | requester | open | accepted; needs ["e", <accept id>, "", "accept"] and ["handoff", <commitment>] |
 | decline | runner | accepted | open again |
 | picked_up | runner | accepted | picked up |
 | delivered | runner | accepted, picked up | delivered; needs ["token", <signed token JSON>] or ["code", <6 digits>] |
 | paid | requester | delivered | marks paid by requester; content = NIP-44 to the runner {method, amount, trxId} |
 | paid_ack | runner | delivered + paid | paid |
-| ated | either side, once | delivered, paid | ["rating", 1–5] |
+| `rated` | either side, once | delivered, paid | ["rating", 1–5] |
 | cancel | requester | open, accepted, picked up | cancelled |
 | dispute | either side | accepted … paid | disputed; ["reason", item_issue / payment_issue / delivery_issue / safety_or_policy / other] |
 
-Every phone computes the state with TaskStateMachine: steps in time order (lifecycle order for ties), retried until nothing changes; wrong author, wrong state, bad signature or bad proof → dropped. Open offers past xpiration are expired.
+Every phone computes the state with TaskStateMachine: steps in time order (lifecycle order for ties), retried until nothing changes; wrong author, wrong state, bad signature or bad proof → dropped. Open offers past `expiration` are expired.
 
 Handoff token: kind 3472 signed by the requester, ["a", <offer address>], ["p", <runner>], ["nonce", …]. It's created at confirm and stays on the requester's phone; shown as a QR (harkara:handoff:<token JSON>, checked by signature offline) or as 6 digits = SHA-256("harkara-handoff:" + sig) mod 10^6, checked against the confirm commitment scrypt(code, "harkara-handoff|<address>|<runner>", N=2^14, r=8, p=1). A token or code delivers a task once.
 
@@ -296,3 +293,25 @@ Location cards come from "Share my location" (a one-off read of the last fix; "A
 ### Plus Codes
 
 `OpenLocationCode` implements encode (2–15 digits), decode, validity and shortening from the Open Location Code specification, checked against vectors from its test data.
+
+## 17. Off-grid carriers (M6)
+
+`MeshEngine` runs the same verified binary events over `MeshRadio` links. BLE dual-role GATT and optional Wi-Fi Aware only move fragments; every hop reassembles and verifies before applying expiry, future-skew, dedupe, post-rate and SOS limits. Production admission also requires feed structure and at least 16 bits of PoW. Events are never re-signed by a carrier or bridge.
+
+Saver scans 10 seconds per minute, dials at most four links and originates with TTL 5. Event scans continuously, dials at most eight links and uses TTL 7. The Disaster shortcut explicitly enables Event mesh. Photos and Wi-Fi-only room messages are excluded from mesh; SOS travels at top priority. Presence identifies a rotating daily mesh ID, node availability and distance to an internet bridge. Presence and bounded digest/pull reconciliation repeat periodically and on new links, including partition healing.
+
+The app outbox sends waiting events when a mesh/node route opens; successful handover advances Saved to Left this phone. Only relay OK or peer receipts advance further. A phone reaching a relay publishes carried events unchanged. The connectivity pill combines real relay sockets, room/node peers, mesh links and propagated bridge distance; QR alone never pretends that another person is reachable.
+
+Node services advertise `harkara-node-` names on `_harkara._tcp`, extending ordinary room servers with public feed/task/SOS synchronization. All off-grid inbound events pass feature-specific validation/decryption before populating Room. A node streams `/harkara.apk`, `/latest.json`, fixed-name `/maps/` packs and `/handbook/` resources over HTTP. Plain sharing exposes only its download page and installed APK while the sharing sheet remains open; private DMs/IOUs are still gift-wrapped.
+
+Mesh and node modes require explicit opt-in and a visible connected-device notification; they use START_NOT_STICKY, no boot receiver and no background GPS. Lite suppresses mesh. Disabling modules or panic wipe tears down radios, sockets and the service. Radio interoperability, OEM power management and hotspot reachability remain unverified on hardware.
+
+## 18. LAN tools (M11)
+
+File drop and push-to-talk use a dedicated `LocalSendServer`/`LanToolsHttp` listener, separate from the chat relay. The screen takes a manual numeric IPv4 address and port (default 53317); there is no DNS lookup or LocalSend multicast discovery. This is plain HTTP without TLS or authenticated peer identity: aliases and fingerprints are untrusted claims, and file bytes, audio and bearer tokens are visible to LAN observers. Use only a user-selected trusted LAN; these tools do not inherit Nostr gift-wrap encryption.
+
+LocalSend v2 endpoints under `/api/localsend/v2/` are `GET info` and `POST register`, `prepare-upload`, `upload` and `cancel`. Each offer needs explicit receiver consent (default deny, at most 25 s); the protocol can approve a subset, while the current screen accepts or rejects the whole offer. Upload grants are peer-IP-bound, single-use per file and expire after 2 min by default. Known `Content-Length` is required for uploads; chunked requests are rejected. Defaults: 25 MiB/file, 100 MiB/offer, 32 files and four sessions. Uploads stream to random private files, not sender-selected paths; size and any supplied SHA-256 are checked, and failed partial files are deleted. The screen keeps a bounded private inbox (32 files/100 MiB); Save copies via the Storage Access Framework, while Delete removes the private copy.
+
+PTT uses `POST /api/harkara/ptt/v1/chunk`, not LocalSend audio or a Nostr event. Explicit listening issues a random bearer token bound to one peer IP for at most 15 min; the current screen exchanges tokens by copy/paste. Ordered chunks contain little-endian PCM16, 16 kHz mono, at most 6 400 bytes each, at most 75 chunks/15 s per hold. Repeated/out-of-order chunks and previously used stream IDs are rejected; replay memory is bounded to 64 streams, after which re-pairing is required. Sending is synchronous with bounded backpressure and no accumulated audio queue. A fresh permitted hold starts capture; release/cancel/focus loss or the 15-second watchdog stops it.
+
+Construction and enabling a module do not start the listener or microphone. The user must explicitly start the screen's listener; PTT additionally requires microphone permission and a fresh hold. `ON_STOP`, screen disposal and leaving the tool close the listener, active client calls, pending consent and audio; returning to foreground does not restart them. PTT mode rejects file offers. Real-device interoperability, audio behavior and lifecycle timing remain unverified on hardware.

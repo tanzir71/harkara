@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clipboard_public_key_label">Harkara key</string>
+    <string name="clipboard_message_label">Harkara message</string>
+    <string name="clipboard_crash_report_label">Harkara crash report</string>
+</resources>

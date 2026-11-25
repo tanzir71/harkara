@@ -119,6 +119,7 @@ class AppFlowTest {
 
         assertTrue(platform.copied!!.startsWith("Harkara "))
         compose.onNodeWithText("Share this app").performClick()
+        compose.onNodeWithText("Share the online install link").performClick()
         assertTrue(platform.shared!!.contains("https://tanzir71.github.io/harkara/"))
     }
 

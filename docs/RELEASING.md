@@ -38,13 +38,15 @@ repository in `../harkara-signing/` on the owner's machine, and as the repositor
 The app reads `https://tanzir71.github.io/harkara/latest.json` at most once a day while online.
 ## Reproducible builds
 
-The build sets fixed archive timestamps and entry order (AbstractArchiveTask in the root build), leaves
-out the dependency-metadata signing block (dependenciesInfo) and VCS info, and pins every dependency in
-the version catalog. eproducible.yml (on every tag, or by hand) builds the unsigned release APKs twice
-from clean checkouts on separate runners and compares them entry by entry with 	ools/compare_apks.py;
-it never gates a release. Remaining differences, if any, are listed here after each run.
+The build sets fixed archive timestamps and entry order (`AbstractArchiveTask` in the root build), leaves
+out the dependency-metadata signing block (`dependenciesInfo`) and VCS info, and pins every dependency in
+the version catalog. `.github/workflows/reproducible.yml` (on every tag, or by hand) builds the unsigned release APKs twice
+from clean checkouts on separate runners and compares them entry by entry with `tools/compare_apks.py`;
+content/container differences are informational and never gate a release, while missing or invalid comparison inputs fail the check.
+The workflow fixes timezone/locale and `SOURCE_DATE_EPOCH`, disables build/configuration caches, uses the tag's version and retains the complete `reproducibility-report` artifact and job summary. Record remaining differences here from that report after each run; no independent-build result is asserted here.
 
 ## APK size
 
-ci.yml builds the unsigned release APKs with ABI splits and fails if an rm64-v8a or rmeabi-v7a
-APK exceeds 30 MB (	ools/check-apk-size.mjs); the universal APK is reported only.
+`ci.yml` builds the unsigned release APKs with ABI splits and fails if an `arm64-v8a` or `armeabi-v7a`
+APK exceeds 30 MB (`tools/check-apk-size.mjs`, 30 000 000 bytes per ABI); the universal APK is reported only.
+Both ABI splits must be present, nonempty and uniquely named. The reproducibility builds also run this gate; `tools/release-meta.mjs` runs it before writing publication metadata.

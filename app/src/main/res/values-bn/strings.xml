@@ -481,4 +481,14 @@
     <string name="handbook_title">জরুরি হ্যান্ডবুক</string>
     <string name="handbook_numbers">জরুরি নম্বর</string>
     <string name="handbook_call">%1$s-এ ফোন করো</string>
+    <string name="offgrid_notification">হরকরা কাছাকাছি সংযোগ</string>
+    <string name="offgrid_notification_body">মেশ বা পাড়ার নোড চালু আছে। বন্ধ করতে মডিউল খুলুন।</string>
+    <string name="mesh_beta_note">বেটা · শুধু কাছের ফোন। চালু থাকলে ব্লুটুথ ব্যবহার করে।</string>
+    <string name="disaster_mode">দুর্যোগ মোড: ইভেন্ট মেশ চালু করুন</string>
+    <string name="share_local_title">কাছাকাছি APK শেয়ার করুন</string>
+    <string name="share_local_body">একই ওয়াই-ফাই বা এই ফোনের হটস্পটে যুক্ত হয়ে QR স্ক্যান করুন। এই পর্দা খোলা রাখুন।</string>
+    <string name="share_local_wait">স্থানীয় ঠিকানা পেতে ওয়াই-ফাইয়ে যুক্ত হোন বা হটস্পট চালু করুন।</string>
+    <string name="share_online">অনলাইন ইনস্টল লিংক শেয়ার করুন</string>
+    <string name="radar_empty">কোনো ফোন যুক্ত নেই। মেশ ও ব্লুটুথ চালু করুন।</string>
+    <string name="radar_peer">%1$s · %2$s · %3$d dBm</string>
 </resources>

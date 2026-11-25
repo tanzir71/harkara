@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- Nearby mesh (Beta): explicit Saver/Event Bluetooth and optional Wi-Fi Aware carriers, rotating presence, bridge reachability, bounded event sync and live Radar. Disaster mode explicitly enables Event mesh. Hardware radio interoperability remains unverified.
+- Neighbourhood node mode serves local events, the installed APK, map packs and handbook on Wi-Fi. Share-this-app opens an APK download page and QR while its sheet stays open.
+- Saved events leave automatically when a carrier opens. Carriers preserve signed events; atomic outbox updates never downgrade acknowledgements or delivery receipts. Private chats and IOUs are decrypted through their feature repositories on mesh/node reception.
+- LAN file drop (LocalSend v2) requires approval for every incoming offer. Held-only LAN push-to-talk needs a paired token and microphone opt-in; leaving/backgrounding stops the listener and audio. These tools use cleartext HTTP on a trusted local network, not authenticated peer identities.
+- Hardening: full Bangla resource parity, expanded Day/Night large-font accessibility tests, normal-text AA contrast using existing palette colors, stricter APK-size and distribution-metadata checks, and reproducibility comparison tooling.
+
 ## 0.4.0
 
 Chats: message people and groups, talk to your area, and chat with everyone on the same Wi-Fi even when the internet is down.

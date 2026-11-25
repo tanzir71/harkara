@@ -51,6 +51,15 @@ jobs:
         run: |
           node tools/build-tokens.mjs --check
           node tools/icons-to-vectors.mjs --check
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
+      - name: Localization, contrast and distribution hardening
+        run: |
+          python -B tools/audit-app-strings.py --strict-ui
+          node tools/audit-token-contrast.mjs
+          node tools/verify-metadata.mjs
+          python -B -m unittest discover -s tools -p test_hardening.py -v
+          node --test tools/hardening.test.mjs
 
   site:
     # Landing site: build without network (coming-soon state) and with the release fixture; static checks + Playwright for both.

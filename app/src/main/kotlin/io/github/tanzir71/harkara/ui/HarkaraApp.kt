@@ -1,6 +1,8 @@
 package io.github.tanzir71.harkara.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -77,6 +79,7 @@ interface PlatformActions {
     fun composeSms(body: String) {}
     /** Asks for the microphone (voice notes) once; reports whether it may be used. */
     fun requestMicrophone(onResult: (granted: Boolean) -> Unit) = onResult(false)
+    fun requestMesh(onResult: (granted: Boolean) -> Unit) = onResult(false)
 
     object None : PlatformActions {
         override fun openUrl(url: String) = Unit
@@ -89,8 +92,8 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, Prayer, Torch, Handbook, HandbookPage, ChatThread }
-private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle, Sos }
+private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, Prayer, Torch, Handbook, HandbookPage, ChatThread, LanTools }
+private enum class Sheet { None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle, Sos, ShareApp, Radar }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
 
@@ -167,12 +170,21 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     }
     var sosWait by remember { mutableStateOf(0) }
     var handbookSection by remember { mutableStateOf<io.github.tanzir71.harkara.tools.HandbookSection?>(null) }
+    var pttTool by rememberSaveable { mutableStateOf(false) }
     val language = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language
     val dial999: () -> Unit = { platform.openUrl("tel:999") }
     val toggleModule: (io.github.tanzir71.harkara.settings.Module, Boolean) -> Unit = { module, on ->
-        container.settings.setModule(module, on)
+        if (module == io.github.tanzir71.harkara.settings.Module.MESH && on) platform.requestMesh { granted ->
+            container.settings.setModule(module, granted)
+        } else container.settings.setModule(module, on)
         // Lite mode checks every 60 minutes instead of 30 (§4.1).
         if (module == io.github.tanzir71.harkara.settings.Module.LITE_MODE) RelaySyncWorker.schedule(context, if (on) 60 else 30)
+    }
+    LaunchedEffect(settings.onboarded, settings.modules) {
+        if (settings.onboarded && (settings.isOn(io.github.tanzir71.harkara.settings.Module.NODE) ||
+                (settings.isOn(io.github.tanzir71.harkara.settings.Module.MESH) && !settings.isOn(io.github.tanzir71.harkara.settings.Module.LITE_MODE)))) {
+            androidx.core.content.ContextCompat.startForegroundService(context, android.content.Intent(context, io.github.tanzir71.harkara.mesh.MeshForegroundService::class.java))
+        }
     }
     val ious by remember(settings.onboarded) {
         if (settings.onboarded) container.khataRepository.ious() else flowOf(emptyList())
@@ -247,9 +259,9 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                             container.settings.setLanguage(it)
                             platform.applyLanguage()
                         },
-                        onShare = { platform.shareText(context.getString(R.string.settings_share_text, UpdateChecker.DOWNLOAD_PAGE)) },
+                        onShare = { sheet = Sheet.ShareApp },
                         onCopyCrash = {
-                            platform.copyToClipboard("Harkara crash report", container.crashReporter.report())
+                            platform.copyToClipboard(context.getString(R.string.clipboard_crash_report_label), container.crashReporter.report())
                             scope.launch { snackbar.showSnackbar(context.getString(R.string.settings_crash_copied)) }
                         },
                         onPanicWipe = { sheet = Sheet.PanicWipe },
@@ -315,6 +327,11 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                             onBack = { page = Page.Handbook },
                             modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                         )
+                    }
+                    Page.LanTools -> {
+                        val enabled = settings.isOn(if (pttTool) io.github.tanzir71.harkara.settings.Module.PUSH_TO_TALK else io.github.tanzir71.harkara.settings.Module.FILE_DROP)
+                        if (enabled) io.github.tanzir71.harkara.ui.screens.LanToolsScreen(pttTool, platform, { page = Page.Tabs }, Modifier.statusBarsPadding().navigationBarsPadding())
+                        else LaunchedEffect(Unit) { page = Page.Tabs }
                     }
                     Page.TaskDetail -> if (openTask == null) {
                         LaunchedEffect(Unit) { page = Page.Tabs }
@@ -432,6 +449,10 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                         io.github.tanzir71.harkara.settings.Module.QIBLA_PRAYER -> page = Page.Prayer
                                         io.github.tanzir71.harkara.settings.Module.TORCH_TOOLS -> page = Page.Torch
                                         io.github.tanzir71.harkara.settings.Module.HANDBOOK -> page = Page.Handbook
+                                        io.github.tanzir71.harkara.settings.Module.RADAR -> sheet = Sheet.Radar
+                                        io.github.tanzir71.harkara.settings.Module.NODE -> sheet = Sheet.Connectivity
+                                        io.github.tanzir71.harkara.settings.Module.FILE_DROP -> { pttTool = false; page = Page.LanTools }
+                                        io.github.tanzir71.harkara.settings.Module.PUSH_TO_TALK -> { pttTool = true; page = Page.LanTools }
                                         else -> comingSoon()
                                     }
                                 },
@@ -458,7 +479,14 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
             ) {
                 Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
                     when (sheet) {
-                        Sheet.Connectivity -> ConnectivitySheetContent(connectivity, settings.meshMode, container.settings::setMeshMode)
+                        Sheet.Connectivity -> androidx.compose.foundation.layout.Column {
+                            ConnectivitySheetContent(connectivity, settings.meshMode, container.settings::setMeshMode)
+                            androidx.compose.material3.Text(context.getString(R.string.mesh_beta_note), color = c.textSecondary, style = HarkaraTheme.type.caption)
+                            io.github.tanzir71.harkara.ui.screens.ModuleRow(io.github.tanzir71.harkara.settings.Module.MESH, settings.isOn(io.github.tanzir71.harkara.settings.Module.MESH), toggleModule)
+                            io.github.tanzir71.harkara.ui.screens.ModuleRow(io.github.tanzir71.harkara.settings.Module.NODE, settings.isOn(io.github.tanzir71.harkara.settings.Module.NODE), toggleModule)
+                        }
+                        Sheet.ShareApp -> ShareAppSheet(container, platform)
+                        Sheet.Radar -> RadarSheet(container)
                         Sheet.PanicWipe -> PanicWipeSheetContent(
                             onWipe = {
                                 sheet = Sheet.None

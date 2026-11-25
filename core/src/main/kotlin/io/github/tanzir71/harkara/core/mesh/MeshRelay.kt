@@ -31,6 +31,7 @@ class MeshRelay(
     private val sosPolicy: SosPolicy = SosPolicy(),
     private val dedupe: DedupeCache = DedupeCache(),
     private val maxFutureSkew: Duration = Duration.ofMinutes(15),
+    private val accept: (Event) -> Boolean = { true },
 ) {
     /** Marks a locally created event as seen and keeps it; returns the frame to broadcast. */
     fun originate(event: Event, now: Instant, ttl: Int = MeshFrame.DEFAULT_TTL): MeshFrame {
@@ -53,6 +54,7 @@ class MeshRelay(
     fun onEvent(event: Event, frame: MeshFrame, now: Instant): RelayDecision {
         if (dedupe.contains(event.id, now)) return RelayDecision.Dropped(DropReason.DUPLICATE)
         if (!event.validate()) return RelayDecision.Dropped(DropReason.INVALID)
+        if (!accept(event)) return RelayDecision.Dropped(DropReason.INVALID)
         dedupe.markIfNew(event.id, now)
         if (event.isExpired(now.epochSecond)) return RelayDecision.Dropped(DropReason.EXPIRED)
         if (event.createdAt > now.epochSecond + maxFutureSkew.seconds) return RelayDecision.Dropped(DropReason.FROM_THE_FUTURE)

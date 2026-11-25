@@ -4,6 +4,7 @@ import io.github.tanzir71.harkara.core.TestData
 import io.github.tanzir71.harkara.core.TestData.NOW
 import io.github.tanzir71.harkara.core.nostr.GiftWrap
 import io.github.tanzir71.harkara.core.nostr.Kinds
+import io.github.tanzir71.harkara.core.nostr.signEvent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -65,6 +66,28 @@ class EventStoreTest {
         val posts = (1..3).map { post(it, "wh0r0d", NOW + it) }
         posts.forEach { store.ingest(it, NOW) }
         assertEquals(listOf(posts[2], posts[1]), store.query("", NOW))
+    }
+
+    @Test
+    fun `byte budget evicts oldest and repeated ingest does not double count`() {
+        val old = post(1, "wh0r0d", NOW - 10)
+        val fresh = post(2, "wh0r0d", NOW)
+        val budget = maxOf(old.toJson().encodeToByteArray().size, fresh.toJson().encodeToByteArray().size).toLong()
+        val store = EventStore(setOf("wh0r"), maxBytes = budget)
+        repeat(3) { assertTrue(store.ingest(old, NOW).cached) }
+        assertTrue(store.ingest(fresh, NOW).cached)
+        assertEquals(listOf(fresh), store.query("wh0r", NOW))
+        assertEquals(1, store.size)
+    }
+
+    @Test
+    fun `task and safety followups without geohashes survive a partition`() {
+        val store = EventStore(setOf("wh0r"))
+        for (kind in listOf(Kinds.TASK_STEP, Kinds.REACTION, Kinds.REPORT, Kinds.SOS_UPDATE)) {
+            val event = TestData.keys(kind).signEvent(kind, listOf(listOf("e", "a".repeat(64))), "followup", NOW)
+            assertTrue(store.ingest(event, NOW).cached)
+            assertTrue(event.id in store.digest(NOW).eventIds)
+        }
     }
 
     @Test

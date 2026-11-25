@@ -112,7 +112,7 @@ fun ChatsRoute(
                         }
                     },
                     onCopyKey = {
-                        me?.let { platform.copyToClipboard("Harkara key", Bech32.encodeNpub(it)) }
+                        me?.let { platform.copyToClipboard(context.getString(R.string.clipboard_public_key_label), Bech32.encodeNpub(it)) }
                         say(context.getString(R.string.chats_key_copied))
                     },
                 )
@@ -267,7 +267,7 @@ fun ChatThreadRoute(
                         MessageActionsSheetContent(
                             onCopy = {
                                 sheet = ThreadSheet.None
-                                item?.let { platform.copyToClipboard("Harkara message", it.copyText) }
+                                item?.let { platform.copyToClipboard(context.getString(R.string.clipboard_message_label), it.copyText) }
                                 say(context.getString(R.string.message_copied))
                             },
                             onMakeTask = {
