@@ -43,3 +43,4 @@ et.zetetic:sqlcipher-android 4.10.0: 4.20.0 requires compileSdk 36 and the hando
 - 2026-11-25: The map style builder (core/map/MapStyle) labels with 
 ame:bn first, falling back to 
 ame; MapLibre's support for Bangla glyph shaping is listed in HARDWARE.md as unverified.
+- 2026-11-25: The emergency handbook (data/handbook, 42 sections, en + bn, ~365 KB) ships inside the APK because the Handbook module is on by default and must work with no network; only further translations would be downloads. Handbook pages use the polite আপনি form (public-safety convention); app UI strings use তুমি.
