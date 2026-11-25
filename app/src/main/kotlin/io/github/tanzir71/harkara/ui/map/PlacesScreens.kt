@@ -100,8 +100,11 @@ fun MyPinsScreen(
         LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (tab == 0) {
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        HButton(stringResource(R.string.pins_import), onImport, variant = HButtonVariant.Secondary, height = 40.dp)
+                    HButton(stringResource(R.string.pins_import), onImport, Modifier.fillMaxWidth(), variant = HButtonVariant.Secondary, height = 44.dp, icon = R.drawable.ic_plus)
+                }
+                item {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.pins_export), style = HarkaraTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
                         PinFileFormat.entries.forEach { f -> Chip(f.extension.uppercase(Locale.ROOT), selected = false, onClick = { onExport(f) }) }
                     }
                 }

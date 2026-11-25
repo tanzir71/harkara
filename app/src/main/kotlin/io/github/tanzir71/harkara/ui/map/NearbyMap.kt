@@ -173,7 +173,7 @@ private fun MapMarker.icon(): Int = when (kind) {
 @Composable
 private fun LiteRow(m: MapMarker, h: Heading, onClick: () -> Unit) {
     val c = HarkaraTheme.colors
-    val title = m.label?.takeIf { m.kind != MarkerKind.PERSON && m.kind != MarkerKind.TASK } ?: m.detail ?: stringResource(m.layer.label())
+    val title = (if (m.kind == MarkerKind.PIN) m.label else m.detail) ?: m.label ?: stringResource(m.layer.label())
     val distance = GeoMath.distanceLabel(h.distanceMeters)
     HCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -187,7 +187,7 @@ private fun LiteRow(m: MapMarker, h: Heading, onClick: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = HarkaraTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1)
-                val sub = listOfNotNull(stringResource(m.layer.label()), m.label?.takeIf { m.kind == MarkerKind.TASK }).joinToString(" · ")
+                val sub = listOfNotNull(stringResource(m.layer.label()), m.label?.takeIf { m.kind == MarkerKind.TASK || m.kind == MarkerKind.POST }).joinToString(" · ")
                 Text(sub, style = HarkaraTheme.type.caption, color = c.textSecondary, maxLines = 1)
             }
             Column(horizontalAlignment = Alignment.End) {

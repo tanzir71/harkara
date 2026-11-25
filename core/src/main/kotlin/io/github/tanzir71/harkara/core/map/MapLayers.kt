@@ -50,8 +50,12 @@ data class MapNode(val id: String, val name: String, val position: LatLng)
  * same data as GeoJSON for export and for native map layers.
  */
 object MapLayers {
+    /** Posts: [MapMarker.label] is the category, [MapMarker.detail] the start of the text. */
     fun posts(posts: List<FeedPost>): List<MapMarker> = posts.map {
-        MapMarker("post:${it.id}", MapLayer.POSTS, MarkerKind.POST, it.location, "category/" + (it.category?.tag ?: "chatter"))
+        MapMarker(
+            "post:${it.id}", MapLayer.POSTS, MarkerKind.POST, it.location, "category/" + (it.category?.tag ?: "chatter"),
+            it.category?.label, it.text.lineSequence().first().take(80),
+        )
     }
 
     fun pins(pins: List<Pin>, me: String?): List<MapMarker> = pins.map {

@@ -530,6 +530,7 @@
     <string name="pins_tab">পিন</string>
     <string name="checkins_tab">চেক-ইন</string>
     <string name="pins_import">ইমপোর্ট</string>
+    <string name="pins_export">এক্সপোর্ট</string>
     <string name="pins_export_note">অন্য ম্যাপ অ্যাপের সাথে আনা-নেওয়ার জন্য GPX, KML বা GeoJSON ইমপোর্ট বা এক্সপোর্ট করো।</string>
     <string name="pins_empty_title">এখনো কোনো পিন নেই</string>
     <string name="pins_empty_body">ম্যাপ থেকে পিন দাও: পানির কল, আশ্রয়কেন্দ্র, গেট। ব্যক্তিগত পিন শুধু তোমার।</string>

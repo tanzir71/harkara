@@ -534,6 +534,7 @@
     <string name="pins_tab">Pins</string>
     <string name="checkins_tab">Check-ins</string>
     <string name="pins_import">Import</string>
+    <string name="pins_export">Export</string>
     <string name="pins_export_note">Import or export GPX, KML or GeoJSON, to and from other map apps.</string>
     <string name="pins_empty_title">No pins yet</string>
     <string name="pins_empty_body">Drop a pin from the map: a water point, a shelter, a gate. Private pins are for you alone.</string>

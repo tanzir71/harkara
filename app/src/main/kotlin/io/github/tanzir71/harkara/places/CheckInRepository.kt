@@ -37,7 +37,8 @@ data class CheckInView(val checkIn: CheckIn, val own: Boolean)
 
 /** Wakes the phone once at a trip's expected arrival; nothing runs while no trip is active. */
 interface OverdueScheduler {
-    fun schedule(tripId: String, atMillis: Long)
+    /** [again] = called from the running job (it woke too early), so the new job queues behind it. */
+    fun schedule(tripId: String, atMillis: Long, again: Boolean = false)
     fun cancel(tripId: String)
 }
 
@@ -121,7 +122,7 @@ class CheckInRepository(
     suspend fun checkOverdue(tripId: String? = null, lastPlace: String? = null): Boolean {
         val trip = currentTrip()?.takeIf { tripId == null || it.id == tripId } ?: return false
         if (now < trip.due) {
-            scheduler.schedule(trip.id, trip.due * 1000)
+            scheduler.schedule(trip.id, trip.due * 1000, again = true)
             return false
         }
         val own = db.checkInDao().ownSince(trip.startedAt).mapNotNull { it.toCheckIn() }.filter { it.author == profile().pubkeyHex }
@@ -152,13 +153,15 @@ private fun CheckInEntity.toCheckIn(): CheckIn? {
 
 /** One-off WorkManager job per active trip (unique per app: one trip at a time). */
 class WorkManagerOverdueScheduler(private val context: Context, private val nowMillis: () -> Long = System::currentTimeMillis) : OverdueScheduler {
-    override fun schedule(tripId: String, atMillis: Long) {
+    override fun schedule(tripId: String, atMillis: Long, again: Boolean) {
         val request = OneTimeWorkRequestBuilder<OverdueWorker>()
             .setInitialDelay((atMillis - nowMillis()).coerceAtLeast(0), TimeUnit.MILLISECONDS)
             .setInputData(workDataOf(OverdueWorker.KEY_TRIP to tripId))
             .addTag(OverdueWorker.TAG)
             .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(OverdueWorker.NAME, ExistingWorkPolicy.REPLACE, request)
+        // A running job can't REPLACE itself without cancelling its own run, so it appends the next one.
+        val policy = if (again) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.REPLACE
+        WorkManager.getInstance(context).enqueueUniqueWork(OverdueWorker.NAME, policy, request)
     }
 
     override fun cancel(tripId: String) {

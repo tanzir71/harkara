@@ -64,8 +64,11 @@ class PinRepository(
         scope.launch { pool.incoming.collect { ingest(it.event) } }
     }
 
+    @Volatile private var center: LatLng? = null
+
     /** Public pins around [center], our own private pins, and answers on the pins we hold. */
     suspend fun subscribe(center: LatLng) {
+        this.center = center
         val cells = GeoMath.withNeighbours(GeoHash.encode(center.lat, center.lng, 5))
         val me = profile().pubkeyHex
         val addresses = db.pinDao().observeAll().first().filter { it.visibility == PinVisibility.PUBLIC.wire }.map { it.address }.take(200)
@@ -112,6 +115,8 @@ class PinRepository(
         if (old != null && Pins.newer(old, pin) === old && old.eventId != pin.eventId) return false
         if (old != null && old.eventId == pin.eventId) return false
         db.pinDao().upsert(pin.toEntity(json, own = pin.owner == profile().pubkeyHex, updatedAt = nowMillis()))
+        // A public pin we didn't hold before: follow its "still there?" answers too.
+        if (old == null && pin.visibility == PinVisibility.PUBLIC) center?.let { subscribe(it) }
         return true
     }
 

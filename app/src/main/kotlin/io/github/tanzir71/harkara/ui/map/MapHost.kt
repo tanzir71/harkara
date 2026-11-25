@@ -285,8 +285,9 @@ fun NearbyMapHost(
     }
 }
 
+/** Lite list banner while no map pack is on the phone. */
 @Composable
-private fun GetMapCard(onOpenPacks: () -> Unit) {
+fun GetMapCard(onOpenPacks: () -> Unit) {
     val c = HarkaraTheme.colors
     HCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
