@@ -23,10 +23,12 @@ harkara/
 | `mesh` | Relay rules on events: dedupe, TTL/hops, token bucket, priority queue (SOS first), fragments, partition-heal digests, peer rate limits, `FakeMeshNetwork` for tests |
 | `relay` | NIP-01 client/relay messages and filters, NIP-11 info, backoff, NIP-77 negentropy, an I/O-free `LocalRelay` |
 | `feed` | Feed posts (tags, expiry, PoW), composer rules and word filters, votes/reports and the local moderation ladder |
+| `chat` | NIP-17 chat rumors (text, cards, `n` names), receipts (kind 3479), voice-note parts, location precision |
+| `lan` | The Wi-Fi room server: HTTP + WebSocket on plain sockets around `LocalRelay` |
 | `tasks` | NIP-99 offers, signed steps, the task state machine, offline handoff tokens/codes, reputation |
 | `khata` | IOU terms, co-signatures, settlements, QR handshake, split bills, CSV/JSON export |
 | `tools` | Prayer times and Qibla (Adhan), Morse code, SOS events |
-| `geo`, `map`, `store` | Geohash math, the MapLibre style builder, the storage budget |
+| `geo`, `map`, `store` | Geohash math, Open Location Code (Plus Codes), the MapLibre style builder, the storage budget |
 
 Everything in `core` is tested on the JVM with JUnit 5, including the official NIP and BIP-340 vectors.
 
@@ -34,15 +36,19 @@ Everything in `core` is tested on the JVM with JUnit 5, including the official N
 
 - **Storage** — Room on SQLCipher (`data/`): one `events` table holding the exact signed JSON of every event
   (indexed by kind, geohash, target, pubkey), the `outbox` with delivery states, relay acks, local mutes,
-  local secrets (handoff tokens) and IOU bundles. JVM tests use a plain in-memory Room database.
+  local secrets (handoff tokens), IOU bundles, and chats (conversations, messages, sent wraps with their
+  Wi-Fi room state, receipts, voice-note parts, contacts). JVM tests use a plain in-memory Room database.
 - **Identity** — `IdentityManager` keeps the root seed in no-backup storage (wrapped by the Android Keystore
   where available), exposes the key ring, and exports/restores NIP-49 backups.
 - **Carriers** — `RelayPool` (OkHttp WebSockets, NIP-11 limits, backoff, NIP-77 catch-up) feeds a single
   `RoomEventStore` door; the `Outbox` sends and retries. The connectivity pill reads a `ConnectivityMonitor`
   that names the best rung that can reach people. Relays run only while the app is visible or during the
   30-minute WorkManager check (network + battery-not-low constraints).
-- **Features** — `FeedRepository`, `TaskRepository`, `KhataRepository`, `SosRepository` each read their
-  events from Room (so everything works offline) and publish through the outbox.
+- **Wi-Fi room** — `LanRoom` (`lan/`): our room server, NSD discovery (`LanDiscovery`, faked in tests) and a
+  second `RelayPool` to the other phones' servers; foreground only. It adds "On local Wi-Fi" to the pill.
+- **Features** — `FeedRepository`, `ChatRepository`, `TaskRepository`, `KhataRepository`, `SosRepository` each
+  read their events from Room (so everything works offline) and publish through the outbox; chats also go to
+  the Wi-Fi room at the same time.
 - **UI** — Jetpack Compose with the Harkara theme generated from `design/tokens/tokens.json`
   (`ui/theme/Tokens.kt`), components in `ui/components`, screens in `ui/screens`, and one `HarkaraApp`
   root that owns navigation and bottom sheets. Android-only actions go through `PlatformActions`, faked in
