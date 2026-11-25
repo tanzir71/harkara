@@ -13,10 +13,14 @@ import io.github.tanzir71.harkara.relay.RelayStatus
 import io.github.tanzir71.harkara.ui.components.Delivery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.net.InetAddress
 
 /** Simulated phones for chat tests: separate databases, identities, relay pools and (optionally) Wi-Fi rooms. */
@@ -60,13 +64,15 @@ class ChatTestPhones(private val clock: () -> Long) {
 
     fun phone(name: String, relayUrl: String? = null, discovery: LanDiscovery? = null) = Phone(name, relayUrl, discovery).also { phones += it }
 
+    /** Stops every carrier, waits for in-flight work to end, then closes the databases (no stray coroutine errors). */
     fun close() {
         phones.forEach { p ->
             p.lan?.stop()
             p.pool.stop()
-            p.db.close()
         }
+        runBlocking { withTimeoutOrNull(5_000) { scope.coroutineContext[Job]!!.cancelAndJoin() } }
         scope.cancel()
+        phones.forEach { it.db.close() }
     }
 
     companion object {

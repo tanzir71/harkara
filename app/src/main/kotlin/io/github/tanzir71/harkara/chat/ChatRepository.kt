@@ -1,5 +1,6 @@
 package io.github.tanzir71.harkara.chat
 
+import androidx.room.withTransaction
 import io.github.tanzir71.harkara.core.Carrier
 import io.github.tanzir71.harkara.core.chat.ChatCard
 import io.github.tanzir71.harkara.core.chat.ChatProtocol
@@ -31,6 +32,7 @@ import io.github.tanzir71.harkara.relay.Outbox
 import io.github.tanzir71.harkara.relay.Priority
 import io.github.tanzir71.harkara.relay.RelayPool
 import io.github.tanzir71.harkara.ui.components.Delivery
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -99,16 +101,27 @@ class ChatRepository(
 
     /** Listens to the relays and the Wi-Fi room. Call once with a long-lived scope. */
     fun start(scope: CoroutineScope) {
-        scope.launch { pool.incoming.collect { ingest(it.event, Carrier.ONLINE) } }
+        scope.launch { pool.incoming.collect { safely { ingest(it.event, Carrier.ONLINE) } } }
         scope.launch {
             pool.eose.collect { (_, sub) -> if (sub == SUB_DM) prefs.dmSyncedAt = nowSeconds() }
         }
         val room = lan ?: return
-        scope.launch { room.incoming.collect { ingest(it, Carrier.NODE) } }
+        scope.launch { room.incoming.collect { safely { ingest(it, Carrier.NODE) } } }
         scope.launch {
-            room.acks.collect { ack -> if (ack.accepted) raiseLan(ack.eventId, Delivery.ReachedNetwork) }
+            room.acks.collect { ack -> if (ack.accepted) safely { raiseLan(ack.eventId, Delivery.ReachedNetwork) } }
         }
-        scope.launch { room.peerCount.collect { if (it > 0) flushLan() } }
+        scope.launch { room.peerCount.collect { if (it > 0) safely { flushLan() } } }
+    }
+
+    /** One bad event (or a database that is shutting down) must not stop the listener for good. */
+    private suspend fun safely(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Dropped; the event will come again from another carrier or the next fetch.
+        }
     }
 
     /**
@@ -171,6 +184,13 @@ class ChatRepository(
     suspend fun voiceClip(messageId: String): VoiceClip? = VoiceNotes.assemble(dao.voiceParts(messageId).map { it.toPart() })
 
     // ---- Starting chats ----
+
+    /** The room id a DM with [npubOrHex] has (or will have), or null for a bad key. */
+    fun dmRoomId(npubOrHex: String): String? = parsePubkey(npubOrHex)?.let { ChatProtocol.roomId(setOf(me, it)) }
+
+    /** The room id a group of [members] (plus us) has, or null when fewer than two others are valid. */
+    fun groupRoomId(members: Collection<String>): String? =
+        (members.mapNotNull(::parsePubkey) + me).toSet().takeIf { it.size >= 3 }?.let(ChatProtocol::roomId)
 
     /** Opens (or finds) the DM with [npubOrHex]; [petName] is ours for them and never leaves the phone. */
     suspend fun startDm(npubOrHex: String, petName: String? = null): String? {
@@ -317,7 +337,13 @@ class ChatRepository(
                     synchronized(seenWraps) { seenWraps.remove(event.id) }
                     return
                 }
-                lock.withLock { onRumor(rumor, carrier) }
+                try {
+                    lock.withLock { onRumor(rumor, carrier) }
+                } catch (e: Exception) {
+                    // Let a later copy of the same wrap try again.
+                    synchronized(seenWraps) { seenWraps.remove(event.id) }
+                    throw e
+                }
             }
             ChatProtocol.isWifiMessage(event) -> onPublic(event, WIFI_ID, ConversationType.WIFI, null, carrier)
             ChatProtocol.isAreaMessage(event) -> {
@@ -377,7 +403,7 @@ class ChatRepository(
         }
     }
 
-    private suspend fun onReceipt(member: String, receipt: ChatRumor.Receipt) {
+    private suspend fun onReceipt(member: String, receipt: ChatRumor.Receipt) = db.withTransaction {
         val status = if (receipt.status == ReceiptStatus.READ) Delivery.Read else Delivery.Delivered
         for (id in receipt.messageIds) {
             val m = dao.message(id) ?: continue
@@ -452,7 +478,7 @@ class ChatRepository(
         voice: VoiceClip?,
         own: Boolean,
         carrier: Carrier,
-    ): Boolean {
+    ): Boolean = db.withTransaction {
         val inserted = dao.insertMessage(
             ChatMessageEntity(
                 id = id,
@@ -481,7 +507,7 @@ class ChatRepository(
             dao.bumpConversation(c.id, createdAt, preview, 0)
             if (!own) dao.addUnread(c.id, 1)
         }
-        return inserted
+        inserted
     }
 
     private suspend fun ensureRoom(members: Set<String>, at: Long): ConversationEntity {

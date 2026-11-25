@@ -41,8 +41,9 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M5 - Chats (v0.4.0)
 
-- [ ] DMs (NIP-17), groups, area channels, "everyone on this Wi-Fi", delivery ticks + carrier glyphs, voice notes, shared cards, "Make it a task".
-- [ ] Gate: two simulated users exchange DMs and group messages via mock relay and LAN room; screen 04 screenshot.
+- [x] DMs (NIP-17), groups, area channels, "everyone on this Wi-Fi", delivery ticks + carrier glyphs, voice notes, shared cards, "Make it a task".
+- [x] Receipts (kind 3479), Plus Codes, location card (exact / ~100 m / area), Wi-Fi room server + NSD discovery, name asked at first send.
+- [x] Gate: two simulated users exchange DMs and group messages via mock relay and LAN room (`ChatRelayTest`, `ChatLanTest`); screen 04 screenshot (`ChatScreenshotTest`).
 
 ## M6 - Off-grid carriers and the ladder (v0.5.0)
 

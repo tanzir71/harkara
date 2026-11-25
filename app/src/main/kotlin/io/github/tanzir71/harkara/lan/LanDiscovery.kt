@@ -37,8 +37,10 @@ interface LanDiscovery {
  */
 class NsdLanDiscovery(context: Context) : LanDiscovery {
     private val app = context.applicationContext
-    private val nsd: NsdManager? = app.getSystemService(NsdManager::class.java)
-    private val wifi: WifiManager? = app.getSystemService(WifiManager::class.java)
+
+    // Looked up only when the room starts (in the foreground), never when the app container is built.
+    private val nsd: NsdManager? by lazy { app.getSystemService(NsdManager::class.java) }
+    private val wifi: WifiManager? by lazy { app.getSystemService(WifiManager::class.java) }
     private val found = ConcurrentHashMap<String, LanPeer>()
     private val mutablePeers = MutableStateFlow<List<LanPeer>>(emptyList())
     override val peers: StateFlow<List<LanPeer>> = mutablePeers.asStateFlow()

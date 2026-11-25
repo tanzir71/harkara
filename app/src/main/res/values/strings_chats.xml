@@ -1,28 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Chats (M5) -->
     <string name="chats_new">New chat</string>
     <string name="chats_rooms">Nearby rooms</string>
     <string name="chats_messages">Messages</string>
     <string name="chats_wifi_title">Everyone on this Wi-Fi</string>
-    <string name="chats_wifi_peers">%1$d phones here · no internet needed</string>
+    <plurals name="chats_wifi_peers">
+        <item quantity="one">%1$d phone here · no internet needed</item>
+        <item quantity="other">%1$d phones here · no internet needed</item>
+    </plurals>
     <string name="chats_wifi_alone">No one else here yet · no internet needed</string>
     <string name="chats_area_title">%1$s channel</string>
     <string name="chats_area_sub">Anyone nearby · no names, gone after a day</string>
     <string name="chats_none_title">No chats yet</string>
     <string name="chats_none_body">DMs and groups are end-to-end encrypted and travel by internet, local Wi-Fi or saved for later. The rooms above are open to everyone nearby.</string>
     <string name="chats_voice_preview">Voice note</string>
-    <string name="chats_members">%1$d members</string>
-    <string name="chats_unread">%1$d unread</string>
+    <plurals name="chats_members">
+        <item quantity="one">%1$d member</item>
+        <item quantity="other">%1$d members</item>
+    </plurals>
+    <string name="chats_unread">Unread: %1$d</string>
     <string name="pill_mesh_short">Nearby · %1$d</string>
 
     <!-- New chat sheet -->
     <string name="chats_new_dm">Message someone</string>
     <string name="chats_new_group">New group</string>
-    <string name="chats_their_key">Their key (npub1…)</string>
+    <string name="chats_their_key" tools:ignore="Typos">Their key (npub1…)</string>
     <string name="chats_pet_name">Name for them · only on this phone</string>
     <string name="chats_start">Start chat</string>
-    <string name="chats_bad_key">That isn\'t a Harkara or Nostr key (npub1…)</string>
+    <string name="chats_bad_key" tools:ignore="Typos">That isn\'t a Harkara or Nostr key (npub1…)</string>
     <string name="chats_your_key">Your key</string>
     <string name="chats_your_key_body">People message you with this. It holds no phone number.</string>
     <string name="chats_copy_key">Copy</string>
@@ -59,7 +65,10 @@
     <string name="thread_dm_sub">Encrypted · %1$s</string>
     <string name="thread_area_sub">Area channel · anonymous</string>
     <string name="thread_wifi_alone">Just you so far</string>
-    <string name="thread_wifi_peers">%1$d phones here</string>
+    <plurals name="thread_wifi_peers">
+        <item quantity="one">%1$d phone here</item>
+        <item quantity="other">%1$d phones here</item>
+    </plurals>
     <string name="thread_too_long">That message is too long.</string>
     <string name="thread_phone">Phone numbers can\'t go in a public room.</string>
     <string name="thread_failed">Couldn\'t send that.</string>

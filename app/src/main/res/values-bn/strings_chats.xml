@@ -5,15 +5,21 @@
     <string name="chats_rooms">আশেপাশের রুম</string>
     <string name="chats_messages">মেসেজ</string>
     <string name="chats_wifi_title">এই ওয়াই-ফাইয়ের সবাই</string>
-    <string name="chats_wifi_peers">এখানে %1$dটি ফোন · ইন্টারনেট লাগে না</string>
+    <plurals name="chats_wifi_peers">
+        <item quantity="one">এখানে %1$dটি ফোন · ইন্টারনেট লাগে না</item>
+        <item quantity="other">এখানে %1$dটি ফোন · ইন্টারনেট লাগে না</item>
+    </plurals>
     <string name="chats_wifi_alone">এখানে এখনো কেউ নেই · ইন্টারনেট লাগে না</string>
     <string name="chats_area_title">%1$s চ্যানেল</string>
     <string name="chats_area_sub">আশেপাশের যে কেউ · নাম ছাড়া, এক দিনে মুছে যায়</string>
     <string name="chats_none_title">এখনো কোনো চ্যাট নেই</string>
     <string name="chats_none_body">ডিএম আর গ্রুপ এন্ড-টু-এন্ড এনক্রিপ্টেড, যায় ইন্টারনেট, লোকাল ওয়াই-ফাই দিয়ে, নয়তো পরে যাওয়ার জন্য জমা থাকে। ওপরের রুমগুলো আশেপাশের সবার জন্য খোলা।</string>
     <string name="chats_voice_preview">ভয়েস নোট</string>
-    <string name="chats_members">%1$d জন সদস্য</string>
-    <string name="chats_unread">%1$dটি না-পড়া</string>
+    <plurals name="chats_members">
+        <item quantity="one">%1$d জন সদস্য</item>
+        <item quantity="other">%1$d জন সদস্য</item>
+    </plurals>
+    <string name="chats_unread">না-পড়া: %1$d</string>
     <string name="pill_mesh_short">আশেপাশে · %1$d</string>
 
     <!-- New chat sheet -->
@@ -59,7 +65,10 @@
     <string name="thread_dm_sub">এনক্রিপ্টেড · %1$s</string>
     <string name="thread_area_sub">এলাকার চ্যানেল · নাম ছাড়া</string>
     <string name="thread_wifi_alone">এখনো শুধু তুমি</string>
-    <string name="thread_wifi_peers">এখানে %1$dটি ফোন</string>
+    <plurals name="thread_wifi_peers">
+        <item quantity="one">এখানে %1$dটি ফোন</item>
+        <item quantity="other">এখানে %1$dটি ফোন</item>
+    </plurals>
     <string name="thread_too_long">মেসেজটা অনেক লম্বা।</string>
     <string name="thread_phone">পাবলিক রুমে ফোন নম্বর দেওয়া যায় না।</string>
     <string name="thread_failed">পাঠানো গেল না।</string>

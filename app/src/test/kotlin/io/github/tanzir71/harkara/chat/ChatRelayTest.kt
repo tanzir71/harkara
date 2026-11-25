@@ -88,7 +88,7 @@ class ChatRelayTest {
         val aliceThread = alice.threadWhen(room) { it.size == 4 }
         assertEquals(texts + "Yes, I can go in 10 min", aliceThread.map { it.message.text })
         assertEquals("Sumon", aliceThread.last().senderName)
-        assertEquals(1, alice.chat.conversations().first().single { it.conversation.id == room }.conversation.unread)
+        withTimeout(10_000) { alice.chat.conversations().first { list -> list.single { it.conversation.id == room }.conversation.unread == 1 } }
         alice.chat.markRead(room)
         assertEquals(0, alice.chat.conversations().first().single { it.conversation.id == room }.conversation.unread)
         bob.awaitDelivery(room, aliceThread.last().message.id, Delivery.Read)

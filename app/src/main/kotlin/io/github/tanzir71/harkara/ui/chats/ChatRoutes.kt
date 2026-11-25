@@ -57,7 +57,6 @@ fun ChatsRoute(
 ) {
     val repo = container.chatRepository
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val presenter = rememberChatPresenter()
     val settings by container.settings.state.collectAsStateWithLifecycle()
     val me by container.identity.profilePubkey.collectAsStateWithLifecycle()
@@ -77,7 +76,9 @@ fun ChatsRoute(
         modifier = modifier,
         pill = pill,
         onOpenRoom = { kind ->
-            scope.launch { onOpen(if (kind == ChatKind.WIFI) repo.wifiRoom() else repo.areaChannel(area)) }
+            // The room is made in the app scope (this screen leaves as the thread opens); its id is known now.
+            container.scope.launch { if (kind == ChatKind.WIFI) repo.wifiRoom() else repo.areaChannel(area) }
+            onOpen(if (kind == ChatKind.WIFI) ChatRepository.WIFI_ID else ChatRepository.AREA_PREFIX + area)
         },
         onOpen = onOpen,
         onNewChat = { sheet = ListSheet.NewChat },
@@ -95,23 +96,19 @@ fun ChatsRoute(
                     npub = me?.let(Bech32::encodeNpub),
                     contacts = names.toList(),
                     onStartDm = { key, name ->
-                        val valid = ChatRepository.parsePubkey(key) != null
-                        if (valid) {
-                            scope.launch {
-                                repo.startDm(key, name.ifBlank { null })?.let { id ->
-                                    sheet = ListSheet.None
-                                    onOpen(id)
-                                }
-                            }
+                        val id = repo.dmRoomId(key)
+                        if (id != null) {
+                            container.scope.launch { repo.startDm(key, name.ifBlank { null }) }
+                            sheet = ListSheet.None
+                            onOpen(id)
                         }
-                        valid
+                        id != null
                     },
                     onCreateGroup = { name, members ->
-                        scope.launch {
-                            repo.createGroup(name, members)?.let { id ->
-                                sheet = ListSheet.None
-                                onOpen(id)
-                            }
+                        repo.groupRoomId(members)?.let { id ->
+                            container.scope.launch { repo.createGroup(name, members) }
+                            sheet = ListSheet.None
+                            onOpen(id)
                         }
                     },
                     onCopyKey = {
@@ -191,7 +188,7 @@ fun ChatThreadRoute(
         }
     }
 
-    fun sendCard(card: ChatCard) = withName { scope.launch { report(repo.sendCard(conversationId, card)) } }
+    fun sendCard(card: ChatCard) = withName { container.scope.launch { report(repo.sendCard(conversationId, card)) } }
 
     LaunchedEffect(recordingSince) {
         if (recordingSince == 0L) return@LaunchedEffect
@@ -225,7 +222,7 @@ fun ChatThreadRoute(
         canAttach = isPrivate,
         recording = if (recordingSince != 0L) RecordingUi(ChatPresenter.duration(minOf(elapsed, VoiceNotes.MAX_DURATION_MS) / 1000), recorded != null) else null,
         onBack = onBack,
-        onSend = { text -> withName { scope.launch { report(repo.sendText(conversationId, text)) } } },
+        onSend = { text -> withName { container.scope.launch { report(repo.sendText(conversationId, text)) } } },
         onAttach = { sheet = ThreadSheet.Attach },
         onMic = {
             platform.requestMicrophone { granted ->
@@ -242,7 +239,7 @@ fun ChatThreadRoute(
             val clip = recorded ?: container.voiceRecorder.stop()
             recordingSince = 0L
             recorded = null
-            if (clip != null) withName { scope.launch { report(repo.sendVoice(conversationId, clip)) } }
+            if (clip != null) withName { container.scope.launch { report(repo.sendVoice(conversationId, clip)) } }
         },
         onRecordingCancel = {
             container.voiceRecorder.cancel()
@@ -280,7 +277,7 @@ fun ChatThreadRoute(
                             onBlock = item?.takeIf { !it.outgoing && it.author != null }?.let { target ->
                                 {
                                     sheet = ThreadSheet.None
-                                    scope.launch { repo.blockAuthor(target.author!!) }
+                                    container.scope.launch { repo.blockAuthor(target.author!!) }
                                 }
                             },
                         )

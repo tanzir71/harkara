@@ -27,6 +27,7 @@ import java.util.Locale
 /** Turns stored chats into rows, headers and thread items: names, times, cards and the route hint. */
 class ChatPresenter(
     private val label: (Int, Array<out Any>) -> String,
+    private val plural: (Int, Int) -> String,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val nowSeconds: () -> Long = { System.currentTimeMillis() / 1000 },
 ) {
@@ -66,7 +67,7 @@ class ChatPresenter(
         RoomRowUi(
             ChatKind.WIFI,
             label(R.string.chats_wifi_title, emptyArray()),
-            if (wifiPeers > 0) label(R.string.chats_wifi_peers, arrayOf(wifiPeers)) else label(R.string.chats_wifi_alone, emptyArray()),
+            if (wifiPeers > 0) plural(R.plurals.chats_wifi_peers, wifiPeers) else label(R.string.chats_wifi_alone, emptyArray()),
             wifiUnread,
         ),
         RoomRowUi(
@@ -88,9 +89,9 @@ class ChatPresenter(
                 val other = c.memberList().firstOrNull { it != me } ?: me.orEmpty()
                 label(R.string.thread_dm_sub, arrayOf(runCatching { shortNpub(Bech32.encodeNpub(other)) }.getOrDefault("")))
             }
-            ChatKind.GROUP -> label(R.string.chats_members, arrayOf(c.memberList().size))
+            ChatKind.GROUP -> plural(R.plurals.chats_members, c.memberList().size)
             ChatKind.AREA -> label(R.string.thread_area_sub, emptyArray())
-            ChatKind.WIFI -> if (wifiPeers > 0) label(R.string.thread_wifi_peers, arrayOf(wifiPeers)) else label(R.string.thread_wifi_alone, emptyArray())
+            ChatKind.WIFI -> if (wifiPeers > 0) plural(R.plurals.thread_wifi_peers, wifiPeers) else label(R.string.thread_wifi_alone, emptyArray())
         }
         return ThreadHeaderUi(kind, title, initials(title), subtitle)
     }
@@ -202,5 +203,5 @@ class ChatPresenter(
 @Composable
 fun rememberChatPresenter(): ChatPresenter {
     val context = LocalContext.current
-    return ChatPresenter({ id, args -> context.getString(id, *args) })
+    return ChatPresenter({ id, args -> context.getString(id, *args) }, { id, n -> context.resources.getQuantityString(id, n, n) })
 }

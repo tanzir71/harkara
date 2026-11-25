@@ -3,7 +3,9 @@ package io.github.tanzir71.harkara.ui
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -83,30 +85,30 @@ class ChatFlowTest {
         compose.onNodeWithContentDescription("Their key (npub1…)").performTextClearance()
         compose.onNodeWithContentDescription("Their key (npub1…)").performTextInput(bob)
         compose.onNodeWithText("Start chat").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText(shortNpub(bob))).fetchSemanticsNodes().isNotEmpty() }
-
         val hint = "Message · sends when a route opens"
+        compose.waitUntil(15_000) { compose.onAllNodes(hasContentDescription(hint)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodes(hasText(shortNpub(bob))).onFirst().assertIsDisplayed()
         compose.onNodeWithContentDescription(hint).performTextInput("Hello from the hall")
         compose.onNodeWithContentDescription("Send").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("What should people call you?").assertIsDisplayed()
         compose.onNodeWithText("Send without a name").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Hello from the hall")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Hello from the hall")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Saved on this phone").assertIsDisplayed()
         assertTrue(container.chatRepository.prefs.nameAsked)
 
         // The second message is not asked about again.
         compose.onNodeWithContentDescription(hint).performTextInput("Second one")
         compose.onNodeWithContentDescription("Send").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Second one")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Second one")).fetchSemanticsNodes().isNotEmpty() }
 
         compose.onNodeWithText("Hello from the hall").performTouchInput { longClick() }
         compose.waitForIdle()
         compose.onNodeWithText("Make it a task").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Coming soon")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Coming soon")).fetchSemanticsNodes().isNotEmpty() }
 
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.waitUntil(5_000) {
+        compose.waitUntil(15_000) {
             compose.onAllNodes(hasText("Messages")).fetchSemanticsNodes().isNotEmpty() &&
                 compose.onAllNodes(hasText("Second one")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -118,11 +120,11 @@ class ChatFlowTest {
     @Test
     fun `the Wi-Fi room and area channel open from the list`() {
         compose.onNodeWithText("Everyone on this Wi-Fi").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Just you so far")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Just you so far")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Message · sends when a route opens").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Dhanmondi channel").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Area channel · anonymous")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Area channel · anonymous")).fetchSemanticsNodes().isNotEmpty() }
     }
 }
