@@ -32,3 +32,15 @@ Everything below is covered by fakes, Robolectric or JVM tests, but has **not** 
 - MapLibre renders Bangla (
 ame:bn) labels with correct conjuncts; if it can't shape Bengali script, labels fall back to 
 ame.
+
+## SMS, QR and links (M10)
+
+- The SMS app opens with the text prefilled from `ACTION_SENDTO smsto:` + `sms_body` on common OEM SMS apps (Google Messages, Samsung, Xiaomi, vivo, OPPO, Realme); some apps may drop the body or split it differently.
+- Two-part GSM-7 SMS (306 characters) are joined again on the receiving phone on Grameenphone, Robi, Banglalink and Teletalk, and survive forwarding; the receiver can paste or share the text into Harkara.
+- "Send SMS directly": `SmsManager.sendDataMessage` to port 7471 between Bangladeshi operators (some networks drop or charge data SMS differently), and `DATA_SMS_RECEIVED` delivery to the enabled receiver on API 26–35.
+- Volunteer gateway: `SMS_RECEIVED` with a two-part text SMS from a member, publishing to relays when the volunteer's phone is online, and `sendMultipartTextMessage` back to a member; the daily cap with real traffic.
+- Android 13+ restricted settings: on a sideloaded APK the SMS permission request is blocked until App info → ⋮ → Allow restricted settings; the guidance screen's steps and wording on Pixel, Samsung, Xiaomi and vivo settings apps.
+- Enabling/disabling the SMS receivers with `setComponentEnabledSetting` takes effect without restarting the app on budget phones.
+- QR: no in-app camera scanner yet (paste works); scanning `harkara:e:` and multi-QR codes from the screen with real phone cameras at 700 characters per code, and the phone camera app handing `harkara:` links to Harkara.
+- Deep links: Chrome and other browsers on Android handing `harkara:` links to the app from the web page's "Open in Harkara" button; `https://tanzir71.github.io/harkara/o/…` links open in the browser on Android 12+ (not verified) and in the app chooser on older versions.
+- The web page on budget-phone browsers: `DecompressionStream('deflate-raw')` support (old Chrome or WebView versions), WebSocket connections to the public relays over mobile data, and Bangla rendering with the bundled fonts.
