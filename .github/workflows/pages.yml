@@ -6,6 +6,7 @@ on:
       - 'site/**'
       - 'tools/**'
       - 'design/**'
+      - 'data/default-relays.json'
       - 'tests/site/**'
       - 'package.json'
       - 'package-lock.json'

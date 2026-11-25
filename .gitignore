@@ -22,6 +22,9 @@ site/en/
 site/privacy/
 site/assets/site.css
 site/assets/favicon.svg
+site/o/
+site/assets/o.js
+site/assets/o.css
 
 # Signing material must never be committed (kept outside the repo in ../harkara-signing/)
 *.keystore
