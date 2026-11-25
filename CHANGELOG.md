@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0
+
+- SMS milestone release of the integrated signed-event SMS, QR, deep-link and non-user web flows. Eligible messages fit two GSM-7 parts; Bangla stays inside the encoded payload, and the normal path opens the user's SMS app with a cost-visible preview.
+- Compact private SMS messages are encrypted and integrated with chat deduplication, blocking and receipt state. Saved contacts can resolve and verify incoming key prefixes without a prior public event.
+- The static non-user page verifies signatures locally, supports IOU confirmation and task/area views, and uses only its documented public relays. QR transport supports bounded multipart reassembly and paste import.
+- Direct SMS and volunteer gateway remain off by default and permission-gated; the gateway is limited to approved recipients and 100 messages per day. Real SIM/carrier behavior remains unverified on hardware.
+- This release retains the complete 283-core/273-app local regression gate, screenshot verification, 78 extended large-text Day/Night states and the 40-case browser gate.
+
 ## 0.8.0
 
 ### Map, pins and location (M9)

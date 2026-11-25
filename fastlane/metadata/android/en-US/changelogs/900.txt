@@ -1,0 +1,1 @@
+SMS, QR and links milestone. Signed small messages fit two SMS; ordinary sending opens your SMS app. Compact private messages are encrypted and deduplicated with chats. The non-user page verifies locally and supports IOU confirmation. Direct SMS and the capped volunteer gateway stay off until explicitly enabled. SIM/carrier behavior remains unverified on hardware.
