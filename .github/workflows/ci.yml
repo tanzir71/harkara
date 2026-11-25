@@ -58,6 +58,7 @@ jobs:
           python -B tools/audit-app-strings.py --strict-ui
           node tools/audit-token-contrast.mjs
           node tools/verify-metadata.mjs
+          node tools/export-store-screenshots.mjs --check
           python -B -m unittest discover -s tools -p test_hardening.py -v
           node --test tools/hardening.test.mjs
 

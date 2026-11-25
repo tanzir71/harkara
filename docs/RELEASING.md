@@ -43,10 +43,18 @@ out the dependency-metadata signing block (`dependenciesInfo`) and VCS info, and
 the version catalog. `.github/workflows/reproducible.yml` (on every tag, or by hand) builds the unsigned release APKs twice
 from clean checkouts on separate runners and compares them entry by entry with `tools/compare_apks.py`;
 content/container differences are informational and never gate a release, while missing or invalid comparison inputs fail the check.
-The workflow fixes timezone/locale and `SOURCE_DATE_EPOCH`, disables build/configuration caches, uses the tag's version and retains the complete `reproducibility-report` artifact and job summary. Record remaining differences here from that report after each run; no independent-build result is asserted here.
+The workflow fixes timezone/locale and `SOURCE_DATE_EPOCH`, disables build/configuration caches, uses the tag's version and retains the complete `reproducibility-report` artifact and job summary.
+
+The v0.5.0 run `45566932709` compared independent clean builds and reported `MATCH` for arm64, ARMv7 and universal APKs: identical ZIP entry contents/metadata and whole-file hashes. Its report is retained as `reproducibility-report`. This is historical evidence, not a claim about a later tag; each final tag repeats the comparison.
+
+## Map data
+
+Map refresh is separate and non-gating: `mappack.yml` runs monthly; its manual trigger is `gh workflow run mappack.yml --ref main`. It publishes a `maps-YYYYMM` release without marking it as the latest app release. Implementation/tests do not fetch map or live-relay datasets. The no-pack Lite fallback works until a pack is available or imported from a friend.
 
 ## APK size
 
 `ci.yml` builds the unsigned release APKs with ABI splits and fails if an `arm64-v8a` or `armeabi-v7a`
 APK exceeds 30 MB (`tools/check-apk-size.mjs`, 30 000 000 bytes per ABI); the universal APK is reported only.
 Both ABI splits must be present, nonempty and uniquely named. The reproducibility builds also run this gate; `tools/release-meta.mjs` runs it before writing publication metadata.
+
+Local split builds use `./gradlew :app:assembleRelease -PharkaraAbiSplits=true`. Do not mix old unsplit APKs into the release output directory: the gate rejects unexpected/duplicate artifacts. On Windows, stop the Gradle daemon before a clean if lint has an output JAR locked. The integrated map-enabled unsigned checkpoint measured 23,050,590 bytes (arm64) and 22,013,478 bytes (ARMv7), both below the decimal 30 MB limit.

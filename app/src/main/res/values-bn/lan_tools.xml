@@ -1,4 +1,6 @@
 <resources>
+    <string name="lan_tools_speak_briefly">দুই সেকেন্ড কথা বলুন</string>
+    <string name="lan_tools_stop_talking">কথা বলা বন্ধ করুন</string>
     <string name="lan_tools_alias">হরকরা</string>
     <string name="lan_tools_drop_title">ল্যানে ফাইল পাঠান</string>
     <string name="lan_tools_ptt_title">ল্যানে চেপে কথা বলুন</string>

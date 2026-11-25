@@ -1,5 +1,7 @@
 package io.github.tanzir71.harkara.ui.screens
 
+import kotlinx.coroutines.CoroutineScope
+
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -43,6 +45,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -203,6 +207,17 @@ internal class LanToolsSession(private val context: Context) {
         state.update { it.copy(talking = false) }
     }
 
+    /** A bounded equivalent of holding the control for switch access and screen readers. */
+    @Synchronized fun speakBriefly(peer: LanToolPeer, token: String, scope: CoroutineScope): Boolean {
+        if (!press(peer, token)) return false
+        val active = sender
+        scope.launch {
+            try { kotlinx.coroutines.delay(2_000) }
+            finally { synchronized(this@LanToolsSession) { if (sender === active) release() } }
+        }
+        return true
+    }
+
     fun send(peer: LanToolPeer, file: OutgoingLanFile, expectedGeneration: Long = generation()) {
         val outgoing = synchronized(this) {
             if (!foreground || client != null || expectedGeneration != generation) return
@@ -346,9 +361,17 @@ fun LanToolsScreen(ptt: Boolean, platform: PlatformActions, onBack: () -> Unit, 
                 val ready = running && microphoneAllowed && peer != null && remoteToken.length in 16..128
                 val holdLabel = stringResource(R.string.lan_tools_hold)
                 val talkState = stringResource(if (state.talking) R.string.lan_tools_talking else R.string.lan_tools_silent)
+                val accessibilityAction = stringResource(if (state.talking) R.string.lan_tools_stop_talking else R.string.lan_tools_speak_briefly)
                 Box(Modifier.fillMaxWidth().heightIn(min = 64.dp)
                     .background(if (ready) c.accentFill else c.bgSunken, RoundedCornerShape(Tokens.Radius.md))
-                    .semantics { role = Role.Button; contentDescription = holdLabel; stateDescription = talkState }
+                    .semantics {
+                        role = Role.Button; contentDescription = holdLabel; stateDescription = talkState
+                        if (!ready) disabled()
+                        onClick(accessibilityAction) {
+                            if (state.talking) { session.release(); true }
+                            else ready && session.speakBriefly(peer!!, remoteToken, scope)
+                        }
+                    }
                     .onFocusChanged { if (!it.isFocused) session.release() }
                     .onKeyEvent { event ->
                         if (event.key != Key.Spacebar && event.key != Key.Enter) false

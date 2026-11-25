@@ -35,8 +35,8 @@ class FakeRadioAir(private val mtu: Int = 185) {
             if (ra.listener != null && rb.listener != null) ra to rb else null
         }
         up?.let { (ra, rb) ->
-            post { ra.listener?.onPeerUp(rb.name, mtu) }
-            post { rb.listener?.onPeerUp(ra.name, mtu) }
+            // Complete both sides' link callbacks before delivering bytes queued by either side.
+            post { ra.listener?.onPeerUp(rb.name, mtu); rb.listener?.onPeerUp(ra.name, mtu) }
         }
     }
 
@@ -94,8 +94,7 @@ class FakeRadioAir(private val mtu: Int = 185) {
         override fun start(token: ByteArray, listener: MeshRadio.Listener) {
             this.listener = listener
             linkedTo(name).filter { it.listener != null }.forEach { other ->
-                post { listener.onPeerUp(other.name, mtu) }
-                post { other.listener?.onPeerUp(name, mtu) }
+                post { listener.onPeerUp(other.name, mtu); other.listener?.onPeerUp(name, mtu) }
             }
         }
 

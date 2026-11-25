@@ -6,3 +6,5 @@
 *.ttf binary
 *.woff2 binary
 *.jks binary
+*.pmtiles binary
+*.pbf binary

@@ -55,17 +55,44 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
+import io.github.tanzir71.harkara.map.MapPackManager
+import io.github.tanzir71.harkara.places.AndroidLocationSource
+import io.github.tanzir71.harkara.places.CheckInRepository
+import io.github.tanzir71.harkara.places.GiftInbox
+import io.github.tanzir71.harkara.places.HeadingSource
+import io.github.tanzir71.harkara.places.LiveShareRepository
+import io.github.tanzir71.harkara.places.LocationSource
+import io.github.tanzir71.harkara.places.PinRepository
+import io.github.tanzir71.harkara.places.SensorHeadingSource
+import io.github.tanzir71.harkara.places.ServiceLiveShareHost
+import io.github.tanzir71.harkara.places.WorkManagerOverdueScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
 
 /** Application root that owns manually wired dependencies. */
 open class HarkaraApplication : Application() {
-    /** Lazily created app container. */
-    open val container: AppContainer by lazy { AppContainer(this) }
+    @Volatile private var currentContainer: AppContainer? = null
+
+    /** The old identity and in-memory carrier caches never cross a completed panic-wipe boundary. */
+    open val container: AppContainer
+        get() = synchronized(this) { currentContainer ?: createContainer().also { currentContainer = it } }
+
+    protected open fun createContainer(): AppContainer = AppContainer(this)
+
+    @Synchronized
+    fun resetContainer(): AppContainer {
+        check(container.isWiped) { "Panic wipe must finish before replacing the container" }
+        return createContainer().also { currentContainer = it; it.greyAreaSms.sync() }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -77,18 +104,39 @@ open class HarkaraApplication : Application() {
 }
 
 /** Manual dependency container. No Firebase, no Play Services. */
-class AppContainer(private val context: Context, private val inMemoryDatabase: Boolean = false) {
+class AppContainer(
+    private val context: Context,
+    private val inMemoryDatabase: Boolean = false,
+    private val databaseFactory: (() -> HarkaraDatabase)? = null,
+) {
+    private val wipeLock = Mutex()
+    private val wiping = AtomicBoolean(false)
+    private val retired = AtomicBoolean(false)
+    @Volatile var isWiped: Boolean = false
+        private set
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val database: HarkaraDatabase by lazy { if (inMemoryDatabase) HarkaraDatabase.inMemory(context) else HarkaraDatabase.create(context) }
+    private val databaseInstance = lazy { databaseFactory?.invoke() ?: if (inMemoryDatabase) HarkaraDatabase.inMemory(context) else HarkaraDatabase.create(context) }
+    val database: HarkaraDatabase
+        get() = synchronized(databaseInstance) {
+            check(!retired.get()) { "This container has been retired" }
+            databaseInstance.value
+        }
     val settings: AppSettings = AppSettings(context)
     val crashReporter = CrashReporter(context, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
     val updateChecker = UpdateChecker(settings, BuildConfig.VERSION_CODE)
     val areas: DhakaAreas by lazy { DhakaAreas.load(context) }
-    val identity: IdentityManager by lazy { IdentityManager(FileSeedStore(seedFile(context))) }
+    private val identityInstance = lazy { IdentityManager(FileSeedStore(seedFile(context))) }
+    val identity: IdentityManager
+        get() = synchronized(identityInstance) {
+            check(!retired.get()) { "This container has been retired" }
+            identityInstance.value
+        }
 
-    val relayPool: RelayPool by lazy { RelayPool(scope) }
+    private val transportClientInstance = lazy { RelayPool.defaultClient() }
+    private val relayPoolInstance = lazy { RelayPool(scope, client = transportClientInstance.value) }
+    val relayPool: RelayPool by relayPoolInstance
     val eventStore: RoomEventStore by lazy { RoomEventStore(database) }
-    val outbox: Outbox by lazy { Outbox(database, relayPool, routes = listOf(mesh.route, node.route)).also { it.start(scope) } }
+    val outbox: Outbox by lazy { Outbox(database, relayPool, routes = listOf(mesh.route, node.route, node.envelopeRoute)).also { it.start(scope) } }
     val wordFilters: WordFilters by lazy {
         WordFilters.parse(context.assets.open("word-filters/filters.json").bufferedReader().use { it.readText() })
     }
@@ -102,8 +150,11 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     }
 
     /** "Everyone on this Wi-Fi": room server + NSD + a pool to the other phones; foreground only. */
-    val lanRoom: LanRoom by lazy { LanRoom(scope, NsdLanDiscovery(context), accept = ::validCarriedEvent) }
-    val mesh: io.github.tanzir71.harkara.mesh.MeshController by lazy {
+    private val lanRoomInstance = lazy {
+        LanRoom(scope, NsdLanDiscovery(context), pool = RelayPool(scope, client = transportClientInstance.value), accept = ::validCarriedEvent)
+    }
+    val lanRoom: LanRoom by lanRoomInstance
+    private val meshInstance = lazy {
         io.github.tanzir71.harkara.mesh.MeshController(scope, database, eventStore, relayPool,
             presenceId = { identity.keyRing().meshPresenceId(java.time.LocalDate.now(java.time.ZoneId.of("Asia/Dhaka"))) },
             radios = { listOf(io.github.tanzir71.harkara.core.mesh.BleRadio(io.github.tanzir71.harkara.mesh.AndroidGattLayer(context), maxLinks = { if (settings.state.value.meshMode == io.github.tanzir71.harkara.settings.MeshMode.EVENT) 8 else 4 }), io.github.tanzir71.harkara.mesh.AwareRadio(context)) },
@@ -113,7 +164,8 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
             accept = ::validCarriedEvent,
         )
     }
-    val node: io.github.tanzir71.harkara.lan.NodeController by lazy {
+    val mesh: io.github.tanzir71.harkara.mesh.MeshController by meshInstance
+    private val nodeInstance = lazy {
         io.github.tanzir71.harkara.lan.NodeController(scope, lanRoom, database, eventStore, relayPool, site = { isNode ->
             io.github.tanzir71.harkara.core.lan.NodeSite(
                 app = { installedApp },
@@ -123,6 +175,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
             )
         }, ingest = ::ingestNearby)
     }
+    val node: io.github.tanzir71.harkara.lan.NodeController by nodeInstance
     private val installedApp by lazy {
         val file = File(context.applicationInfo.sourceDir)
         val digest = MessageDigest.getInstance("SHA-256")
@@ -139,16 +192,25 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     private suspend fun ingestNearby(event: io.github.tanzir71.harkara.core.nostr.Event, carrier: io.github.tanzir71.harkara.core.Carrier): Boolean {
         val kinds = io.github.tanzir71.harkara.core.nostr.Kinds
         return when (event.kind) {
-            kinds.FEED_POST, kinds.REACTION, kinds.REPORT -> feedRepository.ingest(event, carrier)
+            kinds.FEED_POST, kinds.REPORT -> feedRepository.ingest(event, carrier)
+            kinds.REACTION -> {
+                val accepted = if (event.tagValue("a")?.startsWith("${kinds.PIN}:") == true) pinRepository.ingest(event) else feedRepository.ingest(event, carrier)
+                if (accepted) eventStore.store(event, carrier, own = false)
+                accepted
+            }
+            kinds.PIN, kinds.APP_DATA -> pinRepository.ingest(event).also { if (it) eventStore.store(event, carrier, own = false) }
             kinds.TASK_OFFER, kinds.TASK_STEP -> taskRepository.ingest(event, carrier)
             kinds.GIFT_WRAP -> {
                 chatRepository.ingest(event, carrier)
                 khataRepository.ingestWrap(event)
+                startPlaces()
+                giftInbox.offer(event)
                 eventStore.store(event, carrier, own = false)
                 true
             }
             kinds.AREA_CHAT -> { chatRepository.ingest(event, carrier); true }
             kinds.SMS_DM -> chatRepository.ingestSms(event, carrier)
+            kinds.EPHEMERAL_GIFT_WRAP -> { startPlaces(); giftInbox.offer(event) != null }
             else -> eventStore.store(event, carrier, own = false)
         }
     }
@@ -160,10 +222,13 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
             prefs = SettingsChatPrefs(settings),
         ).also { it.start(scope) }
     }
-    val voiceRecorder: VoiceRecorder by lazy { AndroidVoiceRecorder(context) }
-    val voicePlayer: VoicePlayer by lazy { AndroidVoicePlayer(context) }
+    private val voiceRecorderInstance = lazy { AndroidVoiceRecorder(context) }
+    val voiceRecorder: VoiceRecorder by voiceRecorderInstance
+    private val voicePlayerInstance = lazy { AndroidVoicePlayer(context) }
+    val voicePlayer: VoicePlayer by voicePlayerInstance
 
     fun startLan() {
+        check(!wiping.get()) { "Panic wipe is in progress" }
         chatRepository
         node.startSync()
         lanRoom.start()
@@ -186,12 +251,17 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
         SosRepository(database, eventStore, outbox, relayPool, profile = { identity.profile() }).also { it.startIngest(scope) }
     }
     val handbook: Handbook by lazy { Handbook.fromAssets(context) }
-    val lights: LightController by lazy { LightController(CameraTorch(context), ToneSiren(), scope) }
+    private val lightsInstance = lazy { LightController(CameraTorch(context), ToneSiren(), scope) }
+    val lights: LightController by lightsInstance
     /** Deep links, shared text and pasted QR/SMS (M10): set by MainActivity, consumed by the UI. */
     val pendingLinks = MutableStateFlow<HarkaraLink?>(null)
 
     val linkInbox: LinkInbox by lazy {
-        LinkInbox(database, eventStore, outbox, taskRepository, khataRepository, me = { identity.profilePubkey.value }, ingestSms = { event, via -> chatRepository.ingestSms(event, via) })
+        LinkInbox(database, eventStore, outbox, taskRepository, khataRepository, me = { identity.profilePubkey.value },
+            ingestSms = { event, via -> chatRepository.ingestSms(event, via) },
+            ingestContent = ::ingestNearby,
+            ingestGift = { event, via -> startPlaces(); chatRepository.ingest(event, via); giftInbox.offer(event) != null },
+        )
     }
 
     val gatewayStore: GatewayStore by lazy { GatewayStore(database) }
@@ -214,6 +284,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
 
     /** While the gateway switch is on and relays run: events for members are texted to them. */
     suspend fun subscribeGateway() {
+        check(!wiping.get()) { "Panic wipe is in progress" }
         if (!settings.state.value.isOn(Module.SMS_GATEWAY)) return
         if (gatewayRelayStarted.compareAndSet(false, true)) {
             scope.launch { relayPool.incoming.filter { it.subscriptionId == SUB_GATEWAY }.collect { greyAreaSms.forwardToMember(it.event) } }
@@ -221,6 +292,39 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
         val keys = gatewayStore.get().members.mapNotNull { it.pubkey }
         if (keys.isEmpty()) return
         relayPool.subscribe(SUB_GATEWAY, listOf(Filter(kinds = SmsEligibility.KINDS.toList(), tags = mapOf("p" to keys), since = System.currentTimeMillis() / 1000)))
+    }
+
+    // M9: map, pins and location. Sensors and GPS run only while a screen or a user-started share collects them.
+    val giftInbox: GiftInbox by lazy { GiftInbox({ identity.profile() }) }
+    val locationSource: LocationSource by lazy { AndroidLocationSource(context) }
+    val headingSource: HeadingSource by lazy { SensorHeadingSource(context) }
+    val mapPackManager: MapPackManager by lazy { MapPackManager(File(context.filesDir, "maps")) }
+    val pinRepository: PinRepository by lazy {
+        PinRepository(database, outbox, relayPool, { identity.profile() }, { g5 -> identity.keyRing().area(g5, IsoWeek.current()) })
+            .also { it.startIngest(scope, giftInbox) }
+    }
+    val checkInRepository: CheckInRepository by lazy {
+        CheckInRepository(database, outbox, { identity.profile() }, WorkManagerOverdueScheduler(context), displayName = { settings.state.value.displayName })
+            .also {
+                it.startIngest(giftInbox)
+                it.onAlert = { alert -> io.github.tanzir71.harkara.places.CheckInAlerts.notify(context, alert) }
+            }
+    }
+    private val liveShareInstance = lazy {
+        LiveShareRepository(outbox, relayPool, { identity.profile() }, { identity.keyRing() }, locationSource, scope, { settings.state.value.displayName }, host = ServiceLiveShareHost(context),
+            sendLocal = { event -> lanRoom.publish(event); if (mesh.running) mesh.route.carry(event) })
+            .also { it.startIngest(giftInbox) }
+    }
+    val liveShareRepository: LiveShareRepository by liveShareInstance
+    private val placesStarted = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /** Registers every place feature with the inbox, then starts reading wraps (once). */
+    fun startPlaces() {
+        check(!wiping.get()) { "Panic wipe is in progress" }
+        pinRepository
+        checkInRepository
+        liveShareRepository
+        if (placesStarted.compareAndSet(false, true)) giftInbox.start(scope, relayPool)
     }
 
     /** NIP-13 difficulty tuned once to this phone's speed (~2 s of mining). */
@@ -231,7 +335,10 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
 
     fun relays(): List<String> = settings.state.value.relays ?: DefaultRelays.load(context)
 
-    fun startRelays() = relayPool.setRelays(relays())
+    fun startRelays() {
+        check(!wiping.get()) { "Panic wipe is in progress" }
+        relayPool.setRelays(relays())
+    }
 
     fun stopRelays() = relayPool.stop()
 
@@ -242,15 +349,55 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
         return named?.let { LatLng(it.lat, it.lng) } ?: LatLng(23.7808, 90.4142)
     }
 
-    suspend fun panicWipe() {
-        context.stopService(android.content.Intent(context, io.github.tanzir71.harkara.mesh.MeshForegroundService::class.java))
-        mesh.stop()
-        node.stopSharing()
-        node.stopNode(keepRoom = false)
-        stopRelays()
-        stopLan()
-        withContext(Dispatchers.IO) { identity.wipe() }
-        PanicWipeController.wipeEverything(context, database, settings)
+    /** Terminal operation: no new onboarding or identity may use this container afterward. */
+    suspend fun panicWipe() = withContext(Dispatchers.IO + NonCancellable) {
+        wipeLock.withLock {
+            if (isWiped) return@withLock
+            wiping.set(true)
+            foreground = false
+            settings.setModule(Module.MESH, false)
+            settings.setModule(Module.NODE, false)
+            settings.setModule(Module.SMS_DIRECT, false)
+            settings.setModule(Module.SMS_GATEWAY, false)
+            greyAreaSms.sync()
+            // Wait for WorkManager's cancellation transaction; never delete its own open database.
+            val work = try { androidx.work.WorkManager.getInstance(context) } catch (_: IllegalStateException) { null }
+            work?.cancelAllWork()?.result?.get()
+            context.stopService(android.content.Intent(context, io.github.tanzir71.harkara.mesh.MeshForegroundService::class.java))
+            context.stopService(android.content.Intent(context, io.github.tanzir71.harkara.places.LiveShareService::class.java))
+            if (meshInstance.isInitialized()) meshInstance.value.stop()
+            if (nodeInstance.isInitialized()) {
+                nodeInstance.value.stopSharing()
+                nodeInstance.value.stopNode(keepRoom = false)
+            }
+            if (lanRoomInstance.isInitialized()) lanRoomInstance.value.stop()
+            if (relayPoolInstance.isInitialized()) relayPoolInstance.value.stop()
+            // Cancel blocking NIP-11 calls too, or cancelAndJoin could wait on an unbounded socket read.
+            if (transportClientInstance.isInitialized()) transportClientInstance.value.dispatcher.cancelAll()
+            // Includes live GPS callbackFlow cleanup and all repository/relay consumers.
+            scope.coroutineContext[Job]!!.cancelAndJoin()
+            if (transportClientInstance.isInitialized()) {
+                transportClientInstance.value.connectionPool.evictAll()
+                transportClientInstance.value.dispatcher.executorService.shutdownNow()
+            }
+            if (liveShareInstance.isInitialized()) liveShareInstance.value.stop()
+            if (voiceRecorderInstance.isInitialized()) voiceRecorderInstance.value.cancel()
+            if (voicePlayerInstance.isInitialized()) voicePlayerInstance.value.stop()
+            if (lightsInstance.isInitialized()) lightsInstance.value.stop()
+            pendingLinks.value = null
+            // Join any in-flight lazy initialization before capturing the handle to close.
+            val oldDatabase = synchronized(databaseInstance) {
+                synchronized(identityInstance) {
+                    retired.set(true)
+                    databaseInstance.takeIf { it.isInitialized() }?.value
+                }
+            }
+            PanicWipeController.wipeEverything(context, oldDatabase, settings) {
+                if (identityInstance.isInitialized()) identityInstance.value.wipe()
+                else FileSeedStore(seedFile(context)).clear()
+            }
+            isWiped = true
+        }
     }
 
     private fun measureHashRate(): Double {

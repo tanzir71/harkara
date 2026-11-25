@@ -172,7 +172,7 @@ class MeshController(
 
     private suspend fun seed(engine: MeshEngine) {
         val prefix = areaPrefix()
-        db.eventDao().byKinds(NEIGHBOUR_KINDS.toList()).forEach { row ->
+        db.eventDao().byKinds((NEIGHBOUR_KINDS + setOf(Kinds.GIFT_WRAP, Kinds.SMS_DM)).toList()).forEach { row ->
             // Our waiting events must originate through Outbox, not be pre-marked as carried here.
             if (row.own) return@forEach
             val event = runCatching { Event.fromJson(row.json) }.getOrNull() ?: return@forEach
@@ -182,7 +182,7 @@ class MeshController(
 
     companion object {
         /** Public area events a phone keeps for its mesh neighbours. */
-        val NEIGHBOUR_KINDS = setOf(Kinds.FEED_POST, Kinds.SOS, Kinds.SOS_UPDATE, Kinds.CHECK_IN, Kinds.TASK_OFFER, Kinds.AREA_CHAT)
+        val NEIGHBOUR_KINDS = setOf(Kinds.FEED_POST, Kinds.SOS, Kinds.SOS_UPDATE, Kinds.CHECK_IN, Kinds.TASK_OFFER, Kinds.TASK_STEP, Kinds.AREA_CHAT, Kinds.REACTION, Kinds.REPORT, Kinds.PIN)
         private val SOS_KINDS = setOf(Kinds.SOS, Kinds.SOS_UPDATE)
 
         /** Geohash length kept for neighbours (about 39 × 20 km: all of Dhaka in one or two cells). */

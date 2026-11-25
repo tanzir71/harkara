@@ -78,6 +78,7 @@ class ChatFlowTest {
         compose.onNodeWithContentDescription("Their key (npub1…)").performTextInput("not a key")
         compose.onNodeWithText("Start chat").performClick()
         compose.onNodeWithText("That isn't a Harkara or Nostr key (npub1…)").assertIsDisplayed()
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Copy")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Copy").performClick()
         assertEquals(container.identity.npub(), copied.single())
 

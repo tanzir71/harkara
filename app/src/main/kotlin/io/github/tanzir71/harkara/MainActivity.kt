@@ -85,6 +85,50 @@ class MainActivity : ComponentActivity(), PlatformActions {
         callback(text)
     }
 
+    private var pendingLive: ((Boolean) -> Unit)? = null
+
+    private val livePermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        val callback = pendingLive ?: return@registerForActivityResult
+        pendingLive = null
+        callback(result.values.any { it })
+    }
+
+    private var pendingFile: ((java.io.File?, String?) -> Unit)? = null
+
+    private val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val callback = pendingFile ?: return@registerForActivityResult
+        pendingFile = null
+        if (uri == null) return@registerForActivityResult callback(null, null)
+        lifecycleScope.launch {
+            val copied = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching {
+                    val name = contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                        if (c.moveToFirst()) c.getString(0) else null
+                    }
+                    val out = java.io.File.createTempFile("import", ".tmp", cacheDir)
+                    contentResolver.openInputStream(uri)!!.use { input -> out.outputStream().use { input.copyTo(it) } }
+                    out to name
+                }.getOrNull()
+            }
+            callback(copied?.first, copied?.second)
+        }
+    }
+
+    override fun requestLiveLocation(onResult: (granted: Boolean) -> Unit) {
+        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (fine) return onResult(true)
+        pendingLive = onResult
+        livePermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+
+    override fun openFile(mimeTypes: Array<String>, onResult: (file: java.io.File?, name: String?) -> Unit) {
+        pendingFile = onResult
+        runCatching { pickFile.launch(mimeTypes) }.onFailure {
+            pendingFile = null
+            onResult(null, null)
+        }
+    }
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(withLanguageOverride(newBase))
     }
@@ -93,7 +137,11 @@ class MainActivity : ComponentActivity(), PlatformActions {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as HarkaraApplication).container
-        setContent { HarkaraApp(container, this) }
+        setContent {
+            androidx.compose.runtime.CompositionLocalProvider(io.github.tanzir71.harkara.map.LocalMapSurface provides io.github.tanzir71.harkara.map.MapLibreMapSurface) {
+                HarkaraApp(container, this)
+            }
+        }
         if (savedInstanceState == null) handleLink(intent)
     }
 
@@ -185,6 +233,21 @@ class MainActivity : ComponentActivity(), PlatformActions {
     }
 
     override fun applyLanguage() {
+        recreate()
+    }
+
+    override fun afterPanicWipe() {
+        (application as HarkaraApplication).resetContainer()
+        pendingLocation = null
+        pendingSms = null
+        pendingMicrophone = null
+        pendingMesh = null
+        pendingSave = null
+        pendingOpen = null
+        pendingLive = null
+        pendingFile = null
+        // Do not replay a pre-wipe deep link or shared payload into the new identity.
+        setIntent(Intent(this, MainActivity::class.java))
         recreate()
     }
 

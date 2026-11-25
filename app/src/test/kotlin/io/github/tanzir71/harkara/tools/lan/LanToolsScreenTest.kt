@@ -3,6 +3,9 @@ package io.github.tanzir71.harkara.tools.lan
 import android.app.Application
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -78,5 +81,17 @@ class LanToolsScreenTest {
         compose.onNodeWithText(context.getString(R.string.lan_tools_stopped)).assertExists()
         compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
         compose.runOnIdle { assertTrue(back) }
+    }
+
+    @Test fun `hold control has a bounded accessibility action disabled until explicit setup`() {
+        compose.setContent { HarkaraTheme { LanToolsScreen(true, PlatformActions.None, {}) } }
+        val hold = compose.onNodeWithContentDescription(context.getString(R.string.lan_tools_hold))
+        hold.assertExists().assertHasClickAction().assertIsNotEnabled()
+        val action = hold.fetchSemanticsNode().config[SemanticsActions.OnClick]
+        compose.runOnIdle {
+            assertEquals(context.getString(R.string.lan_tools_speak_briefly), action.label)
+            assertFalse(action.action!!.invoke())
+        }
+        compose.onNodeWithText(context.getString(R.string.lan_tools_stopped)).assertExists()
     }
 }

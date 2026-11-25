@@ -47,7 +47,8 @@ object LocationShare {
     /** Short code with the locality when near Dhaka ("QJ6C+QX Dhaka"), else the full code. */
     fun displayCode(fullCode: String): String {
         val short = OpenLocationCode.shorten(fullCode, DHAKA_LAT, DHAKA_LNG)
-        return if (short != fullCode.uppercase()) "$short $DHAKA" else short
+        // A two-digit shortening covers hundreds of kilometres, not the named locality.
+        return if (short.indexOf('+') in 0..4) "$short $DHAKA" else fullCode.uppercase()
     }
 
     /** A location card for [lat]/[lng] at [precision], titled [title], with an optional [place] note. */

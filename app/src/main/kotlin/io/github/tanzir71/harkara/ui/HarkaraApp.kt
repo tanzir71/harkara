@@ -83,6 +83,7 @@ import kotlinx.coroutines.withContext
 
 /** Things only the Android host can do; faked in tests. */
 interface PlatformActions {
+    fun afterPanicWipe() {}
     fun openUrl(url: String)
     fun shareText(text: String)
     fun copyToClipboard(label: String, text: String)
@@ -105,6 +106,10 @@ interface PlatformActions {
     /** Asks for the microphone (voice notes) once; reports whether it may be used. */
     fun requestMicrophone(onResult: (granted: Boolean) -> Unit) = onResult(false)
     fun requestMesh(onResult: (granted: Boolean) -> Unit) = onResult(false)
+    /** Asks for precise (or approximate) location before a user-started live share; reports whether any was granted. */
+    fun requestLiveLocation(onResult: (granted: Boolean) -> Unit) = onResult(false)
+    /** Lets the user pick a file (map pack, GPX/KML/GeoJSON); reports a private copy and its display name. */
+    fun openFile(mimeTypes: Array<String>, onResult: (file: java.io.File?, name: String?) -> Unit) = onResult(null, null)
 
     object None : PlatformActions {
         override fun openUrl(url: String) = Unit
@@ -117,10 +122,10 @@ interface PlatformActions {
     }
 }
 
-private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, Prayer, Torch, Handbook, HandbookPage, ChatThread, LanTools, SmsRestricted, SmsGateway }
+private enum class Page { Tabs, Modules, Settings, Relays, TaskDetail, Prayer, Torch, Handbook, HandbookPage, ChatThread, LanTools, SmsRestricted, SmsGateway, MyPins, MapPacks, Compass }
 private enum class Sheet {
     None, Connectivity, PanicWipe, Backup, Restore, Compose, CardActions, TaskCompose, HandoffEntry, Payment, Rate, Dispute, Name, NewIou, IouDetail, IouQr, IouPaste, IouSettle, Sos, ShareApp, Radar,
-    SendSms, EventQr, PasteLink, GreyArea, GatewayQr,
+    SendSms, EventQr, PasteLink, GreyArea, GatewayQr, Area, Search,
 }
 
 const val REPO_URL = "https://github.com/tanzir71/harkara"
@@ -129,6 +134,17 @@ const val REPO_URL = "https://github.com/tanzir71/harkara"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
+    val wipeScope = rememberCoroutineScope()
+    var wiping by remember(container) { mutableStateOf(false) }
+    var wipeFailed by remember(container) { mutableStateOf(false) }
+    if (wiping) {
+        HarkaraTheme {
+            Box(Modifier.fillMaxSize().background(HarkaraTheme.colors.bgCanvas), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(if (wipeFailed) R.string.panic_wipe_failed else R.string.panic_wiping), color = HarkaraTheme.colors.textPrimary)
+            }
+        }
+        return
+    }
     val settings by container.settings.state.collectAsStateWithLifecycle()
     val connectivity by container.connectivity.state.collectAsStateWithLifecycle()
     val update by container.updateChecker.available.collectAsStateWithLifecycle()
@@ -202,7 +218,8 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     val language = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language
     val dial999: () -> Unit = { platform.openUrl("tel:999") }
     val setModuleNow: (io.github.tanzir71.harkara.settings.Module, Boolean) -> Unit = { module, on ->
-        if (module == io.github.tanzir71.harkara.settings.Module.MESH && on) platform.requestMesh { granted ->
+        if (module == Module.OFFLINE_MAP && on && container.mapPackManager.installed() == null) page = Page.MapPacks
+        else if (module == io.github.tanzir71.harkara.settings.Module.MESH && on) platform.requestMesh { granted ->
             container.settings.setModule(module, granted)
         } else container.settings.setModule(module, on)
         // Lite mode checks every 60 minutes instead of 30 (§4.1).
@@ -246,6 +263,15 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
     LaunchedEffect(center, settings.onboarded) {
         if (settings.onboarded) withContext(Dispatchers.Default) { container.chatRepository.subscribe(GeoHash.encode(center.lat, center.lng, 5)) }
     }
+    // M9: pins, check-ins and live location share one gift-wrap inbox.
+    LaunchedEffect(center, settings.onboarded, relayStatus.size, profilePubkey) {
+        if (settings.onboarded && profilePubkey != null) {
+            container.startPlaces()
+            container.giftInbox.subscribe(container.relayPool)
+            container.pinRepository.subscribe(center)
+        }
+    }
+    var compassTarget by remember { mutableStateOf<io.github.tanzir71.harkara.core.geo.LatLng?>(null) }
 
     val comingSoon: () -> Unit = { scope.launch { snackbar.showSnackbar(context.getString(R.string.coming_soon)) } }
     val say: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
@@ -370,6 +396,18 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                             modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
                         )
                     }
+                    Page.MyPins -> io.github.tanzir71.harkara.ui.map.MyPinsHost(
+                        container, platform, profilePubkey, onBack = { page = Page.Tabs }, say = say,
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.MapPacks -> io.github.tanzir71.harkara.ui.map.MapPacksHost(
+                        container, platform, settings, onBack = { page = Page.Tabs }, say = say,
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
+                    Page.Compass -> io.github.tanzir71.harkara.ui.map.CompassHost(
+                        container, profilePubkey, compassTarget, onBack = { page = Page.Tabs },
+                        modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
+                    )
                     Page.Modules -> ModulesScreen(
                         settings,
                         onToggle = toggleModule,
@@ -519,7 +557,8 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 onGetUpdate = { platform.openUrl(UpdateChecker.DOWNLOAD_PAGE) },
                                 onDismissUpdate = { visibleUpdate?.let { container.settings.dismissUpdate(it.versionCode) } },
                                 onCompose = { composeVerdict = null; sheet = Sheet.Compose },
-                                onSearch = comingSoon,
+                                onSearch = { sheet = Sheet.Search },
+                                onChangeArea = { sheet = Sheet.Area },
                                 alerts = if (ownSos == null && incomingSos.isEmpty()) null else ({
                                     ownSos?.let { sos ->
                                         io.github.tanzir71.harkara.ui.screens.ActiveSosBanner(
@@ -542,6 +581,28 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 }),
                                 onVote = { id, up -> feedItems.firstOrNull { it.post.id == id }?.let { scope.launch { container.feedRepository.vote(it.post, up) } } },
                                 onMore = { id -> sheetPostId = id; sheet = Sheet.CardActions },
+                                onMakeTask = { id -> feedItems.firstOrNull { it.post.id == id }?.let { item ->
+                                    taskDraft = item.post.text.take(80) to mapOf("items" to item.post.text.take(200))
+                                    withName { sheet = Sheet.TaskCompose }
+                                } },
+                                onShare = { id -> feedItems.firstOrNull { it.post.id == id }?.let { shareAsQr(it.post.event) } },
+                                mapContent = { mapModifier, modeSwitch ->
+                                    io.github.tanzir71.harkara.ui.map.NearbyMapHost(
+                                        container = container,
+                                        platform = platform,
+                                        settings = settings,
+                                        center = center,
+                                        profilePubkey = profilePubkey,
+                                        feedPosts = feedItems.map { it.post },
+                                        taskOffers = taskStates.filter { it.status == io.github.tanzir71.harkara.core.tasks.TaskStatus.OPEN }.map { it.offer },
+                                        modeSwitch = modeSwitch,
+                                        onOpenTask = { id -> taskStates.firstOrNull { "${it.offer.address}" == id }?.let { openTaskId = it.offer.event.id; page = Page.TaskDetail } },
+                                        onOpenPacks = { page = Page.MapPacks },
+                                        onOpenCompass = { target -> compassTarget = target; page = Page.Compass },
+                                        say = say,
+                                        modifier = mapModifier,
+                                    )
+                                },
                             )
                             HarkaraTab.Chats -> ChatsRoute(container, platform, connectivity, pill, onOpen = { id -> chatId = id; page = Page.ChatThread }, say = say, modifier = content)
                             HarkaraTab.Tasks -> TasksScreen(
@@ -591,6 +652,10 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                         io.github.tanzir71.harkara.settings.Module.NODE -> sheet = Sheet.Connectivity
                                         io.github.tanzir71.harkara.settings.Module.FILE_DROP -> { pttTool = false; page = Page.LanTools }
                                         io.github.tanzir71.harkara.settings.Module.PUSH_TO_TALK -> { pttTool = true; page = Page.LanTools }
+                                        io.github.tanzir71.harkara.settings.Module.SAVED_PINS -> page = Page.MyPins
+                                        io.github.tanzir71.harkara.settings.Module.OFFLINE_MAP -> page = Page.MapPacks
+                                        io.github.tanzir71.harkara.settings.Module.COMPASS -> { compassTarget = null; page = Page.Compass }
+                                        io.github.tanzir71.harkara.settings.Module.QR -> { pasteMessage = null; sheet = Sheet.PasteLink }
                                         else -> comingSoon()
                                     }
                                 },
@@ -617,11 +682,15 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
             ) {
                 Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
                     when (sheet) {
-                        Sheet.Connectivity -> androidx.compose.foundation.layout.Column {
+                        Sheet.Connectivity -> androidx.compose.foundation.layout.Column(Modifier.verticalScroll(rememberScrollState())) {
                             ConnectivitySheetContent(connectivity, settings.meshMode, container.settings::setMeshMode)
                             androidx.compose.material3.Text(context.getString(R.string.mesh_beta_note), color = c.textSecondary, style = HarkaraTheme.type.caption)
                             io.github.tanzir71.harkara.ui.screens.ModuleRow(io.github.tanzir71.harkara.settings.Module.MESH, settings.isOn(io.github.tanzir71.harkara.settings.Module.MESH), toggleModule)
                             io.github.tanzir71.harkara.ui.screens.ModuleRow(io.github.tanzir71.harkara.settings.Module.NODE, settings.isOn(io.github.tanzir71.harkara.settings.Module.NODE), toggleModule)
+                            io.github.tanzir71.harkara.ui.components.HButton(context.getString(R.string.disaster_mode), {
+                                container.settings.setMeshMode(io.github.tanzir71.harkara.settings.MeshMode.EVENT)
+                                toggleModule(Module.MESH, true)
+                            })
                         }
                         Sheet.ShareApp -> ShareAppSheet(container, platform)
                         Sheet.Radar -> RadarSheet(container)
@@ -630,10 +699,33 @@ fun HarkaraApp(container: AppContainer, platform: PlatformActions) {
                                 sheet = Sheet.None
                                 page = Page.Tabs
                                 tab = HarkaraTab.Nearby
-                                scope.launch { container.panicWipe() }
+                                wiping = true
+                                wipeScope.launch {
+                                    try { container.panicWipe(); platform.afterPanicWipe() }
+                                    catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                                    catch (_: Exception) { wipeFailed = true }
+                                }
                             },
                             onCancel = { sheet = Sheet.None },
                         )
+                        Sheet.Area -> AreaPickerSheet(container.areas.all.map { it.name }, onPick = { name ->
+                            container.settings.completeOnboarding(name, auto = false)
+                            sheet = Sheet.None
+                        }, onLocation = {
+                            platform.requestLocation { lat, lng ->
+                                if (lat != null && lng != null) {
+                                    container.settings.completeOnboarding(container.areas.nearest(lat, lng).name, auto = true, lat = lat, lng = lng)
+                                    sheet = Sheet.None
+                                } else notify(R.string.loc_no_fix)
+                            }
+                        })
+                        Sheet.Search -> LocalSearchSheet(remember(container) { io.github.tanzir71.harkara.search.LocalSearch(container.database) }) { result ->
+                            result.position?.let { position ->
+                                compassTarget = position
+                                sheet = Sheet.None
+                                page = Page.Compass
+                            }
+                        }
                         Sheet.Backup -> BackupSheet(
                             export = container.identity::exportBackup,
                             saveFile = platform::saveTextDocument,

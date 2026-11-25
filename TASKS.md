@@ -63,8 +63,10 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M9 - Map, pins, location (v0.8.0)
 
-- [ ] `mappack.yml` + maps release, MapLibre + PMTiles behind an interface, layers, pins, GPX/KML/GeoJSON, location card, live share, meet-up arrow, compass, check-ins, trip plan, no-map Lite view.
-- [ ] Gate: pin sync, live-share replay protection, check-in tests; style JSON + layer builder unit tests; screen 02 screenshot.
+- [x] `mappack.yml` + maps-release pipeline, MapLibre + PMTiles behind an interface, layers, pins, GPX/KML/GeoJSON, location card, live share, meet-up arrow, compass, check-ins, trip plan, no-map Lite view. Data refresh remains scheduled/manual, not an implementation gate.
+- [x] Map pack download (SHA-256 checked) and phone-to-phone import; PMTiles reader, Open Location Code (official vectors), APK ≤ 30 MB per ABI with MapLibre.
+- [x] Gate: pin sync, live-share replay protection, check-in + overdue tests; style JSON + layer builder unit tests; map screen Compose test on a fake surface; screen 02 screenshot.
+- [x] Integrated local gate: 283 core and 273 app tests, screenshot verification, lint and debug assembly; nine migration fixtures; atomic pack installs, terminal panic reset, encrypted LAN safety/live points, permission recovery and local FTS search.
 
 ## M10 - SMS, QR, web page for non-users (v0.9.0)
 
@@ -83,5 +85,7 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M12 - Hardening and distribution (v0.11.0)
 
-- [ ] Reproducible build settings, fastlane metadata, Obtainium naming, accessibility pass, Bangla complete, APK ≤ 30 MB/ABI, docs updated.
+- [x] Reproducible settings, fastlane metadata, Obtainium naming, Bangla parity and docs; 39 extended accessibility cases cover 78 Day/Night states at 1.3× font scale; normal-text AA contrast passes 24 checks.
+- [x] Map-enabled unsigned ABI APKs: arm64 23,050,590 bytes; ARMv7 22,013,478 bytes, both below 30,000,000 bytes. Size is enforced before publication.
+- [x] Historical independent clean-build comparison: v0.5.0 MATCH for both ABI splits and universal. Final-tag comparison remains to be recorded.
 - [ ] Gate: two clean CI builds compared; size + accessibility checks pass.

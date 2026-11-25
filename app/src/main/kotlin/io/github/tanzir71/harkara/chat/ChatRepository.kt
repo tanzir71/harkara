@@ -500,7 +500,7 @@ class ChatRepository(
     /** Match the same text arriving as SMS and NIP-17 without loading an unbounded thread into memory. */
     private suspend fun matchingPlainText(conversationId: String, author: String, at: Long, text: String): String? = withContext(Dispatchers.IO) {
         db.query("SELECT id FROM chat_messages WHERE conversationId = ? AND author = ? AND createdAt = ? " +
-            "AND type = 'TEXT' AND card IS NULL AND text = ? LIMIT 1", arrayOf(conversationId, author, at, text)).use {
+            "AND type = 'TEXT' AND card IS NULL AND text = ? LIMIT 1", arrayOf<Any>(conversationId, author, at, text)).use {
             if (it.moveToFirst()) it.getString(0) else null
         }
     }

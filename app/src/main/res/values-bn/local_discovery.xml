@@ -1,0 +1,12 @@
+<resources>
+    <string name="panic_wiping">ফোনের তথ্য মুছে সংযোগ বন্ধ করা হচ্ছে…</string>
+    <string name="panic_wipe_failed">মুছে ফেলা শেষ হয়নি। অ্যাপ বন্ধ রাখা হয়েছে। অ্যাপ বন্ধ করে অ্যান্ড্রয়েড সেটিংস থেকে এর স্টোরেজ মুছুন।</string>
+    <string name="area_choose">আপনার এলাকা বেছে নিন</string>
+    <string name="area_choose_note">কাছাকাছির জন্য শুধু বেছে নেওয়া এলাকা ব্যবহার হয়। অবস্থানের অনুমতি ঐচ্ছিক।</string>
+    <string name="local_search_title">এই ফোনে খুঁজুন</string>
+    <string name="local_search_note">জমা ও শেয়ার করা পিন এবং ফোনে থাকা কাছাকাছির পোস্ট। অফলাইনেও চলে; ফোনে না থাকা মানচিত্রের স্থান খোঁজে না।</string>
+    <string name="local_search_query">স্থান, পিন বা কাছাকাছির পোস্ট</string>
+    <string name="local_search_empty">এই ফোনে কোনো মিল নেই।</string>
+    <string name="local_search_failed">এখন খোঁজা যাচ্ছে না। জমা তথ্য বদলায়নি।</string>
+    <string name="local_search_direction">দিক দেখুন</string>
+</resources>

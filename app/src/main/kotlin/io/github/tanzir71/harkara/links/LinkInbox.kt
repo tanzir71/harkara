@@ -36,6 +36,8 @@ class LinkInbox(
     private val me: () -> String?,
     private val nowMillis: () -> Long = System::currentTimeMillis,
     private val ingestSms: suspend (Event, Carrier) -> Boolean = { _, _ -> false },
+    private val ingestContent: suspend (Event, Carrier) -> Boolean = { _, _ -> false },
+    private val ingestGift: suspend (Event, Carrier) -> Boolean = { _, _ -> false },
 ) {
     private val assembler = QrAssembler(nowMillis)
 
@@ -98,6 +100,14 @@ class LinkInbox(
         val offGrid = via != Carrier.ONLINE
         return when (event.kind) {
             Kinds.SMS_DM -> ingestSms(event, via)
+            Kinds.PIN, Kinds.APP_DATA, Kinds.FEED_POST, Kinds.REACTION, Kinds.REPORT -> ingestContent(event, via)
+            Kinds.EPHEMERAL_GIFT_WRAP -> ingestGift(event, via)
+            Kinds.GIFT_WRAP -> {
+                val iou = khata.ingestWrap(event)
+                val other = ingestGift(event, via)
+                val stored = store.store(event, via, own = false)
+                iou || other || stored
+            }
             Kinds.TASK_OFFER -> tasks.ingest(event, via)
             Kinds.TASK_STEP -> tasks.ingest(event, via).also { if (it && offGrid) outbox.enqueue(event, Priority.TASK) }
             Kinds.IOU_SIGN, Kinds.SETTLE -> khata.ingestEvent(event)

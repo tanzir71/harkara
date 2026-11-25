@@ -1,0 +1,12 @@
+<resources>
+    <string name="panic_wiping">Erasing local data and stopping connections...</string>
+    <string name="panic_wipe_failed">Erasure could not finish. The app remains locked. Close it and clear its storage in Android Settings.</string>
+    <string name="area_choose">Choose your area</string>
+    <string name="area_choose_note">Only your chosen area is used for Nearby. Location is optional.</string>
+    <string name="local_search_title">Search this phone</string>
+    <string name="local_search_note">Saved and shared pins plus cached Nearby posts. Works offline; does not search uncached map places.</string>
+    <string name="local_search_query">Place, pin or nearby post</string>
+    <string name="local_search_empty">No matches on this phone.</string>
+    <string name="local_search_failed">Search is unavailable. Your saved data has not changed.</string>
+    <string name="local_search_direction">Show direction</string>
+</resources>

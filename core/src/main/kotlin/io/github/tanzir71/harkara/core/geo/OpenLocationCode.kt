@@ -1,8 +1,10 @@
 package io.github.tanzir71.harkara.core.geo
 
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 
 /** The rectangle a Plus Code stands for, with its centre. */
 data class CodeArea(
@@ -14,151 +16,191 @@ data class CodeArea(
 ) {
     val centerLatitude: Double get() = min((latitudeLo + latitudeHi) / 2, 90.0)
     val centerLongitude: Double get() = min((longitudeLo + longitudeHi) / 2, 180.0)
+    val south: Double get() = latitudeLo
+    val west: Double get() = longitudeLo
+    val north: Double get() = latitudeHi
+    val east: Double get() = longitudeHi
+    val length: Int get() = codeLength
+    val centerLat: Double get() = centerLatitude
+    val centerLng: Double get() = centerLongitude
 }
 
 /**
- * Open Location Code (Plus Codes), written from the public specification
- * (github.com/google/open-location-code, Documentation/Specification). Integer arithmetic as in the
- * reference implementations, so codes agree with theirs at every length.
+ * Open Location Code (Plus Codes), written from the specification at github.com/google/open-location-code
+ * and its integer-based reference algorithm (Apache-2.0), checked against the official test data.
  */
 object OpenLocationCode {
-    const val SEPARATOR: Char = '+'
-    const val SEPARATOR_POSITION: Int = 8
-    const val PADDING: Char = '0'
-    const val ALPHABET: String = "23456789CFGHJMPQRVWX"
-
-    private const val BASE = 20
-    private const val LAT_MAX = 90
-    private const val LNG_MAX = 180
+    const val ALPHABET = "23456789CFGHJMPQRVWX"
+    const val SEPARATOR = '+'
+    const val PADDING = '0'
+    const val NORMAL_LENGTH = 10
+    const val SEPARATOR_POSITION = 8
+    private const val MIN_DIGITS = 2
     private const val MAX_DIGITS = 15
-    private const val PAIR_CODE_LENGTH = 10
-    private const val GRID_CODE_LENGTH = MAX_DIGITS - PAIR_CODE_LENGTH
+    private const val PAIR_LENGTH = 10
+    private const val GRID_LENGTH = MAX_DIGITS - PAIR_LENGTH
+    private const val BASE = 20
+    private const val LAT_MAX = 90L
+    private const val LNG_MAX = 180L
     private const val GRID_COLUMNS = 4
     private const val GRID_ROWS = 5
-    private const val PAIR_PRECISION = 8_000L
-    private const val PAIR_FIRST_PLACE_VALUE = 160_000L
-    private const val GRID_LAT_FIRST_PLACE_VALUE = 625L
-    private const val GRID_LNG_FIRST_PLACE_VALUE = 256L
-    private const val FINAL_LAT_PRECISION = PAIR_PRECISION * 3_125L
-    private const val FINAL_LNG_PRECISION = PAIR_PRECISION * 1_024L
-    private const val MIN_TRIMMABLE_CODE_LEN = 6
-    private val PAIR_RESOLUTIONS = doubleArrayOf(20.0, 1.0, 0.05, 0.0025, 0.000125)
+    private const val LAT_MULTIPLIER = 8000L * 3125
+    private const val LNG_MULTIPLIER = 8000L * 1024
+    private const val LAT_MSP = LAT_MULTIPLIER * BASE * BASE
+    private const val LNG_MSP = LNG_MULTIPLIER * BASE * BASE
 
-    /** Full code for a point; [codeLength] 2, 4, 6, 8 or 10–15 digits (10 ≈ 14 m, 6 ≈ 5.5 km). */
-    fun encode(latitude: Double, longitude: Double, codeLength: Int = PAIR_CODE_LENGTH): String {
-        require(codeLength in 2..MAX_DIGITS && (codeLength >= PAIR_CODE_LENGTH || codeLength % 2 == 0)) { "invalid code length $codeLength" }
-        var latVal = Math.floorDiv(Math.round((latitude + LAT_MAX) * FINAL_LAT_PRECISION * 1e6), 1_000_000L)
-        latVal = latVal.coerceIn(0L, 2L * LAT_MAX * FINAL_LAT_PRECISION - 1)
-        var lngVal = Math.floorDiv(Math.round((longitude + LNG_MAX) * FINAL_LNG_PRECISION * 1e6), 1_000_000L)
-        lngVal = Math.floorMod(lngVal, 2L * LNG_MAX * FINAL_LNG_PRECISION)
-
-        val code = CharArray(MAX_DIGITS)
-        if (codeLength > PAIR_CODE_LENGTH) {
-            for (i in MAX_DIGITS - 1 downTo PAIR_CODE_LENGTH) {
-                val latDigit = (latVal % GRID_ROWS).toInt()
-                val lngDigit = (lngVal % GRID_COLUMNS).toInt()
-                code[i] = ALPHABET[latDigit * GRID_COLUMNS + lngDigit]
-                latVal /= GRID_ROWS
-                lngVal /= GRID_COLUMNS
-            }
-        } else {
-            repeat(GRID_CODE_LENGTH) {
-                latVal /= GRID_ROWS
-                lngVal /= GRID_COLUMNS
-            }
-        }
-        for (i in PAIR_CODE_LENGTH / 2 - 1 downTo 0) {
-            code[i * 2 + 1] = ALPHABET[(lngVal % BASE).toInt()]
-            code[i * 2] = ALPHABET[(latVal % BASE).toInt()]
-            latVal /= BASE
-            lngVal /= BASE
-        }
-        val digits = String(code, 0, max(codeLength, SEPARATOR_POSITION))
-        return if (codeLength >= SEPARATOR_POSITION) {
-            digits.substring(0, SEPARATOR_POSITION) + SEPARATOR + digits.substring(SEPARATOR_POSITION, codeLength)
-        } else {
-            digits.substring(0, codeLength) + PADDING.toString().repeat(SEPARATOR_POSITION - codeLength) + SEPARATOR
-        }
+    fun encode(latitude: Double, longitude: Double, codeLength: Int = NORMAL_LENGTH): String {
+        val (lat, lng) = degreesToIntegers(latitude, longitude)
+        return encodeIntegers(lat, lng, codeLength)
     }
 
-    /** True for a well-formed full or short code (separator, padding and alphabet rules). */
-    fun isValid(code: String): Boolean {
-        val c = code.uppercase()
-        val sep = c.indexOf(SEPARATOR)
-        if (c.length == 1 || sep < 0 || sep != c.lastIndexOf(SEPARATOR) || sep > SEPARATOR_POSITION || sep % 2 == 1) return false
-        val pad = c.indexOf(PADDING)
-        if (pad >= 0) {
-            if (sep < SEPARATOR_POSITION || pad == 0 || pad % 2 == 1) return false
-            val padding = c.substring(pad, sep)
-            if (padding.any { it != PADDING } || c.length > sep + 1) return false
-        }
-        if (c.length - sep - 1 == 1) return false
-        return c.all { it == SEPARATOR || it == PADDING || it in ALPHABET }
+    /** Clipped/normalised integer form of a position, as the reference implementation computes it. */
+    fun degreesToIntegers(latitude: Double, longitude: Double): Pair<Long, Long> {
+        var lat = floor(latitude * LAT_MULTIPLIER).toLong()
+        var lng = floor(longitude * LNG_MULTIPLIER).toLong()
+        lat += LAT_MAX * LAT_MULTIPLIER
+        if (lat < 0) lat = 0 else if (lat >= 2 * LAT_MAX * LAT_MULTIPLIER) lat = 2 * LAT_MAX * LAT_MULTIPLIER - 1
+        lng += LNG_MAX * LNG_MULTIPLIER
+        lng = Math.floorMod(lng, 2 * LNG_MAX * LNG_MULTIPLIER)
+        return lat to lng
     }
+
+    fun encodeIntegers(latInt: Long, lngInt: Long, length: Int): String {
+        val codeLength = min(length, MAX_DIGITS)
+        require(!(codeLength < PAIR_LENGTH && codeLength % 2 == 1) && codeLength >= MIN_DIGITS) { "illegal code length $length" }
+        var lat = latInt
+        var lng = lngInt
+        val rev = StringBuilder()
+        if (codeLength > PAIR_LENGTH) {
+            repeat(GRID_LENGTH) {
+                val latDigit = lat % GRID_ROWS
+                val lngDigit = lng % GRID_COLUMNS
+                rev.append(ALPHABET[(latDigit * GRID_COLUMNS + lngDigit).toInt()])
+                lat /= GRID_ROWS
+                lng /= GRID_COLUMNS
+            }
+        } else {
+            lat /= GRID_ROWS.toDouble().pow(GRID_LENGTH).toLong()
+            lng /= GRID_COLUMNS.toDouble().pow(GRID_LENGTH).toLong()
+        }
+        for (i in 0 until PAIR_LENGTH / 2) {
+            rev.append(ALPHABET[(lng % BASE).toInt()])
+            rev.append(ALPHABET[(lat % BASE).toInt()])
+            lat /= BASE
+            lng /= BASE
+            if (i == 0) rev.append(SEPARATOR)
+        }
+        val code = rev.reverse()
+        if (codeLength < SEPARATOR_POSITION) for (i in codeLength until SEPARATOR_POSITION) code.setCharAt(i, PADDING)
+        return code.substring(0, max(SEPARATOR_POSITION + 1, codeLength + 1))
+    }
+
+    fun decode(code: String): CodeArea {
+        require(isFull(code)) { "not a full Open Location Code: $code" }
+        val clean = code.uppercase().replace(SEPARATOR.toString(), "").replace(PADDING.toString(), "")
+        var latVal = -LAT_MAX * LAT_MULTIPLIER
+        var lngVal = -LNG_MAX * LNG_MULTIPLIER
+        var latPlace = LAT_MSP
+        var lngPlace = LNG_MSP
+        var i = 0
+        while (i < min(clean.length, PAIR_LENGTH)) {
+            latPlace /= BASE
+            lngPlace /= BASE
+            latVal += ALPHABET.indexOf(clean[i]) * latPlace
+            lngVal += ALPHABET.indexOf(clean[i + 1]) * lngPlace
+            i += 2
+        }
+        for (j in PAIR_LENGTH until min(clean.length, MAX_DIGITS)) {
+            latPlace /= GRID_ROWS
+            lngPlace /= GRID_COLUMNS
+            val digit = ALPHABET.indexOf(clean[j])
+            latVal += (digit / GRID_COLUMNS) * latPlace
+            lngVal += (digit % GRID_COLUMNS) * lngPlace
+        }
+        return CodeArea(
+            latVal.toDouble() / LAT_MULTIPLIER,
+            lngVal.toDouble() / LNG_MULTIPLIER,
+            (latVal + latPlace).toDouble() / LAT_MULTIPLIER,
+            (lngVal + lngPlace).toDouble() / LNG_MULTIPLIER,
+            min(clean.length, MAX_DIGITS),
+        )
+    }
+
+    fun isValid(input: String?): Boolean {
+        if (input == null || input.length < 2) return false
+        val code = input.uppercase()
+        val sep = code.indexOf(SEPARATOR)
+        if (sep == -1 || sep != code.lastIndexOf(SEPARATOR)) return false
+        if (sep % 2 != 0 || sep > SEPARATOR_POSITION) return false
+        if (sep == SEPARATOR_POSITION) {
+            if (ALPHABET.indexOf(code[0]) > 8) return false
+            if (ALPHABET.indexOf(code[1]) > 17) return false
+        }
+        var padding = false
+        for (i in 0 until sep) {
+            val ch = code[i]
+            if (ALPHABET.indexOf(ch) == -1 && ch != PADDING) return false
+            if (padding) {
+                if (ch != PADDING) return false
+            } else if (ch == PADDING) {
+                padding = true
+                if (sep < SEPARATOR_POSITION) return false
+                if (i != 2 && i != 4 && i != 6) return false
+            }
+        }
+        if (code.length > sep + 1) {
+            if (padding) return false
+            if (code.length == sep + 2) return false
+            for (i in sep + 1 until code.length) if (ALPHABET.indexOf(code[i]) == -1) return false
+        }
+        return true
+    }
+
+    fun isFull(code: String): Boolean = isValid(code) && code.indexOf(SEPARATOR) == SEPARATOR_POSITION
 
     fun isShort(code: String): Boolean = isValid(code) && code.indexOf(SEPARATOR) in 0 until SEPARATOR_POSITION
 
-    fun isFull(code: String): Boolean {
-        if (!isValid(code) || isShort(code)) return false
-        val c = code.uppercase()
-        if (ALPHABET.indexOf(c[0]) * BASE >= LAT_MAX * 2) return false
-        return c.length < 2 || ALPHABET.indexOf(c[1]) * BASE < LNG_MAX * 2
-    }
-
-    /** The area a full code stands for. */
-    fun decode(code: String): CodeArea {
-        require(isFull(code)) { "not a full Plus Code: $code" }
-        val clean = code.uppercase().filter { it != SEPARATOR && it != PADDING }.take(MAX_DIGITS)
-        var normalLat = -LAT_MAX * PAIR_PRECISION
-        var normalLng = -LNG_MAX * PAIR_PRECISION
-        var gridLat = 0L
-        var gridLng = 0L
-        val pairDigits = min(clean.length, PAIR_CODE_LENGTH)
-        var pv = PAIR_FIRST_PLACE_VALUE
-        var i = 0
-        while (i < pairDigits) {
-            normalLat += ALPHABET.indexOf(clean[i]) * pv
-            normalLng += ALPHABET.indexOf(clean[i + 1]) * pv
-            if (i < pairDigits - 2) pv /= BASE
-            i += 2
-        }
-        var latPrecision = pv.toDouble() / PAIR_PRECISION
-        var lngPrecision = pv.toDouble() / PAIR_PRECISION
-        if (clean.length > PAIR_CODE_LENGTH) {
-            var rowPv = GRID_LAT_FIRST_PLACE_VALUE
-            var colPv = GRID_LNG_FIRST_PLACE_VALUE
-            for (j in PAIR_CODE_LENGTH until clean.length) {
-                val d = ALPHABET.indexOf(clean[j])
-                gridLat += (d / GRID_COLUMNS) * rowPv
-                gridLng += (d % GRID_COLUMNS) * colPv
-                if (j < clean.length - 1) {
-                    rowPv /= GRID_ROWS
-                    colPv /= GRID_COLUMNS
-                }
-            }
-            latPrecision = rowPv.toDouble() / FINAL_LAT_PRECISION
-            lngPrecision = colPv.toDouble() / FINAL_LNG_PRECISION
-        }
-        val lat = normalLat.toDouble() / PAIR_PRECISION + gridLat.toDouble() / FINAL_LAT_PRECISION
-        val lng = normalLng.toDouble() / PAIR_PRECISION + gridLng.toDouble() / FINAL_LNG_PRECISION
-        return CodeArea(lat, lng, lat + latPrecision, lng + lngPrecision, clean.length)
-    }
-
-    /**
-     * Drops leading digits that a reference point makes obvious ("7MMGQJ6C+QX" near Dhaka → "QJ6C+QX").
-     * Padded codes and codes far from the reference come back unchanged.
-     */
-    fun shorten(code: String, referenceLatitude: Double, referenceLongitude: Double): String {
+    /** Drops leading digits made obvious by the reference point; padded location cards stay intact. */
+    fun shorten(code: String, referenceLatitude: Double, referenceLongitude: Double, maxDigits: Int = 8): String {
         if (!isFull(code) || code.indexOf(PADDING) >= 0) return code.uppercase()
-        val c = code.uppercase()
-        val area = decode(c)
-        if (area.codeLength < MIN_TRIMMABLE_CODE_LEN) return c
+        val area = decode(code)
         val refLat = referenceLatitude.coerceIn(-90.0, 90.0)
-        val refLng = ((referenceLongitude + 180.0) % 360.0 + 360.0) % 360.0 - 180.0
-        val range = max(abs(area.centerLatitude - refLat), abs(area.centerLongitude - refLng))
-        for (i in PAIR_RESOLUTIONS.size - 2 downTo 1) {
-            if (range < PAIR_RESOLUTIONS[i] * 0.3) return c.substring((i + 1) * 2)
+        val refLng = normalizeLongitude(referenceLongitude)
+        val range = max(abs(refLat - area.centerLat), abs(refLng - area.centerLng))
+        for (i in 4 downTo 1) {
+            if (i * 2 <= maxDigits && range < latitudePrecision(i * 2) * 0.3) return code.uppercase().substring(i * 2)
         }
-        return c
+        return code.uppercase()
     }
+
+    /** The nearest full code to the reference point that ends with [shortCode]. */
+    fun recover(shortCode: String, refLat: Double, refLng: Double): String {
+        if (isFull(shortCode)) return shortCode.uppercase()
+        require(isShort(shortCode)) { "not a valid short code" }
+        val lat0 = min(max(refLat, -LAT_MAX.toDouble()), LAT_MAX.toDouble())
+        val lng0 = normalizeLongitude(refLng)
+        val digits = SEPARATOR_POSITION - shortCode.indexOf(SEPARATOR)
+        val precision = BASE.toDouble().pow(2 - digits / 2)
+        val prefix = encode(lat0, lng0).substring(0, digits)
+        val recovered = prefix + shortCode.uppercase()
+        val area = decode(recovered)
+        var lat = area.centerLat
+        var lng = area.centerLng
+        val dLat = lat - lat0
+        if (dLat > precision / 2 && lat - precision > -LAT_MAX) lat -= precision
+        else if (dLat < -precision / 2 && lat + precision < LAT_MAX) lat += precision
+        val dLng = area.centerLng - lng0
+        if (dLng > precision / 2) lng -= precision else if (dLng < -precision / 2) lng += precision
+        return encode(lat, lng, recovered.length - 1)
+    }
+
+    private fun normalizeLongitude(longitude: Double): Double {
+        if (longitude >= -LNG_MAX && longitude < LNG_MAX) return longitude
+        val circle = 2 * LNG_MAX
+        return (longitude % circle + circle + LNG_MAX) % circle - LNG_MAX
+    }
+
+    private fun latitudePrecision(length: Int): Double =
+        if (length <= NORMAL_LENGTH) BASE.toDouble().pow((length / -2 + 2).toDouble())
+        else BASE.toDouble().pow(-3) / GRID_ROWS.toDouble().pow(length - PAIR_LENGTH)
 }

@@ -35,6 +35,8 @@ import io.github.tanzir71.harkara.core.ConnectivityState
 import io.github.tanzir71.harkara.ui.components.Chip
 import io.github.tanzir71.harkara.ui.components.ConnectivityPill
 import io.github.tanzir71.harkara.ui.components.HCard
+import io.github.tanzir71.harkara.ui.components.HButton
+import io.github.tanzir71.harkara.ui.components.HButtonVariant
 import io.github.tanzir71.harkara.ui.components.HFab
 import io.github.tanzir71.harkara.ui.components.HIcon
 import io.github.tanzir71.harkara.ui.components.HIconButton
@@ -45,7 +47,10 @@ import io.github.tanzir71.harkara.ui.components.categoryColor
 import io.github.tanzir71.harkara.ui.theme.HarkaraTheme
 import io.github.tanzir71.harkara.update.LatestRelease
 
-/** Screen 01/02: the Nearby feed with its Feed ⇄ Map switch (map is a list fallback until M9). */
+/**
+ * Screen 01/02: the Nearby feed with its Feed ⇄ Map switch. [mapContent] draws Map mode below the header
+ * (it gets the Feed/Map switch to place over the map); without it Map mode shows a note above the list.
+ */
 @Composable
 fun NearbyScreen(
     areaName: String?,
@@ -63,46 +68,64 @@ fun NearbyScreen(
     onVote: (postId: String, up: Boolean) -> Unit = { _, _ -> },
     onMore: (postId: String) -> Unit = {},
     alerts: (@Composable () -> Unit)? = null,
+    initialMode: Int = 0,
+    mapContent: (@Composable (modifier: Modifier, modeSwitch: @Composable () -> Unit) -> Unit)? = null,
+    onReply: ((postId: String) -> Unit)? = null,
+    onMakeTask: ((postId: String) -> Unit)? = null,
+    onShare: ((postId: String) -> Unit)? = null,
 ) {
     val c = HarkaraTheme.colors
-    var mode by rememberSaveable { mutableIntStateOf(0) }
+    var mode by rememberSaveable { mutableIntStateOf(initialMode) }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     val shown = posts.filter { filter == null || it.category?.tag == filter }
+
+    val header: @Composable () -> Unit = {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp), verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f).clickable(role = Role.Button, onClick = onChangeArea)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        areaName ?: stringResource(R.string.nearby_near_you),
+                        style = HarkaraTheme.type.title.copy(fontSize = HarkaraTheme.type.amount.fontSize),
+                        color = c.textPrimary,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    HIcon(R.drawable.ic_chevron_down, size = 20.dp, contentDescription = stringResource(R.string.nearby_change_area))
+                }
+                Text(
+                    stringResource(R.string.nearby_within, stringResource(if (areaAuto) R.string.nearby_auto else R.string.nearby_chosen)),
+                    style = HarkaraTheme.type.caption,
+                    color = c.textSecondary,
+                )
+            }
+            ConnectivityPill(connectivity.best, meshPeers = connectivity.meshPeers, onClick = pill.onClick, onLongClick = pill.onLongClick)
+        }
+    }
+    val modeRow: @Composable () -> Unit = {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Segmented(listOf(stringResource(R.string.nearby_feed), stringResource(R.string.nearby_map)), mode, { mode = it })
+            Spacer(Modifier.weight(1f))
+            HIconButton(R.drawable.ic_search, stringResource(R.string.nearby_search), onSearch)
+        }
+    }
+
+    if (mode == 1 && mapContent != null) {
+        Column(modifier.fillMaxSize()) {
+            Box(Modifier.padding(bottom = 10.dp)) { header() }
+            if (alerts != null) Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { alerts() }
+            if (update != null) UpdateCard(update, onGetUpdate, onDismissUpdate, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            mapContent(Modifier.weight(1f), modeRow)
+        }
+        return
+    }
 
     Box(modifier.fillMaxSize()) {
         LazyColumn(
             contentPadding = PaddingValues(bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp), verticalAlignment = Alignment.Top) {
-                    Column(Modifier.weight(1f).clickable(role = Role.Button, onClick = onChangeArea)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                areaName ?: stringResource(R.string.nearby_near_you),
-                                style = HarkaraTheme.type.title.copy(fontSize = HarkaraTheme.type.amount.fontSize),
-                                color = c.textPrimary,
-                                modifier = Modifier.semantics { heading() },
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            HIcon(R.drawable.ic_chevron_down, size = 20.dp, contentDescription = stringResource(R.string.nearby_change_area))
-                        }
-                        Text(
-                            stringResource(R.string.nearby_within, stringResource(if (areaAuto) R.string.nearby_auto else R.string.nearby_chosen)),
-                            style = HarkaraTheme.type.caption,
-                            color = c.textSecondary,
-                        )
-                    }
-                    ConnectivityPill(connectivity.best, meshPeers = connectivity.meshPeers, onClick = pill.onClick, onLongClick = pill.onLongClick)
-                }
-            }
-            item {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Segmented(listOf(stringResource(R.string.nearby_feed), stringResource(R.string.nearby_map)), mode, { mode = it })
-                    Spacer(Modifier.weight(1f))
-                    HIconButton(R.drawable.ic_search, stringResource(R.string.nearby_search), onSearch)
-                }
-            }
+            item { header() }
+            item { modeRow() }
             item {
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -133,7 +156,16 @@ fun NearbyScreen(
                 item { CalmState(R.drawable.ic_nearby, stringResource(R.string.nearby_empty_title), stringResource(R.string.nearby_empty_body)) }
             } else {
                 items(shown, key = { it.id }) { post ->
-                    PostCard(post, Modifier.padding(horizontal = 16.dp), onVoteUp = { onVote(post.id, true) }, onVoteDown = { onVote(post.id, false) }, onMore = { onMore(post.id) })
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val reply = if (onReply != null) Modifier.clickable(role = Role.Button) { onReply(post.id) } else Modifier
+                        PostCard(post, Modifier.padding(horizontal = 16.dp).then(reply), onVoteUp = { onVote(post.id, true) }, onVoteDown = { onVote(post.id, false) }, onMore = { onMore(post.id) })
+                        if (onMakeTask != null || onShare != null) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (onMakeTask != null) HButton(stringResource(R.string.message_make_task), { onMakeTask(post.id) }, Modifier.weight(1f), variant = HButtonVariant.Ghost, icon = R.drawable.ic_tasks)
+                                if (onShare != null) HButton(stringResource(R.string.location_share), { onShare(post.id) }, Modifier.weight(1f), variant = HButtonVariant.Ghost)
+                            }
+                        }
+                    }
                 }
             }
         }

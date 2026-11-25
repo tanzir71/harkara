@@ -1,5 +1,7 @@
 package io.github.tanzir71.harkara.ui
 
+import kotlinx.coroutines.cancelAndJoin
+
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -30,6 +32,7 @@ class AppFlowTest {
 
     private lateinit var container: AppContainer
     private val platform = RecordingPlatform()
+    private val activeContainer = androidx.compose.runtime.mutableStateOf<AppContainer?>(null)
 
     @Before
     fun setUp() {
@@ -37,12 +40,29 @@ class AppFlowTest {
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit()
         androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
         container = AppContainer(context, inMemoryDatabase = true)
-        compose.setContent { HarkaraApp(container, platform) }
+        activeContainer.value = container
+        platform.afterWipe = {
+            container = AppContainer(context, inMemoryDatabase = true)
+            activeContainer.value = container
+        }
+        compose.setContent { activeContainer.value?.let { current -> androidx.compose.runtime.key(current) { HarkaraApp(current, platform) } } }
     }
 
     private fun pickArea(name: String = "Dhanmondi") {
         compose.onNodeWithText(name).performScrollTo().performClick()
         compose.waitForIdle()
+    }
+
+    @org.junit.After
+    fun tearDown() = kotlinx.coroutines.runBlocking {
+        activeContainer.value = null
+        compose.waitForIdle()
+        container.stopRelays()
+        container.node.stopSharing()
+        container.node.stopNode(keepRoom = false)
+        container.scope.coroutineContext[kotlinx.coroutines.Job]!!.cancelAndJoin()
+        container.database.close()
+        androidx.work.testing.WorkManagerTestInitHelper.closeWorkDatabase()
     }
 
     @Test
@@ -69,13 +89,33 @@ class AppFlowTest {
     }
 
     @Test
+    fun `chosen area can be changed after onboarding`() {
+        pickArea()
+        compose.onNodeWithText("Dhanmondi").performClick()
+        compose.onNodeWithText("Choose your area").assertIsDisplayed()
+        compose.onNodeWithText("Banani").performScrollTo().performClick()
+        compose.onNodeWithText("Banani").assertIsDisplayed()
+        assertEquals("Banani", container.settings.state.value.areaName)
+        assertFalse(container.settings.state.value.areaAuto)
+    }
+
+    @Test
+    fun `nearby search opens an offline local search rather than a placeholder`() {
+        pickArea()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        compose.onNodeWithContentDescription(context.getString(io.github.tanzir71.harkara.R.string.nearby_search)).performClick()
+        compose.onNodeWithText("Search this phone").assertIsDisplayed()
+        compose.onNodeWithText("Place, pin or nearby post").assertIsDisplayed()
+    }
+
+    @Test
     fun `connectivity sheet opens from the pill`() {
         pickArea()
         compose.onNodeWithContentDescription("Saved, sends later").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("How messages get out").assertIsDisplayed()
-        compose.onNodeWithText("Internet relays").assertIsDisplayed()
+        compose.onNodeWithText("How messages get out").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Internet relays").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -96,6 +136,7 @@ class AppFlowTest {
     @Test
     fun `triple tap on the logo offers panic wipe and wiping returns to onboarding`() {
         pickArea()
+        val retired = container
         compose.onNodeWithText("Me").performClick()
         val logo = compose.onNodeWithContentDescription("Harkara logo")
         repeat(3) { logo.performClick() }
@@ -103,9 +144,10 @@ class AppFlowTest {
 
         compose.onNodeWithText("Wipe everything now?").assertIsDisplayed()
         compose.onNodeWithText("Wipe now").performClick()
-        compose.waitUntil(5_000) { !container.settings.state.value.onboarded }
+        compose.waitUntil(10_000) { container !== retired }
         compose.waitForIdle()
 
+        assertTrue(retired.isWiped)
         compose.onNodeWithText("Where are you?").assertIsDisplayed()
     }
 
@@ -124,6 +166,8 @@ class AppFlowTest {
     }
 
     private class RecordingPlatform : PlatformActions {
+        var afterWipe: () -> Unit = {}
+        override fun afterPanicWipe() = afterWipe()
         var copied: String? = null
         var shared: String? = null
         override fun openUrl(url: String) = Unit

@@ -14,8 +14,9 @@ import java.security.SecureRandom
         EventEntity::class, OutboxEntity::class, RelayAckEntity::class, MuteEntity::class, LocalSecretEntity::class, IouEntity::class,
         ConversationEntity::class, ChatMessageEntity::class, ChatWrapEntity::class, ChatReceiptEntity::class,
         VoicePartEntity::class, ContactEntity::class,
+        PinEntity::class, PinVoteEntity::class, CheckInEntity::class, TripEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class HarkaraDatabase : RoomDatabase() {
@@ -27,6 +28,9 @@ abstract class HarkaraDatabase : RoomDatabase() {
     abstract fun iouDao(): IouDao
     abstract fun chatDao(): ChatDao
     abstract fun lookupDao(): LookupDao
+    abstract fun pinDao(): PinDao
+    abstract fun checkInDao(): CheckInDao
+    abstract fun tripDao(): TripDao
 
     companion object {
         const val NAME = "harkara.db"
@@ -39,7 +43,7 @@ abstract class HarkaraDatabase : RoomDatabase() {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, HarkaraDatabase::class.java, NAME)
                 .openHelperFactory(SupportOpenHelperFactory(databaseKey(context)))
-                .fallbackToDestructiveMigration(true)
+                .addMigrations(*DatabaseMigrations.ALL)
                 .build()
         }
 

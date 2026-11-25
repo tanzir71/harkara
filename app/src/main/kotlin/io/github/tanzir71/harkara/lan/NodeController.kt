@@ -66,6 +66,17 @@ class NodeController(
         }
     }
 
+    /** Private safety/place envelopes use any Wi-Fi room, not only opt-in public nodes. */
+    val envelopeRoute: OutboxRoute = object : OutboxRoute {
+        override val carrier: Carrier = Carrier.NODE
+        override val ready = room.peerCount.map { it > 0 }.stateIn(scope, SharingStarted.Eagerly, false)
+
+        override suspend fun carry(event: Event): Boolean {
+            if (event.kind !in ENVELOPE_KINDS || !carried.add(event.id)) return false
+            return (room.publish(event) > 0).also { if (!it) carried.remove(event.id) }
+        }
+    }
+
     /** The address people next to this phone open in a browser, or null without Wi-Fi/hotspot. */
     fun address(): String? = LocalAddress.ipv4()?.let { ip -> room.port.takeIf { it > 0 }?.let { "http://$ip:$it/" } }
 
@@ -73,6 +84,7 @@ class NodeController(
     fun startSync() {
         if (syncJob != null) return
         syncJob = scope.launch { room.incoming.collect { runCatching { fromRoom(it) } } }
+        room.subscribe(SUB_ENVELOPES, listOf(Filter(kinds = ENVELOPE_KINDS.toList(), since = clock() / 1000 - 2 * 86_400, limit = 200)))
         scope.launch {
             room.nodePeers.map { it > 0 }.distinctUntilChanged().collect { any ->
                 if (any) room.subscribe(SUB_NODE, listOf(Filter(kinds = SYNC_KINDS, since = clock() / 1000 - 2 * 86_400, limit = 500)))
@@ -115,7 +127,7 @@ class NodeController(
     }
 
     private suspend fun fromRoom(event: Event) {
-        if (ChatProtocol.carriedByLanRoom(event) || event.kind !in SYNC_KINDS) return
+        if (event.kind !in ENVELOPE_KINDS && event.kind !in SYNC_KINDS) return
         val accepted = ingest?.invoke(event, Carrier.NODE) ?: store.store(event, Carrier.NODE, own = false)
         if (accepted && pool.connectedCount > 0) pool.publish(event)
     }
@@ -128,6 +140,8 @@ class NodeController(
 
     companion object {
         const val SUB_NODE = "node-area"
+        private const val SUB_ENVELOPES = "local-envelopes"
+        private val ENVELOPE_KINDS = setOf(Kinds.GIFT_WRAP, Kinds.EPHEMERAL_GIFT_WRAP, Kinds.SMS_DM)
 
         /** What a node keeps and hands out besides chats. */
         val SYNC_KINDS = listOf(

@@ -29,7 +29,8 @@ harkara/
 | `khata` | IOU terms, co-signatures, settlements, QR handshake, split bills, CSV/JSON export |
 | `tools` | Prayer times and Qibla (Adhan), Morse code, SOS events, bounded LocalSend v2 and held-only LAN voice protocols |
 | `sms`, `links` | Compact encrypted DMs, readable two-part SMS, explicit gateway policy, deep links and multi-QR transport |
-| `geo`, `map`, `store` | Geohash math, Open Location Code (Plus Codes), the MapLibre style builder, the storage budget |
+| `geo`, `map`, `store` | Geohash math, Open Location Code (Plus Codes), PMTiles v3 header/directory/tile reading, map-pack manifests/selection, token-based MapLibre styles and layers, the storage budget |
+| `pins`, `location` | Replaceable private/shared/public pins, pin-file formats, live-share session binding and replay rules, location-card precision, private check-ins and trip plans |
 
 Everything in `core` is tested on the JVM with JUnit 5, including the official NIP and BIP-340 vectors.
 
@@ -38,7 +39,15 @@ Everything in `core` is tested on the JVM with JUnit 5, including the official N
 - **Storage** — Room on SQLCipher (`data/`): one `events` table holding the exact signed JSON of every event
   (indexed by kind, geohash, target, pubkey), the `outbox` with delivery states, relay acks, local mutes,
   local secrets (handoff tokens), IOU bundles, and chats (conversations, messages, sent wraps with their
-  Wi-Fi room state, receipts, voice-note parts, contacts). JVM tests use a plain in-memory Room database.
+  Wi-Fi room state, receipts, voice-note parts, contacts), plus `pins`, `pin_votes`, `check_ins` and `trips`.
+  Schema 6 is the additive union of the independently developed chat and map schema-5 variants;
+  `DatabaseMigrations.ALL` registers direct upgrades from versions 1–5 without destructive fallback.
+  Existing tables/rows are retained, missing tables/indices are created, and early map schemas gain the
+  nullable `check_ins.name` column. A recognized legacy unsigned/BLOB outbox is preserved as
+  `legacy_v1_outbox`, never reinterpreted or retransmitted as signed events. Migration applies to the
+  database Room opens; it does not discover/import an older differently named plain `Harkara.db` file.
+  Schema migration does not change the existing database-key-loss reset behavior or deliberate panic wipe.
+  JVM repository tests use a plain in-memory Room database; migration validation is a separate concern.
 - **Identity** — `IdentityManager` keeps the root seed in no-backup storage (wrapped by the Android Keystore
   where available), exposes the key ring, and exports/restores NIP-49 backups.
 - **Carriers** — `RelayPool` (OkHttp WebSockets, NIP-11 limits, backoff, NIP-77 catch-up) feeds a single
@@ -58,6 +67,20 @@ Everything in `core` is tested on the JVM with JUnit 5, including the official N
 - **SMS and QR**: `LinkInbox` handles pasted/deep-linked events through feature repositories. Ordinary SMS
   opens the user's SMS app with a cost-visible preview; permissioned direct/gateway paths remain off by
   default. The static `o/` page verifies events locally and uses no central account or application server.
+- **Map packs and rendering**: `MapPackManager` (`map/`) fetches the newest `maps-YYYYMM` manifest and a
+  chosen pack only on explicit user action. Packs live outside Room under `files/maps/`, alongside
+  `pack.json`; downloaded bytes/size/SHA-256 are checked against `maps.json`, and install checks PMTiles v3
+  vector type plus coverage of a Dhaka reference point. File imports check the archive too; they verify
+  an expected SHA-256 only when one is supplied. Packs are not bundled in the APK. `MapLibreMapSurface`
+  reads the local `pmtiles://file://…` archive directly with bundled glyphs; a local HTTP tile fallback is
+  not installed. `MapSurface` isolates native rendering from Compose overlays and fake/no-map Lite views.
+- **Pins and location**: `PinRepository`, `CheckInRepository` and `LiveShareRepository` (`places/`) handle
+  feature-specific verification/decryption and publication. `GiftInbox` unwraps pins, check-ins and live
+  shares once before dispatch; Khata retains its own path. Durable pins/votes, check-ins and trip plans
+  use Room, while live points/replay state are in memory. An explicitly started `LiveShareService` owns
+  location updates only for the share's lifetime, with a visible Stop action; no permanent background GPS
+  is implied. Trip deadlines use one WorkManager job per active trip, so overdue delivery depends on the
+  traveller's phone and an available route, not a central server or a watcher's independent alarm.
 - **Features** — `FeedRepository`, `ChatRepository`, `TaskRepository`, `KhataRepository`, `SosRepository` each
   read their events from Room (so everything works offline) and publish through the outbox; chats also go to
   the Wi-Fi room at the same time.
@@ -73,4 +96,5 @@ runs the JVM tests, Robolectric tests (ViewModels/repositories against an in-pro
 OkHttp `MockWebServer`, Compose UI tests, accessibility checks) and Roborazzi screenshot comparisons (Day and
 Night goldens in `app/src/test/screenshots`). The site has `tools/verify-site.mjs` and Playwright tests.
 Nothing needs a phone, a SIM, real relays or a person; hardware-only behaviour is listed in `HARDWARE.md`.
+Panic wipe retires the entire object graph, joins jobs, closes/deletes the old database before erasing its key, and recreates the Activity with a fresh container. UI feature subscriptions are disposed before that boundary. A failed wipe stays locked. Generic encrypted LAN routing includes place/safety envelopes and ephemeral live points; location collection restarts after explicit permission grants and stops with its screen/module. Local search is a bounded derived FTS4 index inside SQLCipher, never a remote query service.
 The pinned Robolectric SDK is provisioned through Gradle before tests, then resolved offline at test runtime.

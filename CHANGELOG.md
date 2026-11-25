@@ -1,6 +1,23 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
+
+### Map, pins and location (M9)
+
+Map, pins and location.
+
+- **Nearby → Map** shows an offline map of Dhaka with posts in their category colours, your pins, places other people pinned, people sharing their location with you ("Rafi · 38 min left"), tasks with their price and neighbourhood nodes. Layer chips turn each one on or off; the compass button turns the map north up and the locate button finds you.
+- **Map packs** (Me → Tools): detailed or light Dhaka maps download only when you ask; the manifest supplies their actual sizes and checksums. A friend can hand you a pack file. Labels follow your app language. Until a pack is on the phone, or with the **No-map Lite view** on, Map mode is a list with distance and direction.
+- **Pins**: drop a pin on the map — **private** (encrypted to you, comes back after a restore), **shared** with people you name, or **public** for everyone nearby, who can answer "Still there?". Edit or delete them any time. **My pins** imports and exports GPX, KML and GeoJSON.
+- **Share your location once** as a card: exact, about 100 m, or just the area, with a Plus Code and a map link.
+- **Live location** for 15 min, 1 hour or 8 hours with the people you name, end-to-end encrypted with a key made for that share. It stops by itself; GPS runs only while it does, and a notification lets you stop it any time.
+- **Meet-up arrow and compass**: points to a pin or to someone sharing with you, with distance and direction. The sensor runs only while the screen is open.
+- **Check-ins**: one tap tells the people you choose "I got here safe". **Trip plan**: say where you're going and by when; if you haven't checked in by then, your phone tells them you're overdue.
+- All of these are switches in Settings → Modules. Map rendering, GPS, sensors and screen-off live sharing remain unverified on hardware; integrated APK sizes are checked separately before release.
+- Database schema 6 preserves existing chats, IOUs, outbox and map data through additive migrations. Nine file-backed tests validate upgrades from historical schemas, data integrity and reopening; no destructive upgrade fallback remains.
+- First-time map installs and failed replacements are safe; permission grants recover map/compass location without reopening the screen. Area selection and encrypted local FTS search now work after onboarding.
+- Encrypted pins, check-ins, overdue alerts and ephemeral live points travel over ordinary local Wi-Fi without requiring internet or a public node. Panic wipe recreates the database/key boundary before new onboarding.
+- Extended large-text Day/Night audits cover 78 states. Screen readers can explicitly send a bounded two-second PTT burst or stop immediately. Local automated gates pass 283 core and 273 app tests, lint and screenshot verification.
 
 ### SMS, QR and links (M10)
 

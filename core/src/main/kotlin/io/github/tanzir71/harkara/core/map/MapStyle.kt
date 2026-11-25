@@ -22,43 +22,65 @@ data class MapColors(
     val roadCasing: String,
 )
 
+/** Which name a label shows first. Protomaps tiles carry Dhaka's local (Bangla) name in `name` and English in `name:en`. */
+enum class LabelLanguage { BANGLA, ENGLISH }
+
 /**
  * Builds the MapLibre style JSON for the offline Dhaka pack (Protomaps basemap schema v4: `earth`,
- * `water`, `landuse`, `buildings`, `roads`, `places`). Labels prefer Bangla (`name:bn`) and fall back to
- * `name`. The tile source is a local URL template served from the PMTiles file on the phone, so nothing
- * here touches the network.
+ * `water`, `landuse`, `buildings`, `roads`, `places`). In Bangla, labels prefer `name:bn`, then `name`
+ * (which is Bangla for most of Dhaka); in English `name:en`, then `name`. The tile source is the PMTiles
+ * file on the phone (`pmtiles://file://…`) or a tile URL template, and glyphs come from the APK's assets,
+ * so nothing here touches the network.
  */
 object MapStyle {
     const val SOURCE = "protomaps"
     const val ATTRIBUTION = "© OpenStreetMap contributors · Protomaps"
+    /** The bundled glyph set (Noto Sans Regular: Latin, Bengali, punctuation), see `assets/glyphs/`. */
+    const val FONT = "NotoSans-Regular"
+    const val ASSET_GLYPHS = "asset://glyphs/{fontstack}/{range}.pbf"
 
-    fun build(colors: MapColors, tilesUrl: String, glyphsUrl: String, maxZoom: Int = 15, night: Boolean = false): JsonObject = buildJsonObject {
+    /** `pmtiles://file://<path>`: MapLibre Android (11.7+) reads the archive directly. */
+    fun pmtilesUrl(absolutePath: String): String = "pmtiles://file://$absolutePath"
+
+    /**
+     * [sourceUrl] (a `pmtiles://` or TileJSON URL) wins over [tilesUrl] (an `{z}/{x}/{y}` template).
+     */
+    fun build(
+        colors: MapColors,
+        tilesUrl: String? = null,
+        glyphsUrl: String = ASSET_GLYPHS,
+        maxZoom: Int = 15,
+        night: Boolean = false,
+        labels: LabelLanguage = LabelLanguage.BANGLA,
+        sourceUrl: String? = null,
+    ): JsonObject = buildJsonObject {
+        require(tilesUrl != null || sourceUrl != null) { "a style needs a tile source" }
         put("version", 8)
         put("name", if (night) "Harkara Night" else "Harkara Day")
         put("glyphs", glyphsUrl)
         putJsonObject("sources") {
             putJsonObject(SOURCE) {
                 put("type", "vector")
-                putJsonArray("tiles") { add(JsonPrimitive(tilesUrl)) }
+                if (sourceUrl != null) put("url", sourceUrl) else putJsonArray("tiles") { add(JsonPrimitive(tilesUrl)) }
                 put("minzoom", 0)
                 put("maxzoom", maxZoom)
                 put("attribution", ATTRIBUTION)
                 putJsonArray("bounds") { DHAKA_BBOX.forEach { add(JsonPrimitive(it)) } }
             }
         }
-        put("layers", layers(colors))
+        put("layers", layers(colors, labels))
     }
 
     /** Dhaka bbox of the map pack: west, south, east, north. */
     val DHAKA_BBOX = listOf(90.30, 23.65, 90.55, 23.92)
 
-    private fun layers(c: MapColors): JsonArray = buildJsonArray {
+    private fun layers(c: MapColors, labels: LabelLanguage): JsonArray = buildJsonArray {
         add(layer("background", "background", null, paint = obj("background-color" to c.land)))
         add(layer("earth", "fill", "earth", paint = obj("fill-color" to c.land)))
         add(
             layer(
                 "park", "fill", "landuse",
-                filter = inKind("park", "nature_reserve", "garden", "grass", "golf_course", "cemetery", "forest", "wood", "playground"),
+                filter = inKind("park", "nature_reserve", "garden", "grass", "golf_course", "cemetery", "grave_yard", "forest", "wood", "playground"),
                 paint = obj("fill-color" to c.park),
             ),
         )
@@ -88,44 +110,54 @@ object MapStyle {
                 ),
             )
         }
+        val halo = buildJsonObject {
+            put("text-color", c.label)
+            put("text-halo-color", c.labelHalo)
+            put("text-halo-width", 1.5)
+        }
+        add(
+            layer(
+                "water-labels", "symbol", "water", minZoom = 13,
+                filter = buildJsonArray { add(JsonPrimitive("has")); add(JsonPrimitive("name")) },
+                layout = buildJsonObject {
+                    put("text-field", nameExpression(labels))
+                    putJsonArray("text-font") { add(JsonPrimitive(FONT)) }
+                    put("text-size", 11)
+                    put("text-max-width", 8)
+                },
+                paint = halo,
+            ),
+        )
         add(
             layer(
                 "road-labels", "symbol", "roads", minZoom = 14, filter = inKind("major_road", "highway", "minor_road"),
                 layout = buildJsonObject {
                     put("symbol-placement", "line")
-                    put("text-field", nameExpression())
+                    put("text-field", nameExpression(labels))
                     putJsonArray("text-font") { add(JsonPrimitive(FONT)) }
                     put("text-size", 11)
                 },
-                paint = obj("text-color" to c.label, "text-halo-color" to c.labelHalo).let {
-                    buildJsonObject { it.forEach { (k, v) -> put(k, v) }; put("text-halo-width", 1.5) }
-                },
+                paint = halo,
             ),
         )
         add(
             layer(
                 "place-labels", "symbol", "places",
                 layout = buildJsonObject {
-                    put("text-field", nameExpression())
+                    put("text-field", nameExpression(labels))
                     putJsonArray("text-font") { add(JsonPrimitive(FONT)) }
                     put("text-size", buildJsonArray { add(JsonPrimitive("interpolate")); add(buildJsonArray { add(JsonPrimitive("linear")) }); add(buildJsonArray { add(JsonPrimitive("zoom")) }); add(JsonPrimitive(10)); add(JsonPrimitive(11)); add(JsonPrimitive(15)); add(JsonPrimitive(14)) })
                     put("text-max-width", 8)
                 },
-                paint = buildJsonObject {
-                    put("text-color", c.label)
-                    put("text-halo-color", c.labelHalo)
-                    put("text-halo-width", 1.5)
-                },
+                paint = halo,
             ),
         )
     }
 
-    const val FONT = "Noto Sans Regular"
-
-    /** `["coalesce", ["get","name:bn"], ["get","name"]]` — Bangla first. */
-    fun nameExpression(): JsonArray = buildJsonArray {
+    /** Bangla: `["coalesce", ["get","name:bn"], ["get","name"]]`; English: `name:en`, then `name`. */
+    fun nameExpression(labels: LabelLanguage = LabelLanguage.BANGLA): JsonArray = buildJsonArray {
         add(JsonPrimitive("coalesce"))
-        add(buildJsonArray { add(JsonPrimitive("get")); add(JsonPrimitive("name:bn")) })
+        add(buildJsonArray { add(JsonPrimitive("get")); add(JsonPrimitive(if (labels == LabelLanguage.BANGLA) "name:bn" else "name:en")) })
         add(buildJsonArray { add(JsonPrimitive("get")); add(JsonPrimitive("name")) })
     }
 

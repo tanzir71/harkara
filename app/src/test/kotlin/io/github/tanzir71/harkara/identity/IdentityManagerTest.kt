@@ -3,13 +3,17 @@ package io.github.tanzir71.harkara.identity
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import io.github.tanzir71.harkara.AppContainer
+import io.github.tanzir71.harkara.HarkaraApplication
 import io.github.tanzir71.harkara.core.nostr.Nip49
 import io.github.tanzir71.harkara.core.nostr.Nip49Exception
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.Job
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -23,9 +27,13 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+class IdentityPanicTestApplication : HarkaraApplication() {
+    override fun createContainer(): AppContainer = AppContainer(this, inMemoryDatabase = true)
+}
+
 /** M3 gate: the app makes a key, backs it up with NIP-49, and restores it after a wipe. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], application = IdentityPanicTestApplication::class)
 class IdentityManagerTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val seedFile = AppContainer.seedFile(context)
@@ -109,16 +117,45 @@ class IdentityManagerTest {
 
     @Test
     fun `panic wipe also wipes the seed`() = runBlocking {
-        val container = AppContainer(context, inMemoryDatabase = true)
-        val before = container.identity.profile().pubkeyHex
+        val app = ApplicationProvider.getApplicationContext<IdentityPanicTestApplication>()
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(
+            app, androidx.work.Configuration.Builder().setExecutor(androidx.work.testing.SynchronousExecutor()).build(),
+        )
+        val container = app.container
+        val identity = container.identity
+        val database = container.database
+        database.eventDao().storedRows()
+        val before = identity.profile().pubkeyHex
         assertTrue(seedFile.exists())
+        assertTrue(database.isOpen)
 
         container.panicWipe()
 
         assertFalse(seedFile.exists())
-        assertFalse(container.identity.hasIdentity())
-        assertNull(container.identity.profilePubkey.value)
-        assertNotEquals(before, container.identity.profile().pubkeyHex)
+        assertFalse(identity.hasIdentity())
+        assertNull(identity.profilePubkey.value)
+        assertTrue(container.isWiped)
+        assertFalse(database.isOpen)
+        assertTrue(container.scope.coroutineContext[Job]!!.isCompleted)
+        assertThrows(IllegalStateException::class.java) { container.identity }
+        assertThrows(IllegalStateException::class.java) { container.database }
+
+        val fresh = app.resetContainer()
+        try {
+            assertNotSame(container, fresh)
+            assertNotSame(container.scope, fresh.scope)
+            assertNotSame(database, fresh.database)
+            assertFalse(fresh.settings.state.value.onboarded)
+            assertFalse(fresh.identity.hasIdentity())
+            assertNull(fresh.identity.profilePubkey.value)
+            assertTrue(fresh.scope.coroutineContext[Job]!!.isActive)
+            assertEquals(0, fresh.database.eventDao().storedRows().size)
+            assertNotEquals(before, fresh.identity.profile().pubkeyHex)
+            assertTrue(seedFile.exists())
+        } finally {
+            fresh.scope.coroutineContext[Job]!!.cancelAndJoin()
+            fresh.database.close()
+        }
     }
 
     @Test
