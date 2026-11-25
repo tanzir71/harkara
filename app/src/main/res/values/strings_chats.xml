@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Chats (M5) -->
+    <string name="chats_new">New chat</string>
+    <string name="chats_rooms">Nearby rooms</string>
+    <string name="chats_messages">Messages</string>
+    <string name="chats_wifi_title">Everyone on this Wi-Fi</string>
+    <plurals name="chats_wifi_peers">
+        <item quantity="one">%1$d phone here · no internet needed</item>
+        <item quantity="other">%1$d phones here · no internet needed</item>
+    </plurals>
+    <string name="chats_wifi_alone">No one else here yet · no internet needed</string>
+    <string name="chats_area_title">%1$s channel</string>
+    <string name="chats_area_sub">Anyone nearby · no names, gone after a day</string>
+    <string name="chats_none_title">No chats yet</string>
+    <string name="chats_none_body">DMs and groups are end-to-end encrypted and travel by internet, local Wi-Fi or saved for later. The rooms above are open to everyone nearby.</string>
+    <string name="chats_voice_preview">Voice note</string>
+    <plurals name="chats_members">
+        <item quantity="one">%1$d member</item>
+        <item quantity="other">%1$d members</item>
+    </plurals>
+    <string name="chats_unread">Unread: %1$d</string>
+    <string name="pill_mesh_short">Nearby · %1$d</string>
+
+    <!-- New chat sheet -->
+    <string name="chats_new_dm">Message someone</string>
+    <string name="chats_new_group">New group</string>
+    <string name="chats_their_key" tools:ignore="Typos">Their key (npub1…)</string>
+    <string name="chats_pet_name">Name for them · only on this phone</string>
+    <string name="chats_start">Start chat</string>
+    <string name="chats_bad_key" tools:ignore="Typos">That isn\'t a Harkara or Nostr key (npub1…)</string>
+    <string name="chats_your_key">Your key</string>
+    <string name="chats_your_key_body">People message you with this. It holds no phone number.</string>
+    <string name="chats_copy_key">Copy</string>
+    <string name="chats_show_qr">Show QR</string>
+    <string name="chats_key_copied">Key copied</string>
+    <string name="chats_key_qr_description">QR code of your public key</string>
+    <string name="chats_group_name">Group name</string>
+    <string name="chats_group_people">People</string>
+    <string name="chats_group_none">Start a chat with someone first, or add them by key.</string>
+    <string name="chats_group_add_key">Add someone by key</string>
+    <string name="chats_group_add">Add</string>
+    <string name="chats_group_create">Create group</string>
+    <string name="chats_group_hint">Pick at least two people. Everyone gets their own encrypted copy.</string>
+
+    <!-- Thread -->
+    <string name="thread_hint">Message · goes by %1$s</string>
+    <string name="thread_hint_saved">Message · sends when a route opens</string>
+    <string name="thread_by_internet">internet</string>
+    <string name="thread_by_bridge">a nearby phone</string>
+    <string name="thread_by_wifi">local Wi-Fi</string>
+    <string name="thread_by_mesh">mesh</string>
+    <string name="thread_by_sms">SMS</string>
+    <string name="thread_by_hand">hand</string>
+    <string name="thread_send">Send</string>
+    <string name="thread_attach">Share a card</string>
+    <string name="thread_record">Record a voice note</string>
+    <string name="thread_recording">Recording · %1$s / 0:15</string>
+    <string name="thread_recorded">Voice note · %1$s</string>
+    <string name="thread_cancel_recording">Discard voice note</string>
+    <string name="thread_mic_denied">Voice notes need the microphone</string>
+    <string name="thread_empty_dm">Messages are end-to-end encrypted and go by whatever route is open.</string>
+    <string name="thread_empty_area">Everyone near your area can read this. Your name stays off unless you add one.</string>
+    <string name="thread_empty_wifi">Phones on this Wi-Fi see these messages, even with no internet. They fade after a day.</string>
+    <string name="thread_dm_sub">Encrypted · %1$s</string>
+    <string name="thread_area_sub">Area channel · anonymous</string>
+    <string name="thread_wifi_alone">Just you so far</string>
+    <plurals name="thread_wifi_peers">
+        <item quantity="one">%1$d phone here</item>
+        <item quantity="other">%1$d phones here</item>
+    </plurals>
+    <string name="thread_too_long">That message is too long.</string>
+    <string name="thread_phone">Phone numbers can\'t go in a public room.</string>
+    <string name="thread_failed">Couldn\'t send that.</string>
+    <string name="thread_task_made">You made that message a task</string>
+
+    <!-- Message actions -->
+    <string name="message_actions">This message</string>
+    <string name="message_copy">Copy</string>
+    <string name="message_copied">Copied</string>
+    <string name="message_make_task">Make it a task</string>
+    <string name="message_make_task_body">Turn this message into an errand someone nearby can pick up.</string>
+    <string name="message_block">Block this person</string>
+    <string name="message_block_body">You won\'t see their messages. They aren\'t told.</string>
+
+    <!-- Cards -->
+    <string name="attach_title">Share in this chat</string>
+    <string name="attach_location">Share my location</string>
+    <string name="attach_location_body">One-off: exact, about 100 m, or just the area · with a Plus Code</string>
+    <string name="attach_checkin">I\'m safe</string>
+    <string name="attach_checkin_body">A check-in card for this chat</string>
+    <string name="location_title_hint">What it is</string>
+    <string name="location_default_title">My location</string>
+    <string name="location_place_hint">Place · optional</string>
+    <string name="location_exact">Exact</string>
+    <string name="location_100m">About 100 m</string>
+    <string name="location_area">Area</string>
+    <string name="location_share">Share</string>
+    <string name="location_unknown">Location isn\'t available right now</string>
+    <string name="location_detail_exact">exact</string>
+    <string name="location_detail_100m">about 100 m</string>
+    <string name="location_detail_area">area only</string>
+    <string name="checkin_safe">I\'m safe</string>
+
+    <!-- Name prompt -->
+    <string name="chat_name_title">What should people call you?</string>
+    <string name="chat_name_body">Shown only to the people you message. Never your phone number.</string>
+    <string name="chat_name_hint">Your name</string>
+    <string name="chat_name_save">Save and send</string>
+    <string name="chat_name_skip">Send without a name</string>
+    <string name="chat_name_phone">A name can\'t contain a phone number</string>
+    <string name="chat_name_long">Keep it under 32 characters</string>
+</resources>

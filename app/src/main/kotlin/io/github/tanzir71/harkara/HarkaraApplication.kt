@@ -2,6 +2,12 @@ package io.github.tanzir71.harkara
 
 import android.app.Application
 import android.content.Context
+import io.github.tanzir71.harkara.chat.AndroidVoicePlayer
+import io.github.tanzir71.harkara.chat.AndroidVoiceRecorder
+import io.github.tanzir71.harkara.chat.ChatRepository
+import io.github.tanzir71.harkara.chat.SettingsChatPrefs
+import io.github.tanzir71.harkara.chat.VoicePlayer
+import io.github.tanzir71.harkara.chat.VoiceRecorder
 import io.github.tanzir71.harkara.connectivity.ConnectivityMonitor
 import io.github.tanzir71.harkara.core.feed.PostComposer
 import io.github.tanzir71.harkara.core.feed.WordFilters
@@ -13,6 +19,8 @@ import io.github.tanzir71.harkara.data.HarkaraDatabase
 import io.github.tanzir71.harkara.feed.FeedRepository
 import io.github.tanzir71.harkara.identity.FileSeedStore
 import io.github.tanzir71.harkara.identity.IdentityManager
+import io.github.tanzir71.harkara.lan.LanRoom
+import io.github.tanzir71.harkara.lan.NsdLanDiscovery
 import io.github.tanzir71.harkara.relay.DefaultRelays
 import io.github.tanzir71.harkara.relay.RoomEventStore
 import io.github.tanzir71.harkara.relay.LiveConnectivityMonitor
@@ -26,6 +34,11 @@ import io.github.tanzir71.harkara.update.UpdateChecker
 import io.github.tanzir71.harkara.core.tasks.TaskTypes
 import io.github.tanzir71.harkara.tasks.TaskRepository
 import io.github.tanzir71.harkara.khata.KhataRepository
+import io.github.tanzir71.harkara.tools.CameraTorch
+import io.github.tanzir71.harkara.tools.Handbook
+import io.github.tanzir71.harkara.tools.LightController
+import io.github.tanzir71.harkara.tools.SosRepository
+import io.github.tanzir71.harkara.tools.ToneSiren
 import io.github.tanzir71.harkara.core.links.HarkaraLink
 import io.github.tanzir71.harkara.core.nostr.Kinds
 import io.github.tanzir71.harkara.core.relay.Filter
@@ -79,7 +92,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
     val wordFilters: WordFilters by lazy {
         WordFilters.parse(context.assets.open("word-filters/filters.json").bufferedReader().use { it.readText() })
     }
-    val connectivity: ConnectivityMonitor by lazy { LiveConnectivityMonitor(relayPool, outbox, scope) { relays().size } }
+    val connectivity: ConnectivityMonitor by lazy { LiveConnectivityMonitor(relayPool, outbox, scope, { relays().size }, lanRoom.peerCount) }
     val feedRepository: FeedRepository by lazy {
         FeedRepository(
             database, eventStore, outbox, relayPool, wordFilters,
@@ -87,6 +100,26 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
             powBits = { powBits },
         ).also { it.startIngest(scope) }
     }
+
+    /** "Everyone on this Wi-Fi": room server + NSD + a pool to the other phones; foreground only. */
+    val lanRoom: LanRoom by lazy { LanRoom(scope, NsdLanDiscovery(context)) }
+    val chatRepository: ChatRepository by lazy {
+        ChatRepository(
+            database, outbox, relayPool, lanRoom,
+            profile = { identity.profile() },
+            areaKey = { g5 -> identity.keyRing().area(g5, IsoWeek.current()) },
+            prefs = SettingsChatPrefs(settings),
+        ).also { it.start(scope) }
+    }
+    val voiceRecorder: VoiceRecorder by lazy { AndroidVoiceRecorder(context) }
+    val voicePlayer: VoicePlayer by lazy { AndroidVoicePlayer(context) }
+
+    fun startLan() {
+        chatRepository
+        lanRoom.start()
+    }
+
+    fun stopLan() = lanRoom.stop()
 
     val taskTypes: TaskTypes by lazy { TaskTypes.parse(context.assets.open("task-types.json").bufferedReader().use { it.readText() }) }
     val taskRepository: TaskRepository by lazy {
@@ -99,6 +132,11 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
             .also { it.startIngest(scope, relayPool) }
     }
 
+    val sosRepository: SosRepository by lazy {
+        SosRepository(database, eventStore, outbox, relayPool, profile = { identity.profile() }).also { it.startIngest(scope) }
+    }
+    val handbook: Handbook by lazy { Handbook.fromAssets(context) }
+    val lights: LightController by lazy { LightController(CameraTorch(context), ToneSiren(), scope) }
     /** Deep links, shared text and pasted QR/SMS (M10): set by MainActivity, consumed by the UI. */
     val pendingLinks = MutableStateFlow<HarkaraLink?>(null)
 
@@ -156,6 +194,7 @@ class AppContainer(private val context: Context, private val inMemoryDatabase: B
 
     suspend fun panicWipe() {
         stopRelays()
+        stopLan()
         withContext(Dispatchers.IO) { identity.wipe() }
         PanicWipeController.wipeEverything(context, database, settings)
     }

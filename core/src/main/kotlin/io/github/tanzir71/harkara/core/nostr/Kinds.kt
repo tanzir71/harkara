@@ -47,6 +47,8 @@ object Kinds {
     const val SOS = 3477
     /** SOS follow-up: `e` to the SOS, `status` = resolved|false_alarm. */
     const val SOS_UPDATE = 3478
+    /** Chat receipt rumor, gift-wrapped to the author: `e` per message, `status` = delivered|read. */
+    const val RECEIPT = 3479
     /**
      * Short DM for the SMS rung: NIP-44 v2 content to the single `p` recipient, signed by the sender, not
      * gift-wrapped (a NIP-59 wrap cannot fit two SMS; the carrier sees both numbers anyway).

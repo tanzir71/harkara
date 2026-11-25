@@ -41,8 +41,9 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M5 - Chats (v0.4.0)
 
-- [ ] DMs (NIP-17), groups, area channels, "everyone on this Wi-Fi", delivery ticks + carrier glyphs, voice notes, shared cards, "Make it a task".
-- [ ] Gate: two simulated users exchange DMs and group messages via mock relay and LAN room; screen 04 screenshot.
+- [x] DMs (NIP-17), groups, area channels, "everyone on this Wi-Fi", delivery ticks + carrier glyphs, voice notes, shared cards, "Make it a task".
+- [x] Receipts (kind 3479), Plus Codes, location card (exact / ~100 m / area), Wi-Fi room server + NSD discovery, name asked at first send.
+- [x] Gate: two simulated users exchange DMs and group messages via mock relay and LAN room (`ChatRelayTest`, `ChatLanTest`); screen 04 screenshot (`ChatScreenshotTest`).
 
 ## M6 - Off-grid carriers and the ladder (v0.5.0)
 
@@ -74,8 +75,10 @@ Each milestone: do the work → tick items → `ci.yml` green → `CHANGELOG.md`
 
 ## M11 - Tools, modules, safety (v0.10.0)
 
-- [ ] Tools shelf, handbook (bn + en), file drop, push-to-talk, SOS flow, Lite mode, battery audit tests.
-- [ ] Gate: module-off tests show no services/sensors; SOS rate-limit + resolve tests.
+- [x] Handbook (bn + en, 42 sections), Qibla + prayer times (Karachi/Hanafi), torch/strobe/Morse SOS/siren, SOS flow (3-s hold, Call 999 first, 30-min limit, resolve), emergency-alert sound switch, Lite mode 60-min checks.
+- [ ] File drop (LocalSend v2) and push-to-talk over the LAN (need the M5 LAN room); compass/QR tools land with M9/M10.
+- [x] Battery audit: with default modules no service, GPS or relay runs in the background (Robolectric).
+- [x] Gate: module-off tests show no services/sensors; SOS rate-limit + resolve tests.
 
 ## M12 - Hardening and distribution (v0.11.0)
 

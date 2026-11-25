@@ -15,6 +15,8 @@ dependencies {
     // BIP-340 Schnorr on secp256k1. The JNI bindings are chosen by the consumer:
     // -jni-jvm for JVM tests, -jni-android in the app.
     implementation(libs.secp256k1.kmp)
+    // Prayer times and Qibla (Batoul Apps, MIT).
+    implementation(libs.adhan)
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlinx.coroutines.test)

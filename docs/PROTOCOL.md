@@ -24,13 +24,13 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | 5 | Deletion | NIP-09 |
 | 7 | Reaction | NIP-25: votes `+`/`-` on posts, `yes`/`no` "still there?" on pins (`e`, `p`, `k`) |
 | 13 | Seal | NIP-59, inside a gift wrap only |
-| 14 | Chat message | NIP-17 rumor: `p` per member, `e` reply, `subject` |
-| 15 | File message | NIP-17 rumor: `file-type`, `encryption-algorithm` `aes-gcm`, `decryption-key`, `decryption-nonce`, `x` |
+| 14 | Chat message | NIP-17 rumor: `p` per member, `e` reply, `subject`; Harkara adds `n` (sender's name) and `card` (§15) |
+| 15 | File message | NIP-17 rumor: `file-type`, `encryption-algorithm` `aes-gcm`, `decryption-key`, `decryption-nonce`, `x`; Harkara voice-note parts carry the audio inline (§15) |
 | 1059 | Gift wrap | NIP-59: one-time key, `p` recipient |
 | 1984 | Report | NIP-56: `e` + `p` with report type; 3 distinct reporting keys hide a post locally, score ≤ −5 hides |
 | 10000 | Mute list | NIP-51 |
 | 10050 | DM relays | NIP-17 inbox relays |
-| 20000 | Area chat | Ephemeral, `g`-tagged area channel message (bitchat's geohash-channel convention) |
+| 20000 | Area chat | Ephemeral. Area channel: `g` = geohash-5, signed by the weekly area key. Wi-Fi room: `t` = `wifi`, signed by the profile key, never sent to relays. Both: optional `n`, `expiration` = +24 h (§15) |
 | 21059 | Ephemeral gift wrap | NIP-59, for live data relays must not store |
 | 30000 | Follow set | NIP-51, opt-in moderator lists per area |
 | 30078 | App data | NIP-78: private pins encrypted to self (`d`) |
@@ -48,6 +48,7 @@ Every post, message, task, pin and IOU is a signed [NIP-01](https://github.com/n
 | 3476 | Check-in | regular | "I got here safe"; top relay priority |
 | 3477 | SOS | regular | Top relay priority; one per 30 min per key; active until an SOS update closes it |
 | 3478 | SOS update | regular | `e` → SOS, `status` = `resolved` · `false_alarm` |
+| 3479 | Chat receipt | rumor, gift-wrapped | To the message author only: `p` author, one `e` per message id (rumor id, or voice-note id), `status` = `delivered` · `read` (M5, §15) |
 | 3480 | SMS DM | regular, SMS rung only | NIP-44 v2 content to the single `p` recipient, signed by the sender, not gift-wrapped (§16.3) |
 | 23471 | Live location | ephemeral, gift-wrapped (21059) | Session key; `seq` (replay protection), `end` (unix s) |
 | 33471 | Pin | addressable | Shared/public pin: `d`, `g`, `expiration`, `title` |
@@ -170,6 +171,7 @@ Panic wipe deletes the seed file and the AndroidKeyStore key (`IdentityManager.w
 | NIP-19 npub/nsec/nprofile | NIP-19 | `Bech32Test` |
 | HChaCha20 | draft-irtf-cfrg-xchacha | `Nip49Test` |
 | Key ring HKDF outputs | computed independently (Python `hmac`/`hashlib`) | `KeyRingTest` |
+| Open Location Code encoding, validity and shortening | google/open-location-code test data, Apache-2.0 | `OpenLocationCodeTest` |
 ## 11. Nearby feed
 
 A feed post is kind 1, signed by the weekly area key (KeyRing.area(geohash5, isoWeek)), with:
@@ -227,6 +229,76 @@ IouTerms = {id, creditor {name, pubkey?}, debtor {name, pubkey?}, amount (taka),
 Phones exchange the whole IouBundle {terms, signatures[], settlements[]} as the content of a kind 3473 rumor, gift-wrapped (NIP-59) to the other party and to self, and merge bundles by id (only verifying signatures are kept). Face to face, the same bundle goes as a QR: harkara:iou: + base64url(JSON). Split bills create one IOU per member with shares that sum exactly. Paid tasks are shown as settled receipts but are not IOUs.
 
 Someone without a key confirms an IOU on the web page with the one-time code from their reminder link (`confirmCodeHash`, §16.7); single signatures and settlements also travel by SMS and QR (§16.3, §16.5) and are merged by terms hash.
+
+## 15. Chats (M5)
+
+Code: `core/chat` (`ChatProtocol`, `ChatCards`, `VoiceNotes`), `core/lan/LanRelayServer`, `core/geo/OpenLocationCode`; app `chat/ChatRepository`, `lan/LanRoom`.
+
+### DMs and groups (NIP-17)
+
+- A chat is a NIP-17 room: the set of the sender and the `p` tags. Its local id is `hex(SHA-256(sorted pubkeys joined by ","))[0..32]`; two members make a DM, three or more a group. A changed member list is a new room. The newest `subject` names a group; Harkara repeats the subject on every group message it sends.
+- Every message is a kind 14 rumor (text, optional `card`, optional `n` name), sealed and gift-wrapped (kind 1059) **to every member and to the sender** (so a restored phone sees its own messages). Wraps and seals are back-dated up to 2 days (NIP-59). Text is at most 6 000 UTF-8 bytes, which keeps every wrap under 16 KB.
+- Subscriptions: kind 1059 with `#p` = our profile key and `since` = last finished fetch − 2 days 1 hour (a week back the first time). On reconnect the relay pool resumes from the last EOSE minus the same 2 days 1 hour, so back-dated wraps are never skipped.
+- Receiving: unwrap (wrap and seal signatures checked, seal signer = rumor author), drop rooms we're not in and blocked authors, dedupe by rumor id, store, then send a **delivered** receipt.
+- `n` is the sender's display name, asked once when they first send and kept on their phone. Inside a wrap only the members see it. A name with 7 or more digits in a phone-like run is never sent and never shown.
+
+### Receipts and delivery states
+
+| State | When |
+|---|---|
+| Saved | stored, no wrap has left the phone |
+| Left this phone | a wrap was written to a relay socket or a Wi-Fi room peer |
+| Reached the network | every recipient's wrap got `OK` true from a relay or a room server |
+| Delivered | every other member sent a kind 3479 receipt with `status` `delivered` (or `read`) |
+| Read | every other member sent `status` `read` (sent when they open the thread) |
+
+Receipts are kind 3479 rumors gift-wrapped only to the author: `["p", author]`, one `["e", id]` per message, `["status", "delivered"|"read"]`. They are never answered. A receipt from someone outside the room is ignored. Once a member's receipt arrives, their copies stop being retried on every carrier. The carrier glyph on our message is the rung that got furthest (relays = Online, Wi-Fi room = Node); incoming messages show the carrier they arrived by.
+
+### Area channel
+
+Kind 20000, `["g", geohash-5]`, optional `["n", name]`, `["expiration", created_at + 86400]`, signed by the weekly **area key** for that cell (anonymous, like Nearby posts). Subscribed on relays as `#g` = the user's cell, `since` = 24 h. Relays don't store ephemeral events; the phone keeps the last 24 h. Like Chatter posts: at most 400 characters and no phone numbers.
+
+### "Everyone on this Wi-Fi"
+
+- Every phone with the app open runs a **room server**: HTTP + WebSocket (RFC 6455) on plain sockets around `LocalRelay`, on a free port, advertised with Android NSD as `_harkara._tcp` under a random per-session name (`harkara-<8 hex>`, never a key). `GET /` with `Accept: application/nostr+json` answers NIP-11.
+- A second relay pool connects to every other phone's server (`ws://ip:port`). Each phone subscribes there to its gift wraps and to the room (`kinds [20000]`, `#t` = `wifi`, `since` 24 h).
+- Room servers accept only gift wraps (1059) and room messages (20000 with `t` = `wifi`); they keep up to 2 000 wraps in memory so a phone that joins later still gets what waited for it; room messages are ephemeral.
+- Sending: our wraps go to the internet relays (outbox) **and** to the room at the same time — injected into our own server (connected peers get them live) and published to every peer's server (each server hands what it accepts to its own phone). Wraps not yet confirmed by a room server are re-sent when a peer appears (for 3 days).
+- Room messages: kind 20000, `["t", "wifi"]`, optional `["n", name]`, `expiration` +24 h, signed by the **profile key** (so people can start a DM from the room). Never sent to relays. Same 400-character, no-phone-number rule.
+- The room runs only while the app is in the foreground (battery rule), never as a service in M5. The connectivity pill shows "On local Wi-Fi" while the room has peers.
+
+### Voice notes
+
+At most 15 s (Opus/OGG 16 kbps on Android 10+, AAC/MP4 24 kbps below; mono 16 kHz). The audio is cut into parts of 4 096 bytes (at most 32) and each part is a kind 15 rumor wrapped on its own (so each wrap stays under 16 KB):
+
+| Tag | Value |
+|---|---|
+| `voice` | note id, 16 random bytes in hex |
+| `part` | index, count |
+| `m`, `file-type` | MIME (`audio/ogg`, `audio/mp4`) |
+| `duration` | milliseconds (≤ 15 000, 500 ms slack) |
+| `x` | SHA-256 of the whole note |
+| `n` | sender's name (optional) |
+
+`content` is the part in Base64 (no file server — NIP-17's URL is replaced by the inline data). The receiver stores parts and builds the note when all have arrived and the hash matches; receipts name the voice id. Strangers' media never auto-downloads over the mesh (the mesh is M6; voice notes are DM/group only).
+
+### Cards
+
+A kind 14 rumor may carry one `card` tag; its `content` is a readable summary for other clients.
+
+| Card | Tag |
+|---|---|
+| Location | `["card","location", lat, lng, precision, title, plus code, place]` — precision `exact` (5 decimals, 10-digit Plus Code), `100m` (rounded to 0.001°), `area` (geohash-5 centre, 6-digit code). Shown as a short code near Dhaka ("QJ6C+QX Dhaka") |
+| Task | `["card","task", type, price, title, steps done (0–5), status, runner]` |
+| IOU | `["card","iou", amount, "lent"\|"borrowed" (author's side), what, status, date, "1"\|"0" agreed]` |
+| Check-in | `["card","checkin", title, detail]` |
+| Pin | `["card","pin", title, detail, visibility, yes, no, category]` |
+
+Location cards come from "Share my location" (a one-off read of the last fix; "Area" falls back to the chosen area). Task, IOU and pin cards are produced by M7–M9.
+
+### Plus Codes
+
+`OpenLocationCode` implements encode (2–15 digits), decode, validity and shortening from the Open Location Code specification, checked against vectors from its test data.
 
 ## 16. SMS, QR, links and the web page for non-users (M10)
 

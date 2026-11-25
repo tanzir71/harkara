@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Chats (M5) -->
+    <string name="chats_new">নতুন চ্যাট</string>
+    <string name="chats_rooms">আশেপাশের রুম</string>
+    <string name="chats_messages">মেসেজ</string>
+    <string name="chats_wifi_title">এই ওয়াই-ফাইয়ের সবাই</string>
+    <plurals name="chats_wifi_peers">
+        <item quantity="one">এখানে %1$dটি ফোন · ইন্টারনেট লাগে না</item>
+        <item quantity="other">এখানে %1$dটি ফোন · ইন্টারনেট লাগে না</item>
+    </plurals>
+    <string name="chats_wifi_alone">এখানে এখনো কেউ নেই · ইন্টারনেট লাগে না</string>
+    <string name="chats_area_title">%1$s চ্যানেল</string>
+    <string name="chats_area_sub">আশেপাশের যে কেউ · নাম ছাড়া, এক দিনে মুছে যায়</string>
+    <string name="chats_none_title">এখনো কোনো চ্যাট নেই</string>
+    <string name="chats_none_body">ডিএম আর গ্রুপ এন্ড-টু-এন্ড এনক্রিপ্টেড, যায় ইন্টারনেট, লোকাল ওয়াই-ফাই দিয়ে, নয়তো পরে যাওয়ার জন্য জমা থাকে। ওপরের রুমগুলো আশেপাশের সবার জন্য খোলা।</string>
+    <string name="chats_voice_preview">ভয়েস নোট</string>
+    <plurals name="chats_members">
+        <item quantity="one">%1$d জন সদস্য</item>
+        <item quantity="other">%1$d জন সদস্য</item>
+    </plurals>
+    <string name="chats_unread">না-পড়া: %1$d</string>
+    <string name="pill_mesh_short">আশেপাশে · %1$d</string>
+
+    <!-- New chat sheet -->
+    <string name="chats_new_dm">কাউকে মেসেজ করো</string>
+    <string name="chats_new_group">নতুন গ্রুপ</string>
+    <string name="chats_their_key">তার কি (npub1…)</string>
+    <string name="chats_pet_name">তার নাম · শুধু এই ফোনে থাকে</string>
+    <string name="chats_start">চ্যাট শুরু করো</string>
+    <string name="chats_bad_key">এটা হরকরা বা নস্টারের কি নয় (npub1…)</string>
+    <string name="chats_your_key">তোমার কি</string>
+    <string name="chats_your_key_body">এটা দিয়ে মানুষ তোমাকে মেসেজ করে। এতে কোনো ফোন নম্বর নেই।</string>
+    <string name="chats_copy_key">কপি</string>
+    <string name="chats_show_qr">QR দেখাও</string>
+    <string name="chats_key_copied">কি কপি হয়েছে</string>
+    <string name="chats_key_qr_description">তোমার পাবলিক কির QR কোড</string>
+    <string name="chats_group_name">গ্রুপের নাম</string>
+    <string name="chats_group_people">মানুষ</string>
+    <string name="chats_group_none">আগে কারো সাথে চ্যাট শুরু করো, অথবা কি দিয়ে যোগ করো।</string>
+    <string name="chats_group_add_key">কি দিয়ে কাউকে যোগ করো</string>
+    <string name="chats_group_add">যোগ করো</string>
+    <string name="chats_group_create">গ্রুপ বানাও</string>
+    <string name="chats_group_hint">অন্তত দুজনকে বাছো। প্রত্যেকে নিজের এনক্রিপ্টেড কপি পায়।</string>
+
+    <!-- Thread -->
+    <string name="thread_hint">মেসেজ · যাবে %1$s দিয়ে</string>
+    <string name="thread_hint_saved">মেসেজ · রাস্তা খুললেই যাবে</string>
+    <string name="thread_by_internet">ইন্টারনেট</string>
+    <string name="thread_by_bridge">পাশের ফোন</string>
+    <string name="thread_by_wifi">লোকাল ওয়াই-ফাই</string>
+    <string name="thread_by_mesh">মেশ</string>
+    <string name="thread_by_sms">এসএমএস</string>
+    <string name="thread_by_hand">হাতে হাতে</string>
+    <string name="thread_send">পাঠাও</string>
+    <string name="thread_attach">কার্ড পাঠাও</string>
+    <string name="thread_record">ভয়েস নোট রেকর্ড করো</string>
+    <string name="thread_recording">রেকর্ড হচ্ছে · %1$s / 0:15</string>
+    <string name="thread_recorded">ভয়েস নোট · %1$s</string>
+    <string name="thread_cancel_recording">ভয়েস নোট বাদ দাও</string>
+    <string name="thread_mic_denied">ভয়েস নোটের জন্য মাইক্রোফোন লাগবে</string>
+    <string name="thread_empty_dm">মেসেজ এন্ড-টু-এন্ড এনক্রিপ্টেড, আর যে রাস্তা খোলা থাকে সেটা দিয়েই যায়।</string>
+    <string name="thread_empty_area">তোমার এলাকার আশেপাশের সবাই এটা পড়তে পারে। নাম না দিলে তোমার নাম থাকে না।</string>
+    <string name="thread_empty_wifi">এই ওয়াই-ফাইয়ের ফোনগুলো ইন্টারনেট ছাড়াই এই মেসেজ দেখে। এক দিন পর মুছে যায়।</string>
+    <string name="thread_dm_sub">এনক্রিপ্টেড · %1$s</string>
+    <string name="thread_area_sub">এলাকার চ্যানেল · নাম ছাড়া</string>
+    <string name="thread_wifi_alone">এখনো শুধু তুমি</string>
+    <plurals name="thread_wifi_peers">
+        <item quantity="one">এখানে %1$dটি ফোন</item>
+        <item quantity="other">এখানে %1$dটি ফোন</item>
+    </plurals>
+    <string name="thread_too_long">মেসেজটা অনেক লম্বা।</string>
+    <string name="thread_phone">পাবলিক রুমে ফোন নম্বর দেওয়া যায় না।</string>
+    <string name="thread_failed">পাঠানো গেল না।</string>
+    <string name="thread_task_made">তুমি মেসেজটাকে কাজ বানিয়েছ</string>
+
+    <!-- Message actions -->
+    <string name="message_actions">এই মেসেজ</string>
+    <string name="message_copy">কপি</string>
+    <string name="message_copied">কপি হয়েছে</string>
+    <string name="message_make_task">কাজ বানাও</string>
+    <string name="message_make_task_body">এই মেসেজটাকে এমন কাজ বানাও যেটা আশেপাশের কেউ করে দিতে পারে।</string>
+    <string name="message_block">এই মানুষটিকে ব্লক করো</string>
+    <string name="message_block_body">তার মেসেজ আর দেখবে না। তাকে জানানো হয় না।</string>
+
+    <!-- Cards -->
+    <string name="attach_title">এই চ্যাটে পাঠাও</string>
+    <string name="attach_location">আমার লোকেশন পাঠাও</string>
+    <string name="attach_location_body">একবারের জন্য: ঠিক জায়গা, প্রায় ১০০ মিটার, বা শুধু এলাকা · প্লাস কোডসহ</string>
+    <string name="attach_checkin">আমি নিরাপদ</string>
+    <string name="attach_checkin_body">এই চ্যাটের জন্য একটা চেক-ইন কার্ড</string>
+    <string name="location_title_hint">কী এটা</string>
+    <string name="location_default_title">আমার লোকেশন</string>
+    <string name="location_place_hint">জায়গা · ইচ্ছা হলে</string>
+    <string name="location_exact">ঠিক জায়গা</string>
+    <string name="location_100m">প্রায় ১০০ মি</string>
+    <string name="location_area">এলাকা</string>
+    <string name="location_share">পাঠাও</string>
+    <string name="location_unknown">এখন লোকেশন পাওয়া যাচ্ছে না</string>
+    <string name="location_detail_exact">ঠিক জায়গা</string>
+    <string name="location_detail_100m">প্রায় ১০০ মি</string>
+    <string name="location_detail_area">শুধু এলাকা</string>
+    <string name="checkin_safe">আমি নিরাপদ</string>
+
+    <!-- Name prompt -->
+    <string name="chat_name_title">মানুষ তোমাকে কী নামে ডাকবে?</string>
+    <string name="chat_name_body">শুধু যাদের মেসেজ করো তারাই দেখে। কখনো তোমার ফোন নম্বর নয়।</string>
+    <string name="chat_name_hint">তোমার নাম</string>
+    <string name="chat_name_save">রাখো আর পাঠাও</string>
+    <string name="chat_name_skip">নাম ছাড়াই পাঠাও</string>
+    <string name="chat_name_phone">নামে ফোন নম্বর থাকতে পারে না</string>
+    <string name="chat_name_long">৩২ অক্ষরের মধ্যে রাখো</string>
+</resources>

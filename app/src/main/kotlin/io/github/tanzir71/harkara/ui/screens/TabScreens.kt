@@ -27,10 +27,3 @@ fun UpcomingTabScreen(
         CalmState(icon, stringResource(title), stringResource(body), tag = stringResource(R.string.coming_soon))
     }
 }
-
-@Composable
-fun ChatsScreen(connectivity: ConnectivityState, modifier: Modifier = Modifier, pill: PillActions = PillActions()) =
-    UpcomingTabScreen(R.string.tab_chats, R.drawable.ic_chats, R.string.chats_empty_body, connectivity, modifier, pill = pill)
-
-
-
