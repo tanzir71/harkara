@@ -1,0 +1,345 @@
+{
+  "_note": "Signed by core (WebPageFixturesTest). Regenerate: HARKARA_WRITE_FIXTURES=1 ./gradlew :core:test --tests *WebPageFixturesTest*",
+  "now": 1795586400,
+  "event": {
+    "fragment": "e:AQPXk2Ma96oOcJQ53Uf8ABrNCwcnZwtmcOpSisg8sBJ_Sr1m82QpjZue7DcbhN24HJ-V6490R3IJTQS-G4AXI1NkMZYnNXiLBghVeoYKygJcgLqVlN0K7NBIRldeRWv1EpxrBnlglRsCAgFnCXdoMHIwZGtxNwIFcGxhY2UJTWlycHVyIDEwN3uwbNWDZfseLFvxYNl-hQfL1oA5Cx8s2_Ng2ewHy9t1FEA0SGwZkAfktD1YNv_BsqlwDlByPwA",
+    "kind": 3477,
+    "content": "পানি বাড়ছে, ছাদে আটকে আছি",
+    "pubkey": "d793631af7aa0e709439dd47fc001acd0b0727670b6670ea528ac83cb0127f4a",
+    "id": "bc09a9bcfcfee4c2942f9aee7b5c0c961453ad0080f397d7d94d28e886a2aa6c"
+  },
+  "eventTampered": {
+    "fragment": "e:AQPXk2Ma96oOcJQ53Uf8ABrNCwcnZwtmcOpSisg8sBJ_Sr1m82QpjZue7DcbhN24HJ-V6490R3IJTQS-G4AXI1NkMZYnNXiLBghVeoYKygJcgLqVlN0K7NBIRldeRWv1EpxrBnlglRsCAgFnCXdoMHIwZGtxNwIFcGxhY2UJTWlycHVyIDEwNXuwbNWDZfseLFvxYNl-hQfLpj5Ytu7B8vYHy2YDSR2gwI4Hy9aAFbQDOQuAioBqgKw2iAoA"
+  },
+  "confirm": {
+    "fragment": "c:AQOqymO-tin2JGsGeWD5wfdiQTqjWR3lnHaqBV_TPykFHfU8UB7sZnqv_8cVUcQpGeZfiinNTcznqM0jUuS--CuqnmYtERXXl2ZvF75JqDl6k18N_OumupYY9kUe9NgGN6v05q8mafvJ3mqP0qwPj61b2ctGn6FlcIZ3KJUO4glrBnlgBVRhbmlhBUthcmltFkNoYS1lciBkb2thbiwgTm92ZW1iZXI",
+    "id": "0f8fad5b-d9cb-469f-a165-70867728950e",
+    "hash": "8062957ebcac77f18c423225c0b21bed744db9f70ebb513ccda71ffaa05de270",
+    "code": "aaca63beb629f624",
+    "amount": 1250,
+    "creditor": "Tania",
+    "debtor": "Karim",
+    "note": "Cha-er dokan, November"
+  },
+  "confirmTampered": {
+    "fragment": "c:AQOqymO-tin2JGsGeWD5wfdiQTqjWR3lnHaqBV_TPykFHfU8UB7sZnqv_8cVUcQpGeZfiinNTcznqM0jUuS--CuqnmYtERXXl2ZvF75JqDl6k18N_OumupYY9kUe9NgGN6v05q8mafvJ3mqP0qwPj61b2ctGn6FlcIZ3KJUO1GFrBnlgBVRhbmlhBUthcmltFkNoYS1lciBkb2thbiwgTm92ZW1iZXI"
+  },
+  "task": {
+    "fragment": "t:V-s2OPUfTcXI1acyS0ffmegWz8xbXrEkW8jJgCn55nQ4ZjE0ZTQ1Zi1jZWVhLTQ2N2EtOTU3NS0yM2ExYjZmMGMzZDI",
+    "address": "30402:57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674:8f14e45f-ceea-467a-9575-23a1b6f0c3d2",
+    "title": "Napa Extra ene din",
+    "offer": {
+      "id": "7ec7ecaf6a4f075c0ec536d1e62a8387b7214c788bfb22a918937424eeefe002",
+      "pubkey": "57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674",
+      "created_at": 1795586400,
+      "kind": 30402,
+      "tags": [
+        [
+          "d",
+          "8f14e45f-ceea-467a-9575-23a1b6f0c3d2"
+        ],
+        [
+          "title",
+          "Napa Extra ene din"
+        ],
+        [
+          "summary",
+          "Napa Extra ene din"
+        ],
+        [
+          "published_at",
+          "1795586400"
+        ],
+        [
+          "price",
+          "120",
+          "BDT"
+        ],
+        [
+          "status",
+          "active"
+        ],
+        [
+          "t",
+          "harkara-task"
+        ],
+        [
+          "t",
+          "buy"
+        ],
+        [
+          "g",
+          "wh0r0dc"
+        ],
+        [
+          "g",
+          "wh0r0d"
+        ],
+        [
+          "g",
+          "wh0r0"
+        ],
+        [
+          "field",
+          "store",
+          "Lazz Pharma, Dhanmondi"
+        ],
+        [
+          "expiration",
+          "1795672800"
+        ],
+        [
+          "name",
+          "Tania"
+        ]
+      ],
+      "content": "2 pata Napa Extra, Lazz Pharma theke",
+      "sig": "deb7613d1b234ffbfa9aaf2d7ce7cdf783bdbab5f4c37d5ec1e7e8369154d28c3f1d8fc3898b8b6aacd290a761434f1996c01c20d4bfa7eb85732dfb089dd99c"
+    },
+    "steps": [
+      {
+        "id": "9385ffeaa651ba77cb5d8d1b81b88461904f4f02b28aeb4cb1d87207b761773b",
+        "pubkey": "29ce758bb2d21def214cea069addbd16896ec77924bf0ec9219e00dcf077605e",
+        "created_at": 1795586460,
+        "kind": 3471,
+        "tags": [
+          [
+            "a",
+            "30402:57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674:8f14e45f-ceea-467a-9575-23a1b6f0c3d2"
+          ],
+          [
+            "e",
+            "7ec7ecaf6a4f075c0ec536d1e62a8387b7214c788bfb22a918937424eeefe002"
+          ],
+          [
+            "step",
+            "accept"
+          ],
+          [
+            "p",
+            "57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674"
+          ],
+          [
+            "name",
+            "Rafi"
+          ]
+        ],
+        "content": "",
+        "sig": "e0846730b5d0d6a31b0c42bfbff0d20c5f989ead1bfbd3e35c46b8e49a6c27c9c7874887df13e38b46dbced94f3df1ff056623a3d0edaed3ea8fea40b4752188"
+      },
+      {
+        "id": "c073eceb32c10387bee10b86b232ec44f22573e5d5d9400e1c3b4ec0be6a992b",
+        "pubkey": "57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674",
+        "created_at": 1795586520,
+        "kind": 3471,
+        "tags": [
+          [
+            "a",
+            "30402:57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674:8f14e45f-ceea-467a-9575-23a1b6f0c3d2"
+          ],
+          [
+            "e",
+            "7ec7ecaf6a4f075c0ec536d1e62a8387b7214c788bfb22a918937424eeefe002"
+          ],
+          [
+            "step",
+            "confirm"
+          ],
+          [
+            "p",
+            "29ce758bb2d21def214cea069addbd16896ec77924bf0ec9219e00dcf077605e"
+          ],
+          [
+            "e",
+            "9385ffeaa651ba77cb5d8d1b81b88461904f4f02b28aeb4cb1d87207b761773b",
+            "",
+            "accept"
+          ],
+          [
+            "handoff",
+            "c8d09204decdd414267677a03e7c01155a0033017be75fe38344a4cc743de1ff"
+          ]
+        ],
+        "content": "",
+        "sig": "28e15e3fd05ece211bffbaf2a47e0c62b2ceaf8b5ba103da5c8fe15c875aeb55ee594dbbb3c393df96bc65b2c4b714f63d1d3720e80e5440c327fda188145e7f"
+      },
+      {
+        "id": "584f61646c83571f786409df683e7f0b792b0b7bc3fbb6a975c026a9dad918fb",
+        "pubkey": "29ce758bb2d21def214cea069addbd16896ec77924bf0ec9219e00dcf077605e",
+        "created_at": 1795587000,
+        "kind": 3471,
+        "tags": [
+          [
+            "a",
+            "30402:57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674:8f14e45f-ceea-467a-9575-23a1b6f0c3d2"
+          ],
+          [
+            "e",
+            "7ec7ecaf6a4f075c0ec536d1e62a8387b7214c788bfb22a918937424eeefe002"
+          ],
+          [
+            "step",
+            "picked_up"
+          ],
+          [
+            "p",
+            "57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674"
+          ]
+        ],
+        "content": "",
+        "sig": "bd560c6b43e732a2faea25124087ed00205ffcd3ede27b815c55c82245abd17936842c05d2dd6cc87938ba29154d028d9854ac40592ce0e946cee63dc86e0c1d"
+      }
+    ],
+    "forged": {
+      "id": "7c724fa838b75c4f59b7debc59d6299c392c4cf2edc23a1cbf93ef038adc4554",
+      "pubkey": "29ce758bb2d21def214cea069addbd16896ec77924bf0ec9219e00dcf077605e",
+      "created_at": 1795587300,
+      "kind": 3471,
+      "tags": [
+        [
+          "a",
+          "30402:57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674:8f14e45f-ceea-467a-9575-23a1b6f0c3d2"
+        ],
+        [
+          "e",
+          "7ec7ecaf6a4f075c0ec536d1e62a8387b7214c788bfb22a918937424eeefe002"
+        ],
+        [
+          "step",
+          "delivered"
+        ],
+        [
+          "p",
+          "57eb3638f51f4dc5c8d5a7324b47df99e816cfcc5b5eb1245bc8c98029f9e674"
+        ],
+        [
+          "code",
+          "654321"
+        ]
+      ],
+      "content": "",
+      "sig": "5ef84474d540f45dec00dd4f6b57f5c5ef787b5ab608acc8162dafcec9c02063f5020d938d2fc052a9b0cd3987b388c96bc093980053511e20f7f1e1df74fa15"
+    }
+  },
+  "area": {
+    "fragment": "g:wh0r0",
+    "events": [
+      {
+        "id": "fd197aff0ad70c284e390d77b24ceb7c2eb93502f7b342860644c23a3eb05209",
+        "pubkey": "e4d24944ed947bc34ed14ea4b2e063aa27ebd8da658577a263f55a631c7f656a",
+        "created_at": 1795584600,
+        "kind": 1,
+        "tags": [
+          [
+            "g",
+            "wh0r0dc"
+          ],
+          [
+            "g",
+            "wh0r0d"
+          ],
+          [
+            "g",
+            "wh0r0"
+          ],
+          [
+            "t",
+            "food"
+          ]
+        ],
+        "content": "Khichuri at the hall canteen till 9 pm",
+        "sig": "2c4bcee71e10cb465d8bc52a8172f8fd6bfd6f0212eda51b52bc769225e7318dcd2c943f29783ff6a7c519c3a78fb5932892c643e06bd154da52bc908910c0fd"
+      },
+      {
+        "id": "1f64d8daead552c389e2382e625cf59b64146570e63782d8ff6f761b48f04548",
+        "pubkey": "dcec806deb8da0774ec5a5d0f5097ffde1f70a9f40d44363bd3dc2dc2590ca5d",
+        "created_at": 1795585800,
+        "kind": 1,
+        "tags": [
+          [
+            "g",
+            "wh0r0dc"
+          ],
+          [
+            "g",
+            "wh0r0d"
+          ],
+          [
+            "g",
+            "wh0r0"
+          ],
+          [
+            "t",
+            "traffic"
+          ],
+          [
+            "expiration",
+            "1795597200"
+          ]
+        ],
+        "content": "Science Lab mor e jam, Nilkhet diye jan",
+        "sig": "0238022154e2e2ad8f39c1db551628a319a6eaa510254bab8431d14e6a83e80ea11b68bdc4e591f5d58a7632545f7a1f90c3038cf02051bb880336d5c707dea2"
+      },
+      {
+        "id": "19c1d6d7e5d6c6c64cfa4878c41067e0c75ff476541884f2d5bdc981968d3770",
+        "pubkey": "e4d24944ed947bc34ed14ea4b2e063aa27ebd8da658577a263f55a631c7f656a",
+        "created_at": 1795568400,
+        "kind": 1,
+        "tags": [
+          [
+            "g",
+            "wh0r0dc"
+          ],
+          [
+            "g",
+            "wh0r0d"
+          ],
+          [
+            "g",
+            "wh0r0"
+          ],
+          [
+            "t",
+            "traffic"
+          ],
+          [
+            "expiration",
+            "1795579200"
+          ]
+        ],
+        "content": "Old jam, long gone",
+        "sig": "916ba8a24afbb827541a54b605dc0e0b93618f2239ac2952638682b2fe317584759466a536852bd7f651133a4d1735b529133118f9f5412f02715d70094993eb"
+      },
+      {
+        "id": "ff9b5f77d884c4f5c8584133a4ed70c5068acd12be1bb33b04aa331dc259d3db",
+        "pubkey": "dcec806deb8da0774ec5a5d0f5097ffde1f70a9f40d44363bd3dc2dc2590ca5d",
+        "created_at": 1795586100,
+        "kind": 1,
+        "tags": [
+          [
+            "g",
+            "wh0r0dc"
+          ],
+          [
+            "g",
+            "wh0r0d"
+          ],
+          [
+            "g",
+            "wh0r0"
+          ],
+          [
+            "t",
+            "alert"
+          ]
+        ],
+        "content": "Everyone leave now",
+        "sig": "3393308bbcf6887a1b30af73a2bbc328dff5d4df4742457d866c152c734e5e076a0fd1ac5a18e7edd74d4be7c278ae130dc175b2e2560d3bf6585fde4a3e96ba"
+      }
+    ],
+    "visible": [
+      "fd197aff0ad70c284e390d77b24ceb7c2eb93502f7b342860644c23a3eb05209",
+      "1f64d8daead552c389e2382e625cf59b64146570e63782d8ff6f761b48f04548"
+    ]
+  }
+}

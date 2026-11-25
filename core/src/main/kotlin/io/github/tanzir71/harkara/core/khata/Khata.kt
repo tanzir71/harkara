@@ -4,6 +4,8 @@ import io.github.tanzir71.harkara.core.nostr.Event
 import io.github.tanzir71.harkara.core.nostr.KeyPair
 import io.github.tanzir71.harkara.core.nostr.Kinds
 import io.github.tanzir71.harkara.core.nostr.signEvent
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -29,6 +31,13 @@ data class IouTerms(
     val due: Long? = null,
     /** Set when the IOU is a receipt for a paid task (`30402:<requester>:<d>`). */
     val task: String? = null,
+    /**
+     * SHA-256 (hex) of the one-time confirm code in the web link sent to a party without a key (M10).
+     * Left out of the JSON when null, so the hashes of older IOUs do not change.
+     */
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val confirmCodeHash: String? = null,
 )
 
 /** Everything known about one IOU: the terms plus every signature and settlement seen. Carried as one blob. */
@@ -44,7 +53,8 @@ data class IouBundle(
     /** Union of two views of the same IOU (same terms hash); anything that doesn't verify is left out. */
     fun merge(other: IouBundle): IouBundle {
         require(Iou.hash(terms) == Iou.hash(other.terms)) { "different IOUs" }
-        val sigs = (signatureEvents() + other.signatureEvents()).filter { Iou.verifySignature(it, terms) }.distinctBy { it.pubkey }
+        val sigs = (signatureEvents() + other.signatureEvents())
+            .filter { Iou.verifySignature(it, terms) || Iou.verifyCodeConfirmation(it, terms) }.distinctBy { it.pubkey }
         val settles = (settlementEvents() + other.settlementEvents()).filter { Iou.verifySettlement(it, terms) }.distinctBy { it.id }
         return copy(signatures = sigs.map { it.toJson() }, settlements = settles.map { it.toJson() })
     }
@@ -95,6 +105,24 @@ object Iou {
         e.kind == Kinds.IOU_SIGN && e.tagValue("h") == hash(terms) &&
             (e.pubkey == terms.creditor.pubkey || e.pubkey == terms.debtor.pubkey) && e.verify()
 
+    /**
+     * A confirmation from the web page for non-users: kind 3474 over the same hash, signed by a throwaway
+     * browser key, carrying the one-time code whose SHA-256 the terms committed to. It stands in for the
+     * signature of the one party without a key. It shows that whoever held the link confirmed; it is weaker
+     * than a real co-signature, because the creditor could also have made it.
+     */
+    fun verifyCodeConfirmation(e: Event, terms: IouTerms): Boolean {
+        val codeHash = terms.confirmCodeHash ?: return false
+        if (listOf(terms.creditor, terms.debtor).count { it.pubkey == null } != 1) return false
+        if (e.kind != Kinds.IOU_SIGN || e.tagValue("h") != hash(terms) || e.tagValue("iou") != terms.id) return false
+        if (e.pubkey == terms.creditor.pubkey || e.pubkey == terms.debtor.pubkey) return false
+        val code = e.tagValue("code") ?: return false
+        return sha256Hex(code) == codeHash && e.verify()
+    }
+
+    /** SHA-256 (hex) of a confirm code, as committed in [IouTerms.confirmCodeHash]. */
+    fun codeHash(code: String): String = sha256Hex(code)
+
     fun settlementHash(terms: IouTerms, s: Settlement): String = sha256Hex(hash(terms) + "|" + json.encodeToString(Settlement.serializer(), s))
 
     /** One side's record of a settlement (kind 3475); settled when both sides sign the same one. */
@@ -117,18 +145,29 @@ object Iou {
 
     /**
      * The state everyone computes from the same bundle. With a counterparty who has no key (not on
-     * Harkara yet), one signature is all there can be, so it stays CLAIMED until they confirm on the web.
+     * Harkara yet), it stays CLAIMED until they confirm on the web page with the code from their link
+     * ([verifyCodeConfirmation]); then the creditor's own settlement is enough to settle it.
      */
     fun state(bundle: IouBundle): IouState {
         val terms = bundle.terms
-        val sigs = bundle.signatureEvents().filter { verifySignature(it, terms) }
-        val signedBy = sigs.map { it.pubkey }.toSet()
+        val all = bundle.signatureEvents()
+        val sigs = all.filter { verifySignature(it, terms) }
+        val confirmations = all.filter { verifyCodeConfirmation(it, terms) }
+        val signedBy = (sigs + confirmations).map { it.pubkey }.toSet()
         val parties = listOfNotNull(terms.creditor.pubkey, terms.debtor.pubkey).toSet()
-        val agreed = parties.size == 2 && signedBy.containsAll(parties)
+        val keyless = listOf(terms.creditor, terms.debtor).count { it.pubkey == null }
+        val partiesSigned = sigs.map { it.pubkey }.toSet().containsAll(parties)
+        val agreed = when (keyless) {
+            0 -> parties.size == 2 && partiesSigned
+            1 -> parties.size == 1 && partiesSigned && confirmations.isNotEmpty()
+            else -> false
+        }
         if (!agreed) return IouState(bundle, IouStatus.CLAIMED, signedBy)
         val settles = bundle.settlementEvents().filter { verifySettlement(it, terms) }
         val byHash = settles.groupBy { it.tagValue("s") }
-        val both = byHash.values.firstOrNull { group -> group.map { it.pubkey }.toSet().containsAll(parties) }
+        // Without a key the creditor's word settles it; a debtor's own record stays "settling".
+        val needed = if (keyless == 0) parties else setOfNotNull(terms.creditor.pubkey)
+        val both = if (needed.isEmpty()) null else byHash.values.firstOrNull { group -> group.map { it.pubkey }.toSet().containsAll(needed) }
         if (both != null) return IouState(bundle, IouStatus.SETTLED, signedBy, parse(both.first()))
         val any = settles.maxByOrNull { it.createdAt }
         return if (any != null) IouState(bundle, IouStatus.SETTLING, signedBy, parse(any)) else IouState(bundle, IouStatus.AGREED, signedBy)
